@@ -85,6 +85,7 @@ export function SocketProvider({
 
     currentSocket.on("emergency_broadcast", onEmergency);
     currentSocket.on("emergency_alert", onEmergency);
+    currentSocket.on("mobile_sos", onEmergency);
     currentSocket.on("personnel_update", () => console.log("Received personnel update via WS"));
     currentSocket.on("patrol_position", () => console.log("Received patrol position via WS"));
 
@@ -93,6 +94,7 @@ export function SocketProvider({
       currentSocket.off("disconnect");
       currentSocket.off("emergency_broadcast", onEmergency);
       currentSocket.off("emergency_alert", onEmergency);
+      currentSocket.off("mobile_sos", onEmergency);
       currentSocket.off("personnel_update");
       currentSocket.off("patrol_position");
     };

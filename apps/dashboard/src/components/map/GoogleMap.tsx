@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { APIProvider, AdvancedMarker, Map, Pin, useMap } from "@vis.gl/react-google-maps";
 
@@ -8,11 +8,13 @@ import TimeSlider from "@/components/map/TimeSlider";
 import PatrolBreadcrumbs from "@/components/map/PatrolBreadcrumbs";
 import { getSelectedPolres, useAppStore } from "@/store";
 import type { PolresItem } from "@/lib/types";
+import LiveReportTicker from "@/components/map/LiveReportTicker";
 
 function MapController({ selectedPolres }: { selectedPolres: PolresItem | null }) {
   const map = useMap();
   const emergency = useAppStore((state) => state.emergency);
-  
+  const circlesRef = useRef<google.maps.Circle[]>([]);
+
   useEffect(() => {
     if (!map) return;
     if (selectedPolres) {
@@ -37,6 +39,51 @@ function MapController({ selectedPolres }: { selectedPolres: PolresItem | null }
     window.addEventListener('map:fly-to-emergency', flyToEmergency);
     return () => window.removeEventListener('map:fly-to-emergency', flyToEmergency);
   }, [map, emergency]);
+
+  useEffect(() => {
+    if (!map) return;
+    if (!window.google?.maps?.Circle) return;
+
+    const drawTacticalPlot = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+
+      circlesRef.current.forEach(c => c.setMap(null));
+      circlesRef.current = [];
+
+      const dangerCircle = new window.google.maps.Circle({
+        map,
+        center: { lat: detail.lat, lng: detail.lng },
+        radius: detail.radius || 5000,
+        fillColor: "#D84F5F",
+        fillOpacity: 0.12,
+        strokeColor: "#D84F5F",
+        strokeWeight: 2,
+        strokeOpacity: 0.6,
+      });
+
+      const safeCircle = new window.google.maps.Circle({
+        map,
+        center: { lat: detail.lat, lng: detail.lng },
+        radius: (detail.radius || 5000) * 0.4,
+        fillColor: "#18C29C",
+        fillOpacity: 0.15,
+        strokeColor: "#18C29C",
+        strokeWeight: 2,
+        strokeOpacity: 0.6,
+      });
+
+      circlesRef.current.push(dangerCircle, safeCircle);
+      map.panTo({ lat: detail.lat, lng: detail.lng });
+      map.setZoom(13);
+    };
+
+    window.addEventListener('map:draw-tactical-plot', drawTacticalPlot);
+    return () => {
+      window.removeEventListener('map:draw-tactical-plot', drawTacticalPlot);
+      circlesRef.current.forEach(c => c.setMap(null));
+    };
+  }, [map]);
 
   return null;
 }
@@ -172,6 +219,7 @@ export default function GoogleMap() {
         </Map>
         <div className="pointer-events-none absolute inset-0 bg-transparent" />
         <TimeSlider />
+        <LiveReportTicker />
         <div className="pointer-events-none absolute left-5 top-5 z-10 max-w-sm rounded-[24px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.92)] px-4 py-4 backdrop-blur-xl">
           <div className="eyebrow">Map Overlay</div>
           <div className="mt-3 text-sm text-[var(--color-text)]">

@@ -8,7 +8,8 @@ import {
   BrainCircuit, 
   Shield, 
   Settings, 
-  HardDrive
+  HardDrive,
+  FileText
 } from "lucide-react";
 import { navGroups } from "@/lib/nav";
 import { cn } from "@/lib/utils";
@@ -16,12 +17,15 @@ import { useFloatingWindows } from "@/components/layout/FloatingWindowsManager";
 import { ComparisonWindow } from "@/components/dashboard/ComparisonWindow";
 
 import { useAppStore } from "@/store";
+import { useState } from "react";
+import AnevReportDialog from "@/components/dashboard/AnevReportDialog";
 
 export default function TacticalSidebar() {
   const pathname = usePathname();
   const setSelectedPolres = useAppStore((state) => state.setSelectedPolres);
   const polres = useAppStore((state) => state.polres);
   const { addWindow } = useFloatingWindows();
+  const [anevOpen, setAnevOpen] = useState(false);
 
   const handleOpenComparison = () => {
     // Pick first two unique active polres or fallback to default
@@ -36,6 +40,7 @@ export default function TacticalSidebar() {
   };
 
   return (
+    <>
     <aside className="h-full flex flex-col bg-[var(--color-bg-elevated)]/80 backdrop-blur-2xl border-r border-[var(--color-border)] relative overflow-hidden transition-all duration-300">
       {/* Tactical Glow Overlay */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent opacity-60" />
@@ -117,6 +122,14 @@ export default function TacticalSidebar() {
           Bandingkan
         </button>
 
+        <button
+          onClick={() => setAnevOpen(true)}
+          className="w-full py-2.5 rounded-lg border border-white/10 bg-white/5 text-[xs] font-bold uppercase tracking-[0.2em] text-[var(--color-text)] hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+        >
+          <FileText className="w-4 h-4" />
+          Generate Anev
+        </button>
+
         <div className="bg-[#0B1B32]/50 rounded-xl p-3 border border-white/5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[9px] uppercase tracking-widest text-white/30 font-bold">System Status</span>
@@ -130,6 +143,9 @@ export default function TacticalSidebar() {
         </div>
       </div>
     </aside>
+    
+    <AnevReportDialog open={anevOpen} onClose={() => setAnevOpen(false)} />
+    </>
   );
 }
 

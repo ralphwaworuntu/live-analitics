@@ -42,11 +42,26 @@ export interface KPIItem {
   subtitle: string;
 }
 
+export interface AIReference {
+  title: string;
+  snippet: string;
+}
+
+export interface AIChatAction {
+  label: string;
+  type: "plot-strategy" | "fly-to" | "generate-anev";
+  lat?: number;
+  lng?: number;
+  radius?: number;
+}
+
 export interface AIChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   references?: string[];
+  referencesData?: AIReference[];
+  actionBtn?: AIChatAction;
   createdAt: string;
 }
 
@@ -81,4 +96,27 @@ export interface PersonnelTrack {
   name: string;
   polresId: string;
   waypoints: PatrolWaypoint[];
+}
+
+export interface YoloBBox {
+  label: string;
+  confidence: number;
+  x: number;    // percent 0-100
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface FieldReport {
+  id: string;
+  timestamp: string;
+  personnelName: string;
+  nrp: string;
+  locationName: string;
+  lat: number;
+  lng: number;
+  textReport: string;
+  imageSrc?: string;
+  yoloBoxes?: YoloBBox[];
+  isSOS?: boolean;
 }
