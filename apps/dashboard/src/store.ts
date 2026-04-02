@@ -12,6 +12,10 @@ import type {
   KPIItem,
   PolresItem,
   PersonnelTrack,
+  TacticalMission,
+  PredictionPoint,
+  PolresAssetStrength,
+  AuditLogEntry,
 } from "@/lib/types";
 import { mockPersonnelTracks } from "@/lib/mockPatrolData";
 
@@ -49,6 +53,21 @@ interface AppState {
   setHistoryTimestamp: (timestamp: number) => void;
   setSelectedPersonnelId: (id: string | null) => void;
   setPersonnelTracks: (tracks: PersonnelTrack[]) => void;
+
+  // C2 & Dispatch
+  activeMissions: TacticalMission[];
+  dispatchMission: (mission: Omit<TacticalMission, "id" | "createdAt">) => void;
+  updateMissionStatus: (id: string, status: "en-route" | "on-site" | "completed") => void;
+  
+  // Predictions
+  predictiveMode: boolean;
+  setPredictiveMode: (enabled: boolean) => void;
+  predictionPoints: PredictionPoint[];
+  
+  // Logistics & Assets
+  polresAssets: PolresAssetStrength[];
+  auditLogs: AuditLogEntry[];
+  addAuditLog: (entry: Omit<AuditLogEntry, "id" | "timestamp">) => void;
 }
 
 const defaultEmergency: EmergencyState = {
@@ -97,6 +116,15 @@ export const useAppStore = create<AppState>((set) => ({
   historyTimestamp: new Date().getHours() * 60 + new Date().getMinutes(),
   selectedPersonnelId: null,
   personnelTracks: mockPersonnelTracks,
+  
+  activeMissions: [],
+  predictiveMode: false,
+  predictionPoints: [
+    { id: "pred-1", lat: -10.165, lng: 123.60, weight: 0.8, label: "Potensi Konflik Massa", confidence: 75, reasoning: "Histori aksi massa mingguan di titik ini." },
+    { id: "pred-2", lat: -9.65, lng: 120.26, weight: 0.6, label: "Potensi Pencurian Motor", confidence: 62, reasoning: "Trend kenaikan 3B di area pemukiman padat." }
+  ],
+  polresAssets: [],
+  auditLogs: [],
 
   setPolresData: (items) =>
     set((state) => {
@@ -171,6 +199,33 @@ export const useAppStore = create<AppState>((set) => ({
   setHistoryTimestamp: (timestamp) => set({ historyTimestamp: timestamp }),
   setSelectedPersonnelId: (id) => set({ selectedPersonnelId: id }),
   setPersonnelTracks: (tracks) => set({ personnelTracks: tracks }),
+
+  dispatchMission: (mission) => set((state) => {
+    const id = `msn-${Date.now()}`;
+    const newMission = { ...mission, id, createdAt: new Date().toISOString() };
+    const log = {
+      id: `audit-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      actor: "COMMANDER-01",
+      action: "MISSION_DISPATCH",
+      target: mission.assignedPersonnelId,
+      details: mission.description
+    };
+    return { 
+      activeMissions: [...state.activeMissions, newMission],
+      auditLogs: [log, ...state.auditLogs]
+    };
+  }),
+
+  updateMissionStatus: (id, status) => set((state) => ({
+    activeMissions: state.activeMissions.map(m => m.id === id ? { ...m, status } : m)
+  })),
+
+  setPredictiveMode: (enabled) => set({ predictiveMode: enabled }),
+
+  addAuditLog: (entry) => set((state) => ({
+    auditLogs: [{ ...entry, id: `audit-${Date.now()}`, timestamp: new Date().toISOString() }, ...state.auditLogs]
+  })),
 }));
 
 export function getSelectedPolres(state: AppState): PolresItem | null {

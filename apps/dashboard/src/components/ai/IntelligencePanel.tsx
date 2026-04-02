@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { getSelectedPolres, useAppStore } from "@/store";
 import { sendAIMessage } from "@/lib/api";
 import type { AIReference } from "@/lib/types";
+import MissionTracker from "./MissionTracker";
 
 // Reference Badge with hover popover
 function ReferenceBadge({ data }: { data: AIReference }) {
@@ -237,6 +238,7 @@ export default function IntelligencePanel() {
         ))}
 
         {sending && <AIThinkingSkeleton />}
+        <MissionTracker />
         <div ref={messagesEndRef} />
       </div>
 

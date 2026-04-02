@@ -120,3 +120,44 @@ export interface FieldReport {
   yoloBoxes?: YoloBBox[];
   isSOS?: boolean;
 }
+
+export type MissionStatus = "en-route" | "on-site" | "completed";
+
+export interface TacticalMission {
+  id: string;
+  title: string;
+  description: string;
+  status: MissionStatus;
+  assignedPersonnelId: string;
+  targetLat: number;
+  targetLng: number;
+  etaMinutes: number;
+  createdAt: string;
+}
+
+export interface PredictionPoint {
+  id: string;
+  lat: number;
+  lng: number;
+  weight: number; // 0-1
+  label: string;
+  confidence: number; // 0-100
+  reasoning: string;
+}
+
+export interface PolresAssetStrength {
+  polresId: string;
+  personnelReal: number;
+  personnelDsp: number;
+  patrolCars: number;
+  emergencyLogistics: number; // percent
+}
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  actor: string;
+  action: string;
+  target: string;
+  details: string;
+}

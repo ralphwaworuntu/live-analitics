@@ -1,13 +1,16 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "@/store";
+import { BrainCircuit, Sparkles } from "lucide-react";
 
 export default function TimeSlider() {
   const historyTimestamp = useAppStore((state) => state.historyTimestamp);
   const liveMode = useAppStore((state) => state.liveMode);
   const setHistoryTimestamp = useAppStore((state) => state.setHistoryTimestamp);
   const setLiveMode = useAppStore((state) => state.setLiveMode);
+  const predictiveMode = useAppStore((state) => state.predictiveMode);
+  const setPredictiveMode = useAppStore((state) => state.setPredictiveMode);
 
   const [currentTimeMinutes, setCurrentTimeMinutes] = useState(() => {
     const d = new Date();
@@ -44,8 +47,13 @@ export default function TimeSlider() {
       <div className="rounded-[26px] border border-[var(--color-border)] bg-[rgba(11,27,50,0.85)] px-4 py-4 shadow-[var(--shadow-float)] backdrop-blur-xl sm:px-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-brand-gold)]">Temporal Control</div>
-            <div className="mt-1 text-sm text-[var(--color-text)] sm:text-[15px]">Scrub Histori Patroli</div>
+            <div className={`text-[10px] uppercase tracking-[0.22em] flex items-center gap-1.5 font-bold ${predictiveMode ? "text-purple-400" : "text-[var(--color-brand-gold)]"}`}>
+              {predictiveMode ? <BrainCircuit className="w-3 h-3" /> : null}
+              {predictiveMode ? "AI Predictive Forecast (Mode)" : "Temporal Control"}
+            </div>
+            <div className="mt-1 text-sm text-[var(--color-text)] sm:text-[15px]">
+              {predictiveMode ? "Forecasting Kerawanan 6-12 Jam" : "Scrub Histori Patroli"}
+            </div>
           </div>
           <div className="metric text-right text-xs font-semibold text-[var(--color-brand-gold)]">
              {liveMode ? (
@@ -64,19 +72,45 @@ export default function TimeSlider() {
           <button
             title="Toggle live mode"
             onClick={() => {
+              if (predictiveMode) setPredictiveMode(false);
               setLiveMode(!liveMode);
               if (!liveMode) {
                 setHistoryTimestamp(currentTimeMinutes);
               }
             }}
-            className="rounded-full border border-[var(--color-border)] bg-[var(--color-panel)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text)] transition-colors hover:border-[var(--color-brand-gold)]/40 hover:text-[var(--color-brand-gold)]"
+            className={`rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] transition-colors ${
+              liveMode 
+                ? "bg-[var(--color-brand-gold)]/20 border-[var(--color-brand-gold)]/40 text-[var(--color-brand-gold)]" 
+                : "bg-white/5 border-white/10 text-[var(--color-text)] hover:border-white/20"
+            }`}
           >
             {liveMode ? "LIVE" : "PLAY"}
           </button>
 
+          <button
+            title="Toggle Predictive AI Mode"
+            onClick={() => {
+              const newState = !predictiveMode;
+              setPredictiveMode(newState);
+              if (newState) setLiveMode(false);
+            } }
+            className={`rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] transition-colors flex items-center gap-2 ${
+              predictiveMode 
+                ? "bg-purple-500/20 border-purple-500/40 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]" 
+                : "bg-white/5 border-white/10 text-[var(--color-text)] hover:border-white/20"
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            PREDIKSI
+          </button>
+
           <div className="relative h-1.5 flex-1 rounded-full bg-[var(--color-surface-3)]">
             <div
-              className="absolute left-0 top-0 h-full rounded-full bg-[linear-gradient(90deg,var(--color-brand-primary),var(--color-brand-gold))] transition-all duration-75"
+              className={`absolute left-0 top-0 h-full rounded-full transition-all duration-75 ${
+                predictiveMode 
+                  ? "bg-[linear-gradient(90deg,#9333ea,#a855f7)] shadow-[0_0_10px_rgba(168,85,247,0.5)]" 
+                  : "bg-[linear-gradient(90deg,var(--color-brand-primary),var(--color-brand-gold))]"
+              }`}
               style={{ width: `${(historyTimestamp / 1439) * 100}%` }}
             />
             {/* Current Time Indicator */}
@@ -96,7 +130,9 @@ export default function TimeSlider() {
               className="absolute left-0 top-0 h-full w-full cursor-pointer opacity-0 z-20"
             />
             <div
-              className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-[var(--color-brand-gold)] bg-[var(--color-panel)] shadow-md transition-all duration-75 z-10"
+              className={`pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 bg-[var(--color-panel)] shadow-md transition-all duration-75 z-10 ${
+                predictiveMode ? "border-purple-400" : "border-[var(--color-brand-gold)]"
+              }`}
               style={{ left: `calc(${(historyTimestamp / 1439) * 100}% - 8px)` }}
             />
           </div>

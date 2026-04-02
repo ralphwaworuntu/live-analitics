@@ -9,7 +9,11 @@ import {
   Shield, 
   Settings, 
   HardDrive,
-  FileText
+  FileText,
+  Users,
+  Car,
+  Package,
+  AlertCircle
 } from "lucide-react";
 import { navGroups } from "@/lib/nav";
 import { cn } from "@/lib/utils";
@@ -110,6 +114,63 @@ export default function TacticalSidebar() {
             </ul>
           </div>
         ))}
+
+        {/* DSP Inventory (Logistics Hub) */}
+        <div className="mx-4 mb-6">
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <Package className="w-3.5 h-3.5 text-[var(--color-brand-gold)]" />
+            <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-brand-gold)] font-bold">Logistics & DSP Hub</span>
+          </div>
+          
+          <div className="space-y-3">
+            {polres.slice(0, 3).map((p) => {
+              const real = p.online || 0;
+              const dsp = p.personnel || 0;
+              const ratio = dsp > 0 ? real / dsp : 0;
+              const isLow = ratio < 0.3; // Threshold for alert
+
+              return (
+                <div 
+                  key={p.id}
+                  className={`rounded-xl border p-3 transition-colors ${
+                    isLow 
+                      ? "border-yellow-500/40 bg-yellow-500/5 animate-pulse" 
+                      : "border-white/5 bg-white/5"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-white uppercase tracking-wider">{p.name}</span>
+                    {isLow && <AlertCircle className="w-3 h-3 text-yellow-500" />}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-[8px] text-[var(--color-muted)] uppercase tracking-widest mb-1">Personnel Strength</span>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-2.5 h-2.5 text-[var(--color-brand-gold)]/60" />
+                        <span className="text-[11px] font-mono text-white">{real} / {dsp}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[8px] text-[var(--color-muted)] uppercase tracking-widest mb-1">Patrol Fleet</span>
+                      <div className="flex items-center gap-1.5">
+                        <Car className="w-2.5 h-2.5 text-blue-400/60" />
+                        <span className="text-[11px] font-mono text-white">{Math.floor(real / 5)} Unit</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-1000 ${isLow ? "bg-yellow-500" : "bg-[var(--color-success)]"}`}
+                      style={{ width: `${ratio * 100}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Footer System Status */}
