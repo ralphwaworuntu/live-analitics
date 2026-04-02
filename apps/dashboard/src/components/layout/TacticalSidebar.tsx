@@ -12,12 +12,28 @@ import {
 } from "lucide-react";
 import { navGroups } from "@/lib/nav";
 import { cn } from "@/lib/utils";
+import { useFloatingWindows } from "@/components/layout/FloatingWindowsManager";
+import { ComparisonWindow } from "@/components/dashboard/ComparisonWindow";
 
 import { useAppStore } from "@/store";
 
 export default function TacticalSidebar() {
   const pathname = usePathname();
   const setSelectedPolres = useAppStore((state) => state.setSelectedPolres);
+  const polres = useAppStore((state) => state.polres);
+  const { addWindow } = useFloatingWindows();
+
+  const handleOpenComparison = () => {
+    // Pick first two unique active polres or fallback to default
+    const p1 = polres[0]?.id || "kupang-kota";
+    const p2 = polres[1]?.id || "manggarai-barat";
+    
+    addWindow(
+      "comparison-main",
+      "Tactical Comparison Matrix",
+      <ComparisonWindow polresA={p1} polresB={p2} />
+    );
+  };
 
   return (
     <aside className="h-full flex flex-col bg-[var(--color-bg-elevated)]/80 backdrop-blur-2xl border-r border-[var(--color-border)] relative overflow-hidden transition-all duration-300">
@@ -92,7 +108,15 @@ export default function TacticalSidebar() {
       </div>
 
       {/* Footer System Status */}
-      <div className="p-4 border-t border-white/5 bg-slate-950/30">
+      <div className="p-4 border-t border-white/5 bg-slate-950/30 flex flex-col gap-3">
+        <button
+          onClick={handleOpenComparison}
+          className="w-full py-2.5 rounded-lg border border-[var(--color-brand-gold)]/40 bg-[var(--color-brand-gold)]/10 text-[xs] font-bold uppercase tracking-[0.2em] text-[var(--color-brand-gold)] hover:bg-[var(--color-brand-gold)]/20 transition-colors shadow-[0_0_10px_rgba(212,175,55,0.1)] flex items-center justify-center gap-2"
+        >
+          <BarChart3 className="w-4 h-4" />
+          Bandingkan
+        </button>
+
         <div className="bg-[#0B1B32]/50 rounded-xl p-3 border border-white/5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[9px] uppercase tracking-widest text-white/30 font-bold">System Status</span>

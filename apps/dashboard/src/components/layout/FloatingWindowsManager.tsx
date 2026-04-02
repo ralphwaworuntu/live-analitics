@@ -14,6 +14,8 @@ interface WindowData {
 interface FloatingWindowsContextType {
   addWindow: (id: string, title: string, content: React.ReactNode) => void;
   closeWindow: (id: string) => void;
+  minimizeWindow: (id: string) => void;
+  restoreWindow: (id: string) => void;
 }
 
 const FloatingWindowsContext = createContext<FloatingWindowsContextType | null>(null);
@@ -26,8 +28,10 @@ export function useFloatingWindows() {
   return context;
 }
 
+import { AnimatePresence, motion } from "framer-motion";
+
 export default function FloatingWindowsProvider({ children }: { children: React.ReactNode }) {
-  const [windows, setWindows] = useState<WindowData[]>([]);
+  const [windows, setWindows] = useState<(WindowData & { minimized?: boolean })[]>([]);
 
   const addWindow = (id: string, title: string, content: React.ReactNode) => {
     setWindows((current) => {
@@ -52,11 +56,43 @@ export default function FloatingWindowsProvider({ children }: { children: React.
     setWindows((current) => current.filter((window) => window.id !== id));
   };
 
+  const minimizeWindow = (id: string) => {
+    setWindows((current) => current.map(w => w.id === id ? { ...w, minimized: true } : w));
+  };
+
+  const restoreWindow = (id: string) => {
+    setWindows((current) => current.map(w => w.id === id ? { ...w, minimized: false } : w));
+  };
+
   return (
-    <FloatingWindowsContext.Provider value={{ addWindow, closeWindow }}>
+    <FloatingWindowsContext.Provider value={{ addWindow, closeWindow, minimizeWindow, restoreWindow }}>
       {children}
-      {windows.map((window) => (
-        <Rnd
+      
+      {/* Minimized Windows Dock */}
+      <div className="fixed top-24 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+        {windows.filter(w => w.minimized).map(window => (
+          <button
+            key={`min-${window.id}`}
+            onClick={() => restoreWindow(window.id)}
+            className="pointer-events-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-[var(--color-brand-gold)] shadow-lg backdrop-blur-md transition-all hover:border-[var(--color-brand-gold)] hover:bg-[var(--color-surface-2)] flex items-center justify-between min-w-[200px]"
+          >
+            <span className="truncate">{window.title}</span>
+            <span className="ml-2">◱</span>
+          </button>
+        ))}
+      </div>
+
+      <AnimatePresence>
+        {windows.filter(w => !w.minimized).map((window) => (
+          <motion.div
+            key={window.id}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            style={{ position: 'fixed', zIndex: 100 }}
+          >
+            <Rnd
           key={window.id}
           default={{
             x: window.defaultX,
@@ -79,21 +115,36 @@ export default function FloatingWindowsProvider({ children }: { children: React.
                   {window.title}
                 </span>
               </div>
-              <button
-                className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-muted)] transition-colors hover:bg-[var(--color-danger)]/20 hover:text-[var(--color-danger)]"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  closeWindow(window.id);
-                }}
-              >
-                ✕
-              </button>
+              <div className="flex items-center">
+                <button
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-muted)] transition-colors hover:bg-white/10 hover:text-white"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    minimizeWindow(window.id);
+                  }}
+                  title="Minimize"
+                >
+                  –
+                </button>
+                <button
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-muted)] transition-colors hover:bg-[var(--color-danger)]/20 hover:text-[var(--color-danger)]"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    closeWindow(window.id);
+                  }}
+                  title="Close"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-auto p-4">{window.content}</div>
           </div>
         </Rnd>
-      ))}
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </FloatingWindowsContext.Provider>
   );
 }

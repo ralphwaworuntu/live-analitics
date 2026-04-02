@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { APIProvider, AdvancedMarker, Map, Pin, useMap } from "@vis.gl/react-google-maps";
 
 import TimeSlider from "@/components/map/TimeSlider";
+import PatrolBreadcrumbs from "@/components/map/PatrolBreadcrumbs";
 import { getSelectedPolres, useAppStore } from "@/store";
 import type { PolresItem } from "@/lib/types";
 
 function MapController({ selectedPolres }: { selectedPolres: PolresItem | null }) {
   const map = useMap();
+  const emergency = useAppStore((state) => state.emergency);
+  
   useEffect(() => {
     if (!map) return;
     if (selectedPolres) {
@@ -20,6 +23,21 @@ function MapController({ selectedPolres }: { selectedPolres: PolresItem | null }
       map.setZoom(7);
     }
   }, [map, selectedPolres]);
+
+  useEffect(() => {
+    if (!map) return;
+
+    const flyToEmergency = () => {
+      if (emergency.lat && emergency.lng) {
+        map.panTo({ lat: emergency.lat, lng: emergency.lng });
+        map.setZoom(16);
+      }
+    };
+
+    window.addEventListener('map:fly-to-emergency', flyToEmergency);
+    return () => window.removeEventListener('map:fly-to-emergency', flyToEmergency);
+  }, [map, emergency]);
+
   return null;
 }
 
@@ -139,6 +157,8 @@ export default function GoogleMap() {
           ))}
 
           <MapController selectedPolres={selectedPolres} />
+          
+          <PatrolBreadcrumbs />
 
           {heatmapEnabled
             ? highlightedHeatPoints.map((point) => (

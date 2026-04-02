@@ -1,10 +1,14 @@
 "use client";
 
 import { getSelectedPolres, useAppStore } from "@/store";
+import { useEmergencySound } from "@/hooks/useEmergencySound";
 
 export default function VisualHijackWrapper({ children }: { children: React.ReactNode }) {
   const emergency = useAppStore((state) => state.emergency);
+  const clearEmergency = useAppStore((state) => state.clearEmergency);
   const selectedPolres = useAppStore(getSelectedPolres);
+
+  useEmergencySound();
 
   return (
     <div
@@ -24,8 +28,26 @@ export default function VisualHijackWrapper({ children }: { children: React.Reac
               </h2>
               <p className="text-sm font-mono text-[var(--color-bg)] font-medium">
                 {emergency.location}
+                {emergency.lat && emergency.lng ? ` | GPS: ${emergency.lat.toFixed(4)}, ${emergency.lng.toFixed(4)}` : ""}
                 {selectedPolres ? ` | Fokus: ${selectedPolres.name}` : ""}
               </p>
+              <div className="mt-3 flex gap-3 pointer-events-auto">
+                <button
+                  onClick={() => {
+                    // MapController in GoogleMap.tsx will handle flying to emergency coordinates
+                    window.dispatchEvent(new CustomEvent('map:fly-to-emergency'));
+                  }}
+                  className="rounded bg-[var(--color-danger)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white shadow hover:opacity-90"
+                >
+                  Buka Komando
+                </button>
+                <button
+                  onClick={clearEmergency}
+                  className="rounded border border-[var(--color-border)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[var(--color-bg)] hover:bg-[var(--color-bg)]/5"
+                >
+                  Abaikan
+                </button>
+              </div>
             </div>
           </div>
         </div>

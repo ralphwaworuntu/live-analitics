@@ -26,6 +26,14 @@ export const initSocket = (token?: string) => {
     },
     transports: ["websocket"],
     autoConnect: true,
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 2000,
+    reconnectionDelayMax: 15000,
+  });
+
+  socket.io.on("reconnect_attempt", (attempt) => {
+    console.log(`Socket reconnect attempt #${attempt}`);
   });
 
   return socket;
@@ -55,31 +63,38 @@ export function SocketProvider({
       console.log("Socket disconnected from WS Server.");
     });
 
-    currentSocket.on(
-      "emergency_broadcast",
-      (data: { message?: string; location?: string; severity?: string; timestamp?: string }) => {
-        const message = data.message || "SOS PANIC BUTTON ACTIVATED";
-        const location = data.location || "Lokasi Tidak Diketahui";
+    const onEmergency = (data: { message?: string; location?: string; severity?: string; timestamp?: string; lat?: number; lng?: number }) => {
+      const message = data.message || "SOS PANIC BUTTON ACTIVATED";
+      const location = data.location || "Lokasi Tidak Diketahui";
 
-        triggerEmergency({
-          message,
-          location,
-          severity: data.severity === "kritis" ? "kritis" : "tinggi",
-          timestamp: data.timestamp,
-        });
+      triggerEmergency({
+        message,
+        location,
+        severity: data.severity === "kritis" ? "kritis" : "tinggi",
+        timestamp: data.timestamp,
+        lat: data.lat,
+        lng: data.lng,
+      });
 
-        pushNotification({
-          title: "Emergency broadcast masuk",
-          description: `${message} • ${location}`,
-          level: "critical",
-        });
-      },
-    );
+      pushNotification({
+        title: "Emergency broadcast masuk",
+        description: `${message} • ${location}`,
+        level: "critical",
+      });
+    };
+
+    currentSocket.on("emergency_broadcast", onEmergency);
+    currentSocket.on("emergency_alert", onEmergency);
+    currentSocket.on("personnel_update", () => console.log("Received personnel update via WS"));
+    currentSocket.on("patrol_position", () => console.log("Received patrol position via WS"));
 
     return () => {
       currentSocket.off("connect");
       currentSocket.off("disconnect");
-      currentSocket.off("emergency_broadcast");
+      currentSocket.off("emergency_broadcast", onEmergency);
+      currentSocket.off("emergency_alert", onEmergency);
+      currentSocket.off("personnel_update");
+      currentSocket.off("patrol_position");
     };
   }, [pushNotification, token, triggerEmergency]);
 

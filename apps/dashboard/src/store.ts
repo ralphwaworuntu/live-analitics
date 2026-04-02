@@ -11,7 +11,9 @@ import type {
   HeatPoint,
   KPIItem,
   PolresItem,
+  PersonnelTrack,
 } from "@/lib/types";
+import { mockPersonnelTracks } from "@/lib/mockPatrolData";
 
 interface AppState {
   polres: PolresItem[];
@@ -39,6 +41,14 @@ interface AppState {
   markNotificationRead: (id: string) => void;
   triggerEmergency: (payload: Partial<EmergencyState> & { message: string; location: string }) => void;
   clearEmergency: () => void;
+  
+  // History & Patrol
+  historyTimestamp: number;
+  selectedPersonnelId: string | null;
+  personnelTracks: PersonnelTrack[];
+  setHistoryTimestamp: (timestamp: number) => void;
+  setSelectedPersonnelId: (id: string | null) => void;
+  setPersonnelTracks: (tracks: PersonnelTrack[]) => void;
 }
 
 const defaultEmergency: EmergencyState = {
@@ -47,6 +57,8 @@ const defaultEmergency: EmergencyState = {
   location: null,
   severity: "kritis",
   timestamp: null,
+  lat: null,
+  lng: null,
 };
 
 export const useAppStore = create<AppState>((set) => ({
@@ -81,6 +93,11 @@ export const useAppStore = create<AppState>((set) => ({
   ],
   emergency: defaultEmergency,
   hasLoadedInitialData: false,
+  
+  historyTimestamp: new Date().getHours() * 60 + new Date().getMinutes(),
+  selectedPersonnelId: null,
+  personnelTracks: mockPersonnelTracks,
+
   setPolresData: (items) =>
     set((state) => {
       const selected = items.find((item) => item.id === state.selectedPolresId) ?? null;
@@ -131,10 +148,12 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       emergency: {
         active: true,
-        message: payload.message,
-        location: payload.location,
+        message: payload.message || "Emergency",
+        location: payload.location || "Unknown Location",
         severity: payload.severity ?? "kritis",
         timestamp: payload.timestamp ?? new Date().toISOString(),
+        lat: payload.lat ?? -10.15,
+        lng: payload.lng ?? 123.58,
       },
       notifications: [
         {
@@ -149,6 +168,9 @@ export const useAppStore = create<AppState>((set) => ({
       ],
     })),
   clearEmergency: () => set({ emergency: defaultEmergency }),
+  setHistoryTimestamp: (timestamp) => set({ historyTimestamp: timestamp }),
+  setSelectedPersonnelId: (id) => set({ selectedPersonnelId: id }),
+  setPersonnelTracks: (tracks) => set({ personnelTracks: tracks }),
 }));
 
 export function getSelectedPolres(state: AppState): PolresItem | null {

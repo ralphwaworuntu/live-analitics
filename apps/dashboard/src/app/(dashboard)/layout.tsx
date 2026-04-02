@@ -1,6 +1,7 @@
 import DashboardShell from "@/components/layout/DashboardShell";
 import FloatingWindowsProvider from "@/components/layout/FloatingWindowsManager";
 import VisualHijackWrapper from "@/components/layout/VisualHijackWrapper";
+import { SocketProvider } from "@/lib/socket";
 
 export default function DashboardLayout({
   children,
@@ -8,10 +9,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <FloatingWindowsProvider>
-      <VisualHijackWrapper>
-        <DashboardShell>{children}</DashboardShell>
-      </VisualHijackWrapper>
-    </FloatingWindowsProvider>
+    <SocketProvider>
+      <FloatingWindowsProvider>
+        <VisualHijackWrapper>
+          <DashboardShell>{children}</DashboardShell>
+        </VisualHijackWrapper>
+      </FloatingWindowsProvider>
+    </SocketProvider>
   );
 }

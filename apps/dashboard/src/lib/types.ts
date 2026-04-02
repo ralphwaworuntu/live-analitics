@@ -65,4 +65,20 @@ export interface EmergencyState {
   location: string | null;
   severity: "kritis" | "tinggi" | "sedang";
   timestamp: string | null;
+  lat: number | null;
+  lng: number | null;
+}
+
+export interface PatrolWaypoint {
+  lat: number;
+  lng: number;
+  timestamp: string; // ISO string or simple time like "08:30"
+}
+
+export interface PersonnelTrack {
+  id: string;
+  nrp: string;
+  name: string;
+  polresId: string;
+  waypoints: PatrolWaypoint[];
 }
