@@ -1,11 +1,27 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { APIProvider, AdvancedMarker, Map, Pin } from "@vis.gl/react-google-maps";
+import { APIProvider, AdvancedMarker, Map, Pin, useMap } from "@vis.gl/react-google-maps";
 
 import TimeSlider from "@/components/map/TimeSlider";
 import { getSelectedPolres, useAppStore } from "@/store";
+import type { PolresItem } from "@/lib/types";
+
+function MapController({ selectedPolres }: { selectedPolres: PolresItem | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map) return;
+    if (selectedPolres) {
+      map.panTo({ lat: selectedPolres.lat, lng: selectedPolres.lng });
+      map.setZoom(12);
+    } else {
+      map.panTo({ lat: -9.0, lng: 121.5 });
+      map.setZoom(7);
+    }
+  }, [map, selectedPolres]);
+  return null;
+}
 
 export default function GoogleMap() {
   const router = useRouter();
@@ -77,7 +93,7 @@ export default function GoogleMap() {
           disableDefaultUI
           style={{ width: "100%", height: "100%" }}
         >
-          {visiblePolres.map((item) => (
+          {polres.map((item) => (
             <AdvancedMarker
               key={item.id}
               position={{ lat: item.lat, lng: item.lng }}
@@ -85,20 +101,44 @@ export default function GoogleMap() {
                 setSelectedPolres(item.id);
                 router.push(`/polres/${item.id}`);
               }}
+              className="group cursor-pointer"
             >
-              <Pin
-                background={
-                  item.status === "kondusif"
-                    ? "var(--color-success)"
-                    : item.status === "waspada"
-                      ? "var(--color-brand-gold)"
-                      : "var(--color-danger)"
-                }
-                borderColor={selectedPolres?.id === item.id ? "#18324d" : "rgba(24,50,77,0.28)"}
-                glyphColor="white"
-              />
+              <div className="relative">
+                <Pin
+                  background={
+                    item.status === "kondusif"
+                      ? "var(--color-success)"
+                      : item.status === "waspada"
+                        ? "var(--color-brand-gold)"
+                        : "var(--color-danger)"
+                  }
+                  borderColor={selectedPolres?.id === item.id ? "#18324d" : "rgba(24,50,77,0.28)"}
+                  glyphColor="white"
+                />
+                
+                {/* TACTICAL HOVERCARD */}
+                <div className="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 flex-col items-center group-hover:flex">
+                  <div className="glass-card flex min-w-[200px] flex-col overflow-hidden rounded-xl border border-[var(--color-border)] p-3 shadow-lg">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-brand-gold)]">
+                      {item.name}
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-xs text-[var(--color-text)]">
+                      <span>Status:</span>
+                      <span className="font-semibold uppercase text-white">{item.status}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-xs text-[var(--color-text)]">
+                      <span>Personil:</span>
+                      <span className="font-mono text-white">{item.online}/{item.personnel} Aktif</span>
+                    </div>
+                  </div>
+                  <div className="h-2 w-2 origin-top-left -translate-x-1/2 rotate-45 border-b border-r border-[var(--color-border)] bg-[rgba(11,27,50,0.8)]" />
+                </div>
+
+              </div>
             </AdvancedMarker>
           ))}
+
+          <MapController selectedPolres={selectedPolres} />
 
           {heatmapEnabled
             ? highlightedHeatPoints.map((point) => (
@@ -110,7 +150,7 @@ export default function GoogleMap() {
               ))
             : null}
         </Map>
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%,transparent_74%,rgba(24,50,77,0.08))]" />
+        <div className="pointer-events-none absolute inset-0 bg-transparent" />
         <TimeSlider />
         <div className="pointer-events-none absolute left-5 top-5 z-10 max-w-sm rounded-[24px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.92)] px-4 py-4 backdrop-blur-xl">
           <div className="eyebrow">Map Overlay</div>

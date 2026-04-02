@@ -13,11 +13,14 @@ import {
 import { navGroups } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
+import { useAppStore } from "@/store";
+
 export default function TacticalSidebar() {
   const pathname = usePathname();
+  const setSelectedPolres = useAppStore((state) => state.setSelectedPolres);
 
   return (
-    <aside className="h-full flex flex-col bg-slate-950/40 backdrop-blur-md border-r border-white/5 relative overflow-hidden">
+    <aside className="h-full flex flex-col bg-[var(--color-bg-elevated)]/80 backdrop-blur-2xl border-r border-[var(--color-border)] relative overflow-hidden transition-all duration-300">
       {/* Tactical Glow Overlay */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent opacity-60" />
       
@@ -53,24 +56,31 @@ export default function TacticalSidebar() {
                   <li key={item.id}>
                     <Link
                       href={item.href}
+                      onClick={() => {
+                        if (item.href.startsWith("/polres/")) {
+                           setSelectedPolres(item.href.split("/").pop() ?? null);
+                        } else if (item.href === "/") {
+                           setSelectedPolres(null);
+                        }
+                      }}
                       className={cn(
                         "group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden",
                         isActive 
-                          ? "bg-[#D4AF37]/10 text-white border border-[#D4AF37]/20 shadow-[0_0_20px_rgba(212,175,55,0.05)]" 
-                          : "text-white/40 hover:bg-white/[0.03] hover:text-white/70"
+                          ? "bg-[var(--color-brand-gold)]/10 text-[var(--color-text)] border border-[var(--color-brand-gold)]/20 shadow-[0_0_20px_rgba(212,175,55,0.05)]" 
+                          : "text-[var(--color-muted)] hover:bg-white/[0.03] hover:text-[var(--color-text)]"
                       )}
                     >
                       <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center border transition-all duration-300",
                         isActive 
-                          ? "bg-[#D4AF37]/20 border-[#D4AF37]/40 text-[#D4AF37]" 
-                          : "bg-white/[0.02] border-white/5 text-white/20 group-hover:border-white/10 group-hover:text-white/40"
+                          ? "bg-[var(--color-brand-gold)]/20 border-[var(--color-brand-gold)]/40 text-[var(--color-brand-gold)]" 
+                          : "bg-[var(--color-panel)] border-[var(--color-border)] text-[var(--color-subtle)] group-hover:border-[var(--color-border-hover)] group-hover:text-[var(--color-muted)]"
                       )}>
                         {getIconForCategory(item.id, item.label)}
                       </div>
                       <span className="text-[13px] font-medium tracking-wide flex-1">{item.label}</span>
                       {isActive && (
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-[#D4AF37] rounded-l-full shadow-[0_0_10px_#D4AF37]" />
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-[var(--color-brand-gold)] rounded-l-full shadow-[0_0_10px_var(--color-brand-gold)]" />
                       )}
                     </Link>
                   </li>

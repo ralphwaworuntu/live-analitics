@@ -8,8 +8,8 @@ export default function VisualHijackWrapper({ children }: { children: React.Reac
 
   return (
     <div
-      className={`flex min-h-screen bg-[var(--color-bg)] transition-all duration-300 ${
-        emergency.active ? "visual-hijack-active" : ""
+      className={`relative flex min-h-screen w-full bg-[var(--color-bg)] transition-all duration-300 ${
+        emergency.active ? "after:pointer-events-none after:absolute after:inset-0 after:z-50 after:border-4 after:border-[var(--color-danger)] after:animate-[pulse-danger_2s_ease-in-out_infinite]" : ""
       }`}
     >
       {emergency.active ? (
@@ -20,11 +20,11 @@ export default function VisualHijackWrapper({ children }: { children: React.Reac
             </div>
             <div>
               <h2 className="text-lg font-bold uppercase tracking-[0.18em] text-[var(--color-danger)]">
-                Urgent: {emergency.message}
+                Status Kontinjensi: {emergency.message}
               </h2>
-              <p className="text-sm font-mono text-[var(--color-text)]">
+              <p className="text-sm font-mono text-[var(--color-bg)] font-medium">
                 {emergency.location}
-                {selectedPolres ? ` | Fokus ${selectedPolres.name}` : ""}
+                {selectedPolres ? ` | Fokus: ${selectedPolres.name}` : ""}
               </p>
             </div>
           </div>
