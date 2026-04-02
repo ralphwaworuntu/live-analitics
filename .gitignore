@@ -1,0 +1,12 @@
+# SENTINEL Command Center
+# Biro Operasi Polda NTT — Live Tracking & AI Dashboard
+
+.env
+.env.local
+.env.production.local
+__pycache__/
+*.pyc
+node_modules/
+.next/
+*.log
+backups/

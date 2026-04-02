@@ -1,0 +1,42 @@
+name: sentinel_mobile
+description: SENTINEL Field Officer Tactical App (Biro Ops Polda NTT)
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI & Theming
+  cupertino_icons: ^1.0.2
+  google_fonts: ^6.1.0
+  
+  # State Management & Network
+  provider: ^6.1.1
+  dio: ^5.4.0
+  socket_io_client: ^2.0.3
+  
+  # Auth & Security
+  local_auth: ^2.1.7 # Biometric Login
+  flutter_secure_storage: ^9.0.0 # JWT Storage
+  
+  # Geolocation & Maps
+  google_maps_flutter: ^2.5.3
+  geolocator: ^10.1.0
+  
+  # Camera & Vision
+  camera: ^0.10.5+9
+  image_picker: ^1.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

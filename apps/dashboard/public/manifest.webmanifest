@@ -1,0 +1,17 @@
+{
+  "name": "SENTINEL Command Center",
+  "short_name": "SENTINEL",
+  "description": "PWA command center untuk live tracking dan koordinasi operasional Polda NTT.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+# ============================================
+# SENTINEL — Docker Compose (Development / Local Demo)
+# Usage: docker compose -f docker-compose.dev.yml up -d --build
+# ============================================
+# Perbedaan dengan Production:
+#   - Semua port terbuka (untuk debugging langsung)
+#   - Tanpa Nginx/SSL (akses langsung ke service)
+#   - Ollama tanpa GPU (CPU mode — lambat tapi jalan)
+#   - Hot reload aktif
+# ============================================
+
+services:
+  # --- PostGIS ---
+  db:
+    image: postgis/postgis:15-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sentinel_db
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: sentinel_dev
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinel-dev
+
+  # --- Ollama (CPU mode for dev — no GPU required) ---
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_dev:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - sentinel-dev
+
+  # --- FastAPI Backend ---
+  api:
+    build:
+      context: ./backend-api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sentinel:sentinel_dev@db:5432/sentinel_db
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: llama3:8b
+      JWT_SECRET: dev-secret-not-for-production
+      ALLOWED_ORIGINS: http://localhost:3000
+      IP_WHITELIST: ""
+      DEBUG: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend-api:/app  # Hot reload
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    networks:
+      - sentinel-dev
+
+volumes:
+  pgdata_dev:
+  ollama_dev:
+
+networks:
+  sentinel-dev:
+    driver: bridge
