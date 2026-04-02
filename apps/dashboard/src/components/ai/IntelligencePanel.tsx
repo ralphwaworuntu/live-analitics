@@ -77,6 +77,11 @@ export default function IntelligencePanel() {
   const aiMessages = useAppStore((state) => state.aiMessages);
   const addAIMessage = useAppStore((state) => state.addAIMessage);
   const pushNotification = useAppStore((state) => state.pushNotification);
+  const activities = useAppStore((state) => state.activities);
+  const notifications = useAppStore((state) => state.notifications);
+
+  const visibleActivities = activities.slice(0, 8);
+  const priorityNotifications = notifications.filter(n => n.level === "critical" || n.level === "warning").slice(0, 3);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -146,7 +151,13 @@ export default function IntelligencePanel() {
     }
   };
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const formatTime = (isoString?: string) => {
+    if (!mounted) return "--:--:-- WITA";
     if (!isoString) return new Date().toLocaleTimeString("id", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) + " WITA";
     const date = new Date(isoString);
     return date.toLocaleTimeString("id", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) + " WITA";
@@ -167,6 +178,30 @@ export default function IntelligencePanel() {
         </div>
         <div className="absolute top-0 right-0 w-8 h-8 opacity-20 hud-corner-tr" />
       </div>
+
+      {/* TACTICAL LIVE FEED (PRIORITY) */}
+      <AnimatePresence>
+        {priorityNotifications.length > 0 && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            className="px-5 pt-4"
+          >
+            <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+              <div className="text-[8px] font-black uppercase tracking-[0.2em] text-red-400 mb-2 flex items-center gap-1.5">
+                <AlertCircle className="w-3 h-3" /> SIAGA KRITIS
+              </div>
+              <div className="space-y-1.5">
+                {priorityNotifications.map(n => (
+                  <div key={n.id} className="text-[11px] text-white/80 font-bold leading-tight">
+                    • {n.title}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Messages Feed */}
       <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6 scrollbar-hide">
@@ -238,6 +273,32 @@ export default function IntelligencePanel() {
         ))}
 
         {sending && <AIThinkingSkeleton />}
+        
+        {/* Incident Activity Ticker Integrated */}
+        <div className="mt-8 pt-6 border-t border-white/5">
+          <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-muted)] mb-4 px-1">Incident Activity Log</div>
+          <div className="space-y-3">
+            {visibleActivities.map((act) => (
+              <div key={act.id} className="flex gap-3 group/item">
+                <div className="mt-1 flex flex-col items-center">
+                   <div className={cn("w-1.5 h-1.5 rounded-full", 
+                     act.status === "danger" ? "bg-red-500 animate-pulse" : 
+                     act.status === "warning" ? "bg-yellow-500" : "bg-blue-500"
+                   )} />
+                   <div className="w-px flex-1 bg-white/5 my-1" />
+                </div>
+                <div>
+                   <div className="flex items-center gap-2">
+                     <span className="text-[11px] font-bold text-white/90">{act.title}</span>
+                     <span className="text-[8px] font-mono text-white/20">{act.time}</span>
+                   </div>
+                   <div className="text-[10px] text-white/40 uppercase tracking-tighter mt-0.5">{act.location}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <MissionTracker />
         <div ref={messagesEndRef} />
       </div>

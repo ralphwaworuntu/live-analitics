@@ -129,7 +129,7 @@ export const useAppStore = create<AppState>((set) => ({
   emergency: defaultEmergency,
   hasLoadedInitialData: false,
   
-  historyTimestamp: new Date().getHours() * 60 + new Date().getMinutes(),
+  historyTimestamp: 0, // Will be set on client mount
   selectedPersonnelId: null,
   personnelTracks: mockPersonnelTracks,
   

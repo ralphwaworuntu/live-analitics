@@ -12,10 +12,17 @@ export default function TimeSlider() {
   const predictiveMode = useAppStore((state) => state.predictiveMode);
   const setPredictiveMode = useAppStore((state) => state.setPredictiveMode);
 
-  const [currentTimeMinutes, setCurrentTimeMinutes] = useState(() => {
+  const [currentTimeMinutes, setCurrentTimeMinutes] = useState(0);
+
+  // Sync initial time on mount ONLY to avoid hydration mismatch
+  useEffect(() => {
     const d = new Date();
-    return d.getHours() * 60 + d.getMinutes();
-  });
+    const initialMinutes = d.getHours() * 60 + d.getMinutes();
+    setCurrentTimeMinutes(initialMinutes);
+    if (liveMode) {
+      setHistoryTimestamp(initialMinutes);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Current time indicator updates every minute

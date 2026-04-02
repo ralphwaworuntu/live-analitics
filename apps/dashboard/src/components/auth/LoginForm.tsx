@@ -32,10 +32,10 @@ import { Separator } from "@/components/ui/separator";
 
 const loginSchema = z.object({
   nrp: z.string()
-    .min(8, { message: "ID NRP wajib minimal 8 digit" })
+    .min(4, { message: "ID NRP wajib minimal 4 digit" })
     .regex(/^\d+$/, { message: "ID NRP harus berupa angka" }),
   password: z.string()
-    .min(6, { message: "Kata sandi minimal 6 karakter" }),
+    .min(5, { message: "Kata sandi minimal 5 karakter" }),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
@@ -56,13 +56,24 @@ export function LoginForm() {
     defaultValues: { nrp: "", password: "" },
   });
 
-  const onSubmit = async () => {
+  const onSubmit = async (values: LoginValues) => {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      // Alur Instan: Simulasi super cepat (500ms)
-      await new Promise(resolve => setTimeout(resolve, 500));
-      router.push("/");
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        router.push("/");
+        router.refresh();
+      } else {
+        setErrorMessage(data.detail || "ID NRP atau Kata Sandi salah.");
+      }
     } catch {
       setErrorMessage("KESALAHAN SISTEM: Gagal terhubung ke Server Komando.");
     } finally {
@@ -75,14 +86,29 @@ export function LoginForm() {
     setScanStep("connecting");
     setErrorMessage("");
     
-    // Alur Biometrik Efisien: Total 1.5 Detik
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setScanStep("scanning");
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Redirect Instan Tanpa Delay
-    router.push("/");
-    setIsScanning(false);
+    try {
+      // Simulate biometric then hit the same mock endpoint with default credentials
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setScanStep("scanning");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nrp: "1234", password: "admin" }),
+      });
+
+      if (res.ok) {
+        router.push("/");
+        router.refresh();
+      } else {
+        setErrorMessage("Biometrik gagal: Data tidak tersinkron.");
+      }
+    } catch {
+       setErrorMessage("Sensor Error: Gagal membaca sidik jari.");
+    } finally {
+       setIsScanning(false);
+    }
   };
 
   return (
