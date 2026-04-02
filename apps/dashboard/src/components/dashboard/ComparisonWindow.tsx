@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useAppStore } from "@/store";
+import { AlertTriangle, TrendingDown, Clock, ShieldCheck } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -47,7 +49,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function ComparisonWindow({ polresA, polresB }: ComparisonProps) {
-  const [activeTab, setActiveTab] = useState<"crime" | "personnel" | "response">("crime");
+  const [activeTab, setActiveTab] = useState<"crime" | "personnel" | "response" | "sandbox">("crime");
+  const sandboxMode = useAppStore((state) => state.sandboxMode);
+  const sandboxImpact = useAppStore((state) => state.sandboxImpact);
 
   // Fallback to defaults if the IDs don't match our dummy set
   const dataA = mockComparisonData[polresA as PolresComparisonId] || mockComparisonData["kupang-kota"];
@@ -105,6 +109,17 @@ export function ComparisonWindow({ polresA, polresB }: ComparisonProps) {
         >
           Personil
         </button>
+
+        {sandboxMode && (
+          <button
+            onClick={() => setActiveTab("sandbox")}
+            className={`border-b-2 px-4 py-3 text-xs font-semibold uppercase tracking-[0.1em] transition-colors ${
+              activeTab === "sandbox" ? "border-cyan-500 text-cyan-400" : "border-transparent text-cyan-500/40 hover:text-cyan-400"
+            }`}
+          >
+            Analisis Simulasi
+          </button>
+        )}
       </div>
 
       <div className="flex-1 p-4">
@@ -146,18 +161,53 @@ export function ComparisonWindow({ polresA, polresB }: ComparisonProps) {
           </ResponsiveContainer>
         )}
 
-        {activeTab === "personnel" && (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={combinedPersonnel} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A384A" vertical={false} />
-              <XAxis dataKey="category" tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
-              <Bar name={dataA.name} dataKey="PolresA" fill="#D4AF37" radius={[4, 4, 0, 0]} maxBarSize={40} />
-              <Bar name={dataB.name} dataKey="PolresB" fill="#18C29C" radius={[4, 4, 0, 0]} maxBarSize={40} />
-            </BarChart>
-          </ResponsiveContainer>
+        {activeTab === "sandbox" && sandboxImpact && (
+          <div className="flex h-full flex-col gap-6 p-4">
+             <div className="flex items-center gap-3 p-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5">
+                <ShieldCheck className="w-6 h-6 text-cyan-400" />
+                <div>
+                   <div className="text-[10px] text-cyan-400/60 uppercase font-bold tracking-widest leading-none">Resource Shift Target</div>
+                   <div className="text-sm font-bold text-white mt-1 uppercase">{sandboxImpact.resourceShift}</div>
+                </div>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl border border-white/5 bg-white/5">
+                   <div className="flex items-center gap-2 mb-2">
+                      <TrendingDown className="w-4 h-4 text-red-400" />
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Coverage Drop</span>
+                   </div>
+                   <div className="text-2xl font-bold text-red-400">{Math.abs(sandboxImpact.coverageChange)}%</div>
+                   <div className="text-[9px] text-white/20 mt-1 uppercase leading-tight">Penurunan area patroli di yurisdiksi asal</div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-white/5 bg-white/5">
+                   <div className="flex items-center gap-2 mb-2">
+                      <Clock className="w-4 h-4 text-yellow-400" />
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Response Time</span>
+                   </div>
+                   <div className="text-2xl font-bold text-yellow-400">+{sandboxImpact.responseTimeChange}m</div>
+                   <div className="text-[9px] text-white/20 mt-1 uppercase leading-tight">Estimasi keterlambatan respon darurat</div>
+                </div>
+             </div>
+
+             <div className="flex-1 p-5 rounded-2xl border border-orange-500/30 bg-orange-500/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                   <AlertTriangle className="w-24 h-24 text-orange-500" />
+                </div>
+                <div className="relative z-10">
+                   <div className="text-[10px] text-orange-400 font-bold uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Tactical Risk Assessment 
+                   </div>
+                   <div className="text-3xl font-black text-orange-500 uppercase tracking-tighter mb-2">RISIKO: {sandboxImpact.riskAssesment}</div>
+                   <p className="text-[11px] text-white/60 leading-relaxed max-w-md uppercase font-mono">
+                      Pergeseran personil skala besar melebihi ambang batas keamanan (DSP 30%). 
+                      Yurisdiksi asal masuk kategori RADAR SIAGA.
+                   </p>
+                </div>
+             </div>
+          </div>
         )}
       </div>
     </div>

@@ -161,3 +161,30 @@ export interface AuditLogEntry {
   target: string;
   details: string;
 }
+
+export interface OSINTSignal {
+  id: string;
+  lat: number;
+  lng: number;
+  source: "X" | "News" | "IG";
+  sentiment: "positive" | "neutral" | "negative" | "provocative";
+  content: string;
+  timestamp: string;
+  viralScore: number; // 0-100
+}
+
+export interface SandboxImpact {
+  resourceShift: string;
+  coverageChange: number; // percent
+  responseTimeChange: number; // minutes
+  riskAssesment: "Low" | "Medium" | "High";
+}
+
+export interface SearchResult {
+  id: string;
+  type: "personnel" | "incident" | "location" | "command";
+  title: string;
+  subtitle: string;
+  lat?: number;
+  lng?: number;
+}

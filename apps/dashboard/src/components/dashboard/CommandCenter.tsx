@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 
 import GoogleMap from "@/components/map/GoogleMap";
+import OSINTPulse from "@/components/map/OSINTPulse";
+import TacticalSearch from "@/components/map/TacticalSearch";
 import { getSelectedPolres, useAppStore } from "@/store";
 
 export default function CommandCenter() {
@@ -15,6 +17,10 @@ export default function CommandCenter() {
   const setHeatmapEnabled = useAppStore((state) => state.setHeatmapEnabled);
   const liveMode = useAppStore((state) => state.liveMode);
   const setLiveMode = useAppStore((state) => state.setLiveMode);
+  const sandboxMode = useAppStore((state) => state.sandboxMode);
+  const setSandboxMode = useAppStore((state) => state.setSandboxMode);
+  const osintEnabled = useAppStore((state) => state.osintEnabled);
+  const setOsintEnabled = useAppStore((state) => state.setOsintEnabled);
 
 
 
@@ -22,11 +28,19 @@ export default function CommandCenter() {
   const priorityNotifications = useMemo(() => notifications.slice(0, 3), [notifications]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[var(--color-bg)] text-[var(--color-text)]">
+    <div className={`relative h-full w-full overflow-hidden bg-[var(--color-bg)] text-[var(--color-text)] transition-all duration-500 ${
+      sandboxMode ? "border-[6px] border-cyan-500/50 shadow-[inset_0_0_100px_rgba(6,182,212,0.1)]" : ""
+    }`}>
+      {/* GLOBAL TACTICAL SEARCH */}
+      <TacticalSearch />
+
       {/* GIS MAP CONTAINER - TIER 0 BACKBONE */}
       <div className="absolute inset-0 z-0">
         <GoogleMap />
       </div>
+
+      {/* OSINT DATA LAYER */}
+      <OSINTPulse />
 
       {/* OVERLAY TACTICAL HUD */}
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-4 sm:p-6">
@@ -50,6 +64,12 @@ export default function CommandCenter() {
                 <strong>{emergency.active ? "Status Darurat" : "Postur Normal"}</strong>
                 <span>{priorityNotifications.length} Siaga</span>
               </div>
+              {sandboxMode && (
+                <div className="command-chip !border-cyan-500/50 !bg-cyan-500/10 !text-cyan-400 animate-pulse">
+                  <strong>WARGAMING MODE</strong>
+                  <span>Simulasi Aktif</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -79,6 +99,26 @@ export default function CommandCenter() {
                 }`}
               >
                 {liveMode ? "Data Langsung" : "Tayangan Ulang"}
+              </button>
+              <button
+                onClick={() => setSandboxMode(!sandboxMode)}
+                className={`pointer-events-auto rounded-xl border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] transition-all shadow-md ${
+                  sandboxMode
+                    ? "border-cyan-500 bg-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]"
+                    : "border-white/10 bg-slate-900/40 text-white/40"
+                }`}
+              >
+                Sandbox
+              </button>
+              <button
+                onClick={() => setOsintEnabled(!osintEnabled)}
+                className={`pointer-events-auto rounded-xl border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] transition-all shadow-md ${
+                  osintEnabled
+                    ? "border-orange-500 bg-orange-500 text-white"
+                    : "border-white/10 bg-slate-900/40 text-white/40"
+                }`}
+              >
+                OSINT Pulse
               </button>
             </div>
           </div>

@@ -11,7 +11,7 @@ import { getSelectedPolres, useAppStore } from "@/store";
 import type { PolresItem } from "@/lib/types";
 import LiveReportTicker from "@/components/map/LiveReportTicker";
 import { useState, useCallback } from "react";
-import { Navigation, Target, Plus, ShieldCheck } from "lucide-react";
+import { Navigation, Target, Plus, ShieldCheck, Newspaper, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 function MapController({ selectedPolres }: { selectedPolres: PolresItem | null }) {
@@ -105,6 +105,9 @@ export default function GoogleMap() {
   const selectedPolres = useAppStore(getSelectedPolres);
   const setSelectedPolres = useAppStore((state) => state.setSelectedPolres);
   const emergency = useAppStore((state) => state.emergency);
+  const osintSignals = useAppStore((state) => state.osintSignals);
+  const osintEnabled = useAppStore((state) => state.osintEnabled);
+  const sandboxMode = useAppStore((state) => state.sandboxMode);
 
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, lat: number, lng: number } | null>(null);
 
@@ -267,6 +270,40 @@ export default function GoogleMap() {
                       <div className="text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-1">{point.label}</div>
                       <div className="text-[9px] text-white/80 leading-relaxed font-mono">{point.reasoning}</div>
                     </div>
+                  </div>
+               </div>
+            </AdvancedMarker>
+          ))}
+
+          {/* OSINT Signals (Radio Waves) */}
+          {osintEnabled && osintSignals.map((sig) => (
+            <AdvancedMarker key={sig.id} position={{ lat: sig.lat, lng: sig.lng }}>
+               <div className="relative group/osint">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 bg-orange-500/20 text-white shadow-lg backdrop-blur-md transition-all group-hover/osint:scale-110 ${
+                    sig.sentiment === "negative" || sig.sentiment === "provocative" ? "border-orange-500 animate-pulse" : "border-orange-300"
+                  }`}>
+                    {sig.source === "X" ? <MessageSquare className="w-5 h-5 text-orange-400" /> : <Newspaper className="w-5 h-5 text-orange-400" />}
+                  </div>
+                  
+                  {/* OSINT News Bubble */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-64 opacity-0 group-hover/osint:opacity-100 transition-all pointer-events-none z-50">
+                    <div className="bg-slate-950/95 border border-orange-500/30 p-3 rounded-xl shadow-2xl backdrop-blur-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">{sig.source} Intelligence</span>
+                        <div className="flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping" />
+                          <span className="text-[9px] text-white/40 font-mono">LIVE</span>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-white/90 leading-relaxed font-medium mb-2 line-clamp-3">&ldquo;{sig.content}&rdquo;</p>
+                      <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                        <span className="text-[9px] text-white/30 uppercase font-bold tracking-tighter">Viral Score: {sig.viralScore}%</span>
+                        <span className={`text-[9px] font-bold uppercase ${
+                          sig.sentiment === "negative" ? "text-red-400" : "text-orange-400"
+                        }`}>{sig.sentiment}</span>
+                      </div>
+                    </div>
+                    <div className="h-3 w-3 bg-slate-950/95 border-r border-b border-orange-500/30 rotate-45 mx-auto -mt-1.5" />
                   </div>
                </div>
             </AdvancedMarker>

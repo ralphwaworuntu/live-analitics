@@ -16,6 +16,9 @@ import type {
   PredictionPoint,
   PolresAssetStrength,
   AuditLogEntry,
+  OSINTSignal,
+  SandboxImpact,
+  SearchResult,
 } from "@/lib/types";
 import { mockPersonnelTracks } from "@/lib/mockPatrolData";
 
@@ -24,7 +27,6 @@ interface AppState {
   heatPoints: HeatPoint[];
   activities: ActivityItem[];
   selectedPolresId: string | null;
-  searchQuery: string;
   timeRangeHours: number;
   liveMode: boolean;
   heatmapEnabled: boolean;
@@ -36,7 +38,6 @@ interface AppState {
   setPolresData: (items: PolresItem[]) => void;
   setHeatPoints: (items: HeatPoint[]) => void;
   setSelectedPolres: (id: string | null) => void;
-  setSearchQuery: (query: string) => void;
   setTimeRangeHours: (hours: number) => void;
   setLiveMode: (value: boolean) => void;
   setHeatmapEnabled: (value: boolean) => void;
@@ -68,6 +69,22 @@ interface AppState {
   polresAssets: PolresAssetStrength[];
   auditLogs: AuditLogEntry[];
   addAuditLog: (entry: Omit<AuditLogEntry, "id" | "timestamp">) => void;
+
+  // OSINT
+  osintEnabled: boolean;
+  setOsintEnabled: (enabled: boolean) => void;
+  osintSignals: OSINTSignal[];
+  
+  // Tactical Sandbox
+  sandboxMode: boolean;
+  setSandboxMode: (enabled: boolean) => void;
+  sandboxImpact: SandboxImpact | null;
+  calculateSandboxImpact: (polresId: string, personnelShifted: number) => void;
+
+  // Global Search
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchResults: SearchResult[];
 }
 
 const defaultEmergency: EmergencyState = {
@@ -85,7 +102,6 @@ export const useAppStore = create<AppState>((set) => ({
   heatPoints: [],
   activities: mockActivities,
   selectedPolresId: null,
-  searchQuery: "",
   timeRangeHours: 24,
   liveMode: true,
   heatmapEnabled: true,
@@ -125,6 +141,18 @@ export const useAppStore = create<AppState>((set) => ({
   ],
   polresAssets: [],
   auditLogs: [],
+  
+  osintEnabled: false,
+  osintSignals: [
+    { id: "sig-1", lat: -10.15, lng: 123.61, source: "X", sentiment: "negative", content: "Aksi blokade jalan di jalan negara Soe. #NTTAction", timestamp: new Date().toISOString(), viralScore: 82 },
+    { id: "sig-2", lat: -8.65, lng: 121.65, source: "News", sentiment: "provocative", content: "Massa mulai berkumpul di depan kantor Bupati Ende.", timestamp: new Date().toISOString(), viralScore: 75 }
+  ],
+
+  sandboxMode: false,
+  sandboxImpact: null,
+
+  searchQuery: "",
+  searchResults: [],
 
   setPolresData: (items) =>
     set((state) => {
@@ -149,7 +177,6 @@ export const useAppStore = create<AppState>((set) => ({
         kpis: buildMockKpis(nextSelection),
       };
     }),
-  setSearchQuery: (query) => set({ searchQuery: query }),
   setTimeRangeHours: (hours) => set({ timeRangeHours: hours }),
   setLiveMode: (value) => set({ liveMode: value }),
   setHeatmapEnabled: (value) => set({ heatmapEnabled: value }),
@@ -226,6 +253,34 @@ export const useAppStore = create<AppState>((set) => ({
   addAuditLog: (entry) => set((state) => ({
     auditLogs: [{ ...entry, id: `audit-${Date.now()}`, timestamp: new Date().toISOString() }, ...state.auditLogs]
   })),
+
+  // OSINT
+  setOsintEnabled: (enabled) => set({ osintEnabled: enabled }),
+  
+  // Sandbox
+  setSandboxMode: (enabled) => set({ sandboxMode: enabled }),
+  calculateSandboxImpact: (polresId, shifted) => set(() => ({
+    sandboxImpact: {
+      resourceShift: `${shifted} Peleton ke ${polresId}`,
+      coverageChange: -15,
+      responseTimeChange: 5,
+      riskAssesment: "Medium"
+    }
+  })),
+
+  // Search
+  setSearchQuery: (query) => set((state) => {
+    const results: SearchResult[] = [];
+    if (query.length > 1) {
+       state.polres.filter(p => p.name.toLowerCase().includes(query.toLowerCase())).forEach(p => {
+         results.push({ id: p.id, type: "location", title: p.name, subtitle: `${p.island} | Polres`, lat: p.lat, lng: p.lng });
+       });
+       if ("brimob".includes(query.toLowerCase())) {
+          results.push({ id: "brimob-1", type: "command", title: "Brimob Polda NTT", subtitle: "Siap Gerak | 2 Peleton", lat: -10.17, lng: 123.63 });
+       }
+    }
+    return { searchQuery: query, searchResults: results };
+  }),
 }));
 
 export function getSelectedPolres(state: AppState): PolresItem | null {
