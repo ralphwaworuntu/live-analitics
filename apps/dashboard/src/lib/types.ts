@@ -1,4 +1,30 @@
-export type SeverityLevel = "kondusif" | "waspada" | "kontinjensi";
+export type SeverityLevel = "kondusif" | "waspada" | "kontinjensi" | "kritis";
+
+export interface PolsekItem {
+  id: string;
+  polresId: string;
+  name: string;
+  lat: number;
+  lng: number;
+  crimeStatus: "Merah" | "Kuning" | "Hijau";
+  polygons?: number[][]; // GeoJSON simplified
+}
+
+export interface PolicePost {
+  id: string;
+  polresId: string;
+  polsekId?: string;
+  name: string;
+  lat: number;
+  lng: number;
+  type: "Pos Polisi" | "Pos Lantas" | "Pos Pam";
+}
+
+export interface AssetHealth {
+  engine: number; // 0-100
+  tires: number; // 0-100
+  lastServiceKm: number;
+}
 
 export interface PolresItem {
   id: string;
@@ -10,6 +36,9 @@ export interface PolresItem {
   personnel?: number;
   online?: number;
   reports24h?: number;
+  crimeStatus?: "Merah" | "Kuning" | "Hijau";
+  cases?: number;
+  polsekList?: PolsekItem[];
 }
 
 export interface HeatPoint {
@@ -82,26 +111,55 @@ export interface EmergencyState {
   timestamp: string | null;
   lat: number | null;
   lng: number | null;
+  unitId?: string; // Unit trigger SOS
 }
 
 export interface PatrolWaypoint {
   lat: number;
   lng: number;
-  timestamp: string; // ISO string or simple time like "08:30"
+  timestamp: string; 
 }
+
+export interface PatrolHotspot {
+  id: string;
+  lat: number;
+  lng: number;
+  name: string;
+  lastVisitedAt?: string;
+  status: "safe" | "vulnerable" | "critical";
+}
+
+export interface PatrolPlan {
+  id: string;
+  polresId: string;
+  week: number;
+  hotspots: PatrolHotspot[];
+  renOpsMatch: "VALID" | "REVISI";
+  analysisSummary: string;
+}
+
+export type UnitType = "R2" | "R4";
 
 export interface PersonnelTrack {
   id: string;
   nrp: string;
   name: string;
   polresId: string;
+  polsekId?: string;
+  unitType: UnitType;
   waypoints: PatrolWaypoint[];
+  // TACTICAL MICRO
+  fuelStatus: number; // percent
+  odometer: number; // km
+  fuelInputShift?: number; // Liters
+  isSOS?: boolean;
+  health: AssetHealth;
 }
 
 export interface YoloBBox {
   label: string;
   confidence: number;
-  x: number;    // percent 0-100
+  x: number; 
   y: number;
   width: number;
   height: number;
@@ -139,9 +197,9 @@ export interface PredictionPoint {
   id: string;
   lat: number;
   lng: number;
-  weight: number; // 0-1
+  weight: number; 
   label: string;
-  confidence: number; // 0-100
+  confidence: number; 
   reasoning: string;
 }
 
@@ -150,7 +208,7 @@ export interface PolresAssetStrength {
   personnelReal: number;
   personnelDsp: number;
   patrolCars: number;
-  emergencyLogistics: number; // percent
+  emergencyLogistics: number; 
 }
 
 export interface AuditLogEntry {
@@ -170,13 +228,13 @@ export interface OSINTSignal {
   sentiment: "positive" | "neutral" | "negative" | "provocative";
   content: string;
   timestamp: string;
-  viralScore: number; // 0-100
+  viralScore: number; 
 }
 
 export interface SandboxImpact {
   resourceShift: string;
-  coverageChange: number; // percent
-  responseTimeChange: number; // minutes
+  coverageChange: number; 
+  responseTimeChange: number; 
   riskAssesment: "Low" | "Medium" | "High";
 }
 

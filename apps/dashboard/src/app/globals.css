@@ -277,6 +277,11 @@ button {
   }
 }
 
+@keyframes led-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 @keyframes visual-hijack {
   0%,
   100% {

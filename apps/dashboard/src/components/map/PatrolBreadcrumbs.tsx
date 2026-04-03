@@ -1,27 +1,35 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
+import { AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
 import { useAppStore } from "@/store";
+import { Bike, Car } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function PatrolBreadcrumbs() {
   const map = useMap();
-  const historyTimestamp = useAppStore((state) => state.historyTimestamp);
   const personnelTracks = useAppStore((state) => state.personnelTracks);
   const selectedPersonnelId = useAppStore((state) => state.selectedPersonnelId);
   const setSelectedPersonnelId = useAppStore((state) => state.setSelectedPersonnelId);
+  const activeShift = useAppStore((state) => state.activeShift);
 
-  // We keep a registry of Google Map Polyline class instances we've created
-  // so we can update them directly rather than redrawing completely.
   const polylineRefs = useRef<Map<string, google.maps.Polyline>>(new Map());
 
-  // Filter paths up to the current historyTimestamp
+  // Logic Shift & PCI Segmentation: 
+  // Pagi (08:00 - 20:00) -> 480 to 1200 mins
+  // Malam (20:00 - 08:00) -> 1200 onwards or before 480
   const filteredTracks = useMemo(() => {
     return personnelTracks.map((track) => {
       const validWaypoints = track.waypoints.filter((wp) => {
         const d = new Date(wp.timestamp);
-        const minutes = d.getHours() * 60 + d.getMinutes();
-        return minutes <= historyTimestamp;
+        const mins = d.getHours() * 60 + d.getMinutes();
+        
+        if (activeShift === "pagi") {
+          return mins >= 480 && mins <= 1200;
+        } else {
+          // Night shift cross midnight
+          return mins >= 1200 || mins <= 480;
+        }
       });
 
       return {
@@ -31,14 +39,11 @@ export default function PatrolBreadcrumbs() {
         isSelected: track.id === selectedPersonnelId,
       };
     });
-  }, [personnelTracks, historyTimestamp, selectedPersonnelId]);
+  }, [personnelTracks, selectedPersonnelId, activeShift]);
 
-  // Imperative DOM manipulations for Polylines to ensure fast 60fps scrubbing
+  // Smoother Polyline Updates
   useEffect(() => {
-    if (!map) return;
-
-    // We only want to run this if the google.maps.Polyline constructor is available
-    if (!window.google?.maps?.Polyline) return;
+    if (!map || !window.google?.maps?.Polyline) return;
 
     filteredTracks.forEach((track) => {
       let polyline = polylineRefs.current.get(track.id);
@@ -46,84 +51,81 @@ export default function PatrolBreadcrumbs() {
       if (!polyline) {
         polyline = new window.google.maps.Polyline({
           map,
-          strokeColor: "#D4AF37", // Gold / emas
-          strokeOpacity: track.isSelected ? 1.0 : 0.4,
-          strokeWeight: track.isSelected ? 4 : 2,
+          strokeColor: "#2F7CF2",
+          strokeOpacity: 0.5,
+          strokeWeight: 3,
           geodesic: true,
         });
         polylineRefs.current.set(track.id, polyline);
-        
-        // Add click listener to select this track
-        polyline.addListener("click", () => {
-          setSelectedPersonnelId(track.id);
-        });
       }
 
-      // Update path
       const path = track.validWaypoints.map((wp) => ({ lat: wp.lat, lng: wp.lng }));
       polyline.setPath(path);
       
-      // Update styling based on selection
       polyline.setOptions({
-        strokeColor: track.isSelected ? "#D4AF37" : (selectedPersonnelId ? "#475569" : "#D4AF37"),
-        strokeOpacity: track.isSelected ? 1.0 : (selectedPersonnelId ? 0.2 : 0.4),
-        strokeWeight: track.isSelected ? 4 : 2,
+        strokeColor: track.isSelected ? "#D4AF37" : "#2F7CF2",
+        strokeOpacity: track.isSelected ? 0.9 : 0.4,
+        strokeWeight: track.isSelected ? 5 : 3,
         zIndex: track.isSelected ? 100 : 10,
       });
     });
 
-    // Clean up
     return () => {
-      // We don't remove them on every render because we memoize and mutate them.
-      // But if the component unmounts entirely we would clean them up.
+      // Clean up logic if tracks are removed
     };
-  }, [map, filteredTracks, selectedPersonnelId, setSelectedPersonnelId]);
-
-  // Clean all polylines on unmount
-  useEffect(() => {
-    return () => {
-      polylineRefs.current.forEach((polyline) => {
-        polyline.setMap(null);
-      });
-      polylineRefs.current.clear();
-    };
-  }, []);
+  }, [map, filteredTracks]);
 
   return (
     <>
-      {filteredTracks.map((track) => {
-        if (!track.latestPosition) return null;
+      <AnimatePresence mode="popLayout">
+        {filteredTracks.map((track) => {
+          if (!track.latestPosition) return null;
+          const isFaded = selectedPersonnelId && !track.isSelected;
 
-        const isFaded = selectedPersonnelId && !track.isSelected;
+          return (
+            <AdvancedMarker
+              key={track.id}
+              position={{ lat: track.latestPosition.lat, lng: track.latestPosition.lng }}
+              onClick={() => setSelectedPersonnelId(track.isSelected ? null : track.id)}
+              zIndex={track.isSelected ? 110 : 20}
+            >
+              <motion.div
+                layout
+                initial={{ scale: 0 }}
+                animate={{ 
+                  scale: isFaded ? 0.8 : 1.1,
+                  opacity: isFaded ? 0.3 : 1
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="relative group cursor-pointer"
+              >
+                 {/* Live Pulse Animation for Smooth Interpolation Feel */}
+                 <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.div 
+                      className={`absolute h-14 w-14 rounded-full border-2 ${track.isSelected ? "border-[#D4AF37]" : "border-blue-500/50"}`}
+                      animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                 </div>
 
-        return (
-          <AdvancedMarker
-            key={track.id}
-            position={{ lat: track.latestPosition.lat, lng: track.latestPosition.lng }}
-            onClick={() => setSelectedPersonnelId(track.isSelected ? null : track.id)}
-            className="group cursor-pointer"
-            zIndex={track.isSelected ? 100 : 20}
-          >
-            <div className={`transition-opacity duration-300 ${isFaded ? "opacity-30 hover:opacity-100" : "opacity-100"}`}>
-               {/* Personnel Core Icon */}
-               <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-[var(--color-bg)] bg-[var(--color-brand-gold)] shadow-[0_0_12px_rgba(212,175,55,0.4)]">
-                 <div className="h-2 w-2 rounded-full bg-white shadow-sm" />
-               </div>
-               
-               {/* Tooltip / Label */}
-               <div className="absolute top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-[var(--color-border)] bg-[rgba(11,27,50,0.85)] px-3 py-1.5 shadow-lg backdrop-blur-md opacity-0 transition-opacity group-hover:opacity-100 min-w-max">
-                 <div className="text-[10px] uppercase tracking-widest text-[var(--color-brand-gold)] border-b border-[var(--color-border)] pb-1 mb-1 font-bold">
-                   {track.nrp}
+                 {/* Unit Icon */}
+                 <div className={`relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#07111F] bg-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.4)] ${track.isSelected ? "shadow-[#D4AF37]/60" : ""}`}>
+                    {track.unitType === "R2" ? (
+                      <Bike size={20} className="text-[#07111F]" />
+                    ) : (
+                      <Car size={20} className="text-[#07111F]" />
+                    )}
                  </div>
-                 <div className="text-xs font-medium text-white">{track.name}</div>
-                 <div className="text-[9px] text-[var(--color-subtle)] mt-1">
-                   {new Date(track.latestPosition.timestamp).toLocaleTimeString('id', { hour: '2-digit', minute: '2-digit' })} WITA
+                 
+                 <div className="absolute top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-slate-950/80 px-2 py-1 shadow-xl backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
+                   <div className="text-[9px] font-bold text-white uppercase">{track.name} ({track.nrp})</div>
+                   <div className="text-[7px] text-slate-400 mt-0.5">{track.polresId} | {track.unitType}</div>
                  </div>
-               </div>
-            </div>
-          </AdvancedMarker>
-        );
-      })}
+              </motion.div>
+            </AdvancedMarker>
+          );
+        })}
+      </AnimatePresence>
     </>
   );
 }

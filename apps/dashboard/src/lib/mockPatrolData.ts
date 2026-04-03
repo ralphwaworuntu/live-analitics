@@ -6,6 +6,7 @@ export const mockPersonnelTracks: PersonnelTrack[] = [
     nrp: "85020112",
     name: "Bripka Yohanis",
     polresId: "kupang-kota",
+    unitType: "R4",
     waypoints: Array.from({ length: 48 }).map((_, i) => ({
       lat: -10.15 + (Math.sin(i / 3) * 0.05),
       lng: 123.58 + (Math.cos(i / 3) * 0.05),
@@ -17,6 +18,7 @@ export const mockPersonnelTracks: PersonnelTrack[] = [
     nrp: "88090334",
     name: "Aipda Rahmat",
     polresId: "kupang-kota",
+    unitType: "R2",
     waypoints: Array.from({ length: 48 }).map((_, i) => ({
       lat: -10.18 + (Math.cos(i / 2) * 0.03),
       lng: 123.60 + (Math.sin(i / 2) * 0.06),
@@ -28,6 +30,7 @@ export const mockPersonnelTracks: PersonnelTrack[] = [
     nrp: "92040556",
     name: "Brigadir Stefanus",
     polresId: "manggarai-barat",
+    unitType: "R4",
     waypoints: Array.from({ length: 48 }).map((_, i) => ({
       lat: -8.50 + (Math.sin(i / 4) * 0.04),
       lng: 119.88 + (Math.cos(i / 4) * 0.04),

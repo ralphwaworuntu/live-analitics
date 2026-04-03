@@ -1,376 +1,179 @@
 "use client";
 
-import { useMemo, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { APIProvider, AdvancedMarker, Map, Pin, useMap } from "@vis.gl/react-google-maps";
-import type { MapMouseEvent } from "@vis.gl/react-google-maps";
-
-
-import PatrolBreadcrumbs from "@/components/map/PatrolBreadcrumbs";
+import { useEffect } from "react";
+import { APIProvider, Map, useMap, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { getSelectedPolres, useAppStore } from "@/store";
-import type { PolresItem } from "@/lib/types";
-import { useState, useCallback } from "react";
-import { Navigation, Target, Plus, ShieldCheck, Newspaper, MessageSquare } from "lucide-react";
+import type { PolresItem, PolicePost } from "@/lib/types";
+import { TowerControl, Siren, Zap } from "lucide-react";
+import PatrolBreadcrumbs from "@/components/map/PatrolBreadcrumbs";
 import { motion, AnimatePresence } from "framer-motion";
 
-function MapController({ selectedPolres }: { selectedPolres: PolresItem | null }) {
+function MapController({ selectedPolres, emergency }: { selectedPolres: PolresItem | null, emergency: any }) {
   const map = useMap();
-  const emergency = useAppStore((state) => state.emergency);
-  const circlesRef = useRef<google.maps.Circle[]>([]);
 
   useEffect(() => {
     if (!map) return;
+    
+    if (emergency.active && emergency.lat && emergency.lng) {
+       map.panTo({ lat: emergency.lat, lng: emergency.lng });
+       map.setZoom(16);
+       return;
+    }
+
     if (selectedPolres) {
       map.panTo({ lat: selectedPolres.lat, lng: selectedPolres.lng });
-      map.setZoom(12);
-    } else {
-      map.panTo({ lat: -9.0, lng: 121.5 });
-      map.setZoom(7);
+      map.setZoom(11);
     }
-  }, [map, selectedPolres]);
-
-  useEffect(() => {
-    if (!map) return;
-
-    const flyToEmergency = () => {
-      if (emergency.lat && emergency.lng) {
-        map.panTo({ lat: emergency.lat, lng: emergency.lng });
-        map.setZoom(16);
-      }
-    };
-
-    window.addEventListener('map:fly-to-emergency', flyToEmergency);
-    return () => window.removeEventListener('map:fly-to-emergency', flyToEmergency);
-  }, [map, emergency]);
-
-  useEffect(() => {
-    if (!map) return;
-    if (!window.google?.maps?.Circle) return;
-
-    const drawTacticalPlot = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (!detail) return;
-
-      circlesRef.current.forEach(c => c.setMap(null));
-      circlesRef.current = [];
-
-      const dangerCircle = new window.google.maps.Circle({
-        map,
-        center: { lat: detail.lat, lng: detail.lng },
-        radius: detail.radius || 5000,
-        fillColor: "#D84F5F",
-        fillOpacity: 0.12,
-        strokeColor: "#D84F5F",
-        strokeWeight: 2,
-        strokeOpacity: 0.6,
-      });
-
-      const safeCircle = new window.google.maps.Circle({
-        map,
-        center: { lat: detail.lat, lng: detail.lng },
-        radius: (detail.radius || 5000) * 0.4,
-        fillColor: "#18C29C",
-        fillOpacity: 0.15,
-        strokeColor: "#18C29C",
-        strokeWeight: 2,
-        strokeOpacity: 0.6,
-      });
-
-      circlesRef.current.push(dangerCircle, safeCircle);
-      map.panTo({ lat: detail.lat, lng: detail.lng });
-      map.setZoom(13);
-    };
-
-    window.addEventListener('map:draw-tactical-plot', drawTacticalPlot);
-    return () => {
-      window.removeEventListener('map:draw-tactical-plot', drawTacticalPlot);
-      circlesRef.current.forEach(c => c.setMap(null));
-    };
-  }, [map]);
+  }, [map, selectedPolres, emergency]);
 
   return null;
 }
 
-export default function GoogleMap() {
-  const router = useRouter();
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "";
-
-  const polres = useAppStore((state) => state.polres);
-  const heatmapEnabled = useAppStore((state) => state.heatmapEnabled);
-  const predictiveMode = useAppStore((state) => state.predictiveMode);
-  const predictionPoints = useAppStore((state) => state.predictionPoints);
-  const activeMissions = useAppStore((state) => state.activeMissions);
-  const dispatchMission = useAppStore((state) => state.dispatchMission);
-  const selectedPolres = useAppStore(getSelectedPolres);
-  const setSelectedPolres = useAppStore((state) => state.setSelectedPolres);
-  const osintSignals = useAppStore((state) => state.osintSignals);
-  const osintEnabled = useAppStore((state) => state.osintEnabled);
-
-  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, lat: number, lng: number } | null>(null);
-
-  const handleRightClick = useCallback((e: MapMouseEvent) => {
-    if (e.detail.latLng) {
-      const lat = e.detail.latLng.lat;
-      const lng = e.detail.latLng.lng;
-      // Use the raw event to get clientX/Y
-      const domEvent = (e as unknown as { domEvent: MouseEvent }).domEvent;
-      setContextMenu({ 
-        x: domEvent.clientX, 
-        y: domEvent.clientY, 
-        lat, 
-        lng 
-      });
-    }
-  }, []);
-
-  const handleDispatch = (type: "mission" | "checkpoint") => {
-    if (!contextMenu) return;
-    
-    if (type === "mission") {
-      dispatchMission({
-        title: "Respon Taktis",
-        description: `Perintah dispersi massa/pengamanan di koordinat ${contextMenu.lat.toFixed(4)}, ${contextMenu.lng.toFixed(4)}`,
-        status: "en-route",
-        assignedPersonnelId: "UNIT-REBELS-" + Math.floor(Math.random() * 900 + 100),
-        targetLat: contextMenu.lat,
-        targetLng: contextMenu.lng,
-        etaMinutes: 8
-      });
-    }
-    setContextMenu(null);
-  };
-
-  const highlightedHeatPoints = useMemo(() => {
-    return polres.filter(p => p.status !== 'kondusif').map(p => ({
-      id: p.id,
-      lat: p.lat,
-      lng: p.lng,
-      weight: (p.status as string) === 'kritis' ? 30 : 15
-    }));
-  }, [polres]);
-
-  const visiblePolres = useMemo(() => {
-    if (!selectedPolres) {
-      return polres;
-    }
-    return polres.filter((item) => item.id === selectedPolres.id);
-  }, [polres, selectedPolres]);
-
-  if (!apiKey) {
-    return (
-      <div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#0f172a,#020617)] overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(90deg,rgba(31,103,204,1)_1px,transparent_1px),linear-gradient(rgba(31,103,204,1)_1px,transparent_1px)] bg-[size:34px_34px]" />
-        <div className="relative z-10 flex flex-col items-center justify-center h-full max-w-3xl px-6 mx-auto text-center">
-          <div className="rounded-[40px] border border-white/5 bg-slate-950/40 p-8 shadow-2xl backdrop-blur-2xl">
-            <div className="eyebrow !text-[10px] opacity-40">SYSTEM FALLBACK</div>
-            <h3 className="mt-4 text-2xl font-bold text-white uppercase tracking-tight">Geospatial engine inactive</h3>
-            <p className="mt-3 text-sm leading-relaxed text-white/40">
-              `NEXT_PUBLIC_GOOGLE_MAPS_KEY` not found. 
-              Region-based tactical operations remain active.
-            </p>
-            <div className="mt-8 grid gap-2.5 grid-cols-2">
-              {visiblePolres.slice(0, 4).map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setSelectedPolres(item.id);
-                    router.push(`/polres/${item.id}`);
-                  }}
-                  className="rounded-xl border border-white/5 bg-white/5 px-4 py-3 text-left transition-all hover:bg-white/10 hover:border-white/20"
-                >
-                  <div className="text-xs font-bold text-white">{item.name}</div>
-                  <div className="mt-1 text-[8px] uppercase tracking-widest text-[var(--color-brand-gold)]">
-                    {item.status}
-                  </div>
-                </button>
-              ))}
-            </div>
+function PolicePostsLayer({ posts }: { posts: PolicePost[] }) {
+  return (
+    <>
+      {posts.map(post => (
+        <AdvancedMarker key={post.id} position={{ lat: post.lat, lng: post.lng }}>
+          <div className="bg-white border-2 border-blue-600 rounded-sm p-0.5 shadow-md flex items-center justify-center group cursor-pointer">
+             <TowerControl size={10} className="text-blue-700" />
+             <div className="absolute top-6 left-1/2 -track-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-slate-900 border border-white/10 p-1.5 rounded text-[8px] text-white whitespace-nowrap z-50">
+                <div className="font-bold">{post.name}</div>
+                <div className="text-blue-400 font-mono tracking-tighter uppercase">{post.type}</div>
+             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
+        </AdvancedMarker>
+      ))}
+    </>
+  );
+}
+
+function SOSOverlay() {
+  const emergency = useAppStore(state => state.emergency);
+  const clearEmergency = useAppStore(state => state.clearEmergency);
+  
+  if (!emergency.active) return null;
 
   return (
-    <div className="relative h-full min-h-[480px] w-full overflow-hidden">
+    <AnimatePresence>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[999] pointer-events-none"
+      >
+        {/* Full screen red pulse border */}
+        <div className="absolute inset-0 border-[20px] border-red-600 animate-[pulse_1s_infinite] pointer-events-none" />
+        
+        {/* Centered Modal */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto">
+          <div className="bg-slate-950 border-2 border-red-600 p-8 rounded-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] flex flex-col items-center text-center max-w-md w-full">
+             <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center mb-6 animate-bounce shadow-[0_0_20px_rgba(220,38,38,0.8)]">
+                <Siren size={40} className="text-white" />
+             </div>
+             <h2 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter">Unit Membutuhkan Bantuan</h2>
+             <p className="text-slate-400 mb-8 font-medium">Bripka Yohanis (p-001) memicu SOS melalui tombol taktis. Lokasi telah dikunci di pusat kontrol.</p>
+             
+             <div className="grid grid-cols-2 gap-4 w-full">
+                <button 
+                  onClick={clearEmergency}
+                  className="py-4 bg-white/5 hover:bg-white/10 text-slate-400 font-bold rounded-xl transition-all uppercase tracking-widest cursor-pointer"
+                >Abaikan</button>
+                <button 
+                  className="py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl shadow-lg shadow-red-600/30 transition-all uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Zap size={18} /> Kirim Unit Terdekat
+                </button>
+             </div>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+export default function GoogleMap() {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "";
+  const polres = useAppStore((state) => state.polres);
+  const selectedPolres = useAppStore(getSelectedPolres);
+  const emergency = useAppStore((state) => state.emergency);
+  const posts = useAppStore((state) => state.policePosts);
+
+  if (!apiKey) return null;
+
+  return (
+    <div className="relative h-full w-full overflow-hidden">
       <APIProvider apiKey={apiKey}>
         <Map
           defaultCenter={{ lat: -9.0, lng: 121.5 }}
           defaultZoom={7}
-          mapId="SENTINEL_MAP_ID"
+          mapId="SENTINEL_DASHBOARD_MAP_ID"
           gestureHandling="greedy"
           disableDefaultUI
-          onContextmenu={handleRightClick}
-          onClick={() => setContextMenu(null)}
           style={{ width: "100%", height: "100%" }}
         >
-          {polres.map((item) => (
-            <AdvancedMarker
-              key={item.id}
-              position={{ lat: item.lat, lng: item.lng }}
-              onClick={() => {
-                setSelectedPolres(item.id);
-                router.push(`/polres/${item.id}`);
-              }}
-              className="group cursor-pointer"
-            >
-              <div className="relative">
-                <Pin
-                  background={
-                    item.status === "kondusif"
-                      ? "var(--color-success)"
-                      : item.status === "waspada"
-                        ? "var(--color-brand-gold)"
-                        : "var(--color-danger)"
-                  }
-                  borderColor={selectedPolres?.id === item.id ? "#18324d" : "rgba(24,50,77,0.28)"}
-                  glyphColor="white"
-                />
-                
-                {/* TACTICAL HOVERCARD */}
-                <div className="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 flex-col items-center group-hover:flex">
-                  <div className="glass-card flex min-w-[200px] flex-col overflow-hidden rounded-xl border border-[var(--color-border)] p-3 shadow-lg">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-brand-gold)]">
-                      {item.name}
-                    </div>
-                    <div className="mt-1 flex items-center justify-between text-xs text-[var(--color-text)]">
-                      <span>Status:</span>
-                      <span className="font-semibold uppercase text-white">{item.status}</span>
-                    </div>
-                    <div className="mt-1 flex items-center justify-between text-xs text-[var(--color-text)]">
-                      <span>Personil:</span>
-                      <span className="font-mono text-white">{item.online}/{item.personnel} Aktif</span>
-                    </div>
-                  </div>
-                  <div className="h-2 w-2 origin-top-left -translate-x-1/2 rotate-45 border-b border-r border-[var(--color-border)] bg-[rgba(11,27,50,0.8)]" />
-                </div>
-
-              </div>
-            </AdvancedMarker>
-          ))}
-
-          <MapController selectedPolres={selectedPolres} />
+          {/* Polres Layer */}
+          <GeoJsonLayer polresList={polres} />
           
+          <PolicePostsLayer posts={posts} />
           <PatrolBreadcrumbs />
-
-          {/* Predictive AI Heatmap (Purple) */}
-          {predictiveMode && predictionPoints.map((point) => (
-            <AdvancedMarker key={point.id} position={{ lat: point.lat, lng: point.lng }}>
-               <div className="relative group/pred">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-purple-400 bg-purple-600/40 text-[11px] font-bold text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] animate-pulse">
-                    {point.confidence}%
-                  </div>
-                  {/* Confidence Tooltip */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 opacity-0 group-hover/pred:opacity-100 transition-opacity pointer-events-none z-50">
-                    <div className="bg-slate-900/95 border border-purple-500/30 p-2 rounded-lg backdrop-blur-md shadow-2xl">
-                      <div className="text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-1">{point.label}</div>
-                      <div className="text-[9px] text-white/80 leading-relaxed font-mono">{point.reasoning}</div>
-                    </div>
-                  </div>
-               </div>
-            </AdvancedMarker>
-          ))}
-
-          {/* OSINT Signals (Radio Waves) */}
-          {osintEnabled && osintSignals.map((sig) => (
-            <AdvancedMarker key={sig.id} position={{ lat: sig.lat, lng: sig.lng }}>
-               <div className="relative group/osint">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 bg-orange-500/20 text-white shadow-lg backdrop-blur-md transition-all group-hover/osint:scale-110 ${
-                    sig.sentiment === "negative" || sig.sentiment === "provocative" ? "border-orange-500 animate-pulse" : "border-orange-300"
-                  }`}>
-                    {sig.source === "X" ? <MessageSquare className="w-5 h-5 text-orange-400" /> : <Newspaper className="w-5 h-5 text-orange-400" />}
-                  </div>
-                  
-                  {/* OSINT News Bubble */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-64 opacity-0 group-hover/osint:opacity-100 transition-all pointer-events-none z-50">
-                    <div className="bg-slate-950/95 border border-orange-500/30 p-3 rounded-xl shadow-2xl backdrop-blur-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">{sig.source} Intelligence</span>
-                        <div className="flex items-center gap-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping" />
-                          <span className="text-[9px] text-white/40 font-mono">LIVE</span>
-                        </div>
-                      </div>
-                      <p className="text-[11px] text-white/90 leading-relaxed font-medium mb-2 line-clamp-3">&ldquo;{sig.content}&rdquo;</p>
-                      <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                        <span className="text-[9px] text-white/30 uppercase font-bold tracking-tighter">Viral Score: {sig.viralScore}%</span>
-                        <span className={`text-[9px] font-bold uppercase ${
-                          sig.sentiment === "negative" ? "text-red-400" : "text-orange-400"
-                        }`}>{sig.sentiment}</span>
-                      </div>
-                    </div>
-                    <div className="h-3 w-3 bg-slate-950/95 border-r border-b border-orange-500/30 rotate-45 mx-auto -mt-1.5" />
-                  </div>
-               </div>
-            </AdvancedMarker>
-          ))}
-
-          {/* Tactical Mission Compasses */}
-          {activeMissions.filter(m => m.status === "en-route").map((msn) => (
-            <AdvancedMarker key={msn.id} position={{ lat: msn.targetLat, lng: msn.targetLng }}>
-              <div className="flex flex-col items-center">
-                <div className="bg-blue-500/20 border border-blue-400 p-1.5 rounded-full animate-ping absolute" />
-                <Target className="w-6 h-6 text-blue-400 relative" />
-                <div className="mt-1 bg-blue-500 text-white text-[8px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter shadow-lg">
-                  OBJ: {msn.assignedPersonnelId}
-                </div>
-              </div>
-            </AdvancedMarker>
-          ))}
-
-          {heatmapEnabled && !predictiveMode
-            ? highlightedHeatPoints.map((point) => (
-                <AdvancedMarker key={point.id} position={{ lat: point.lat, lng: point.lng }}>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white bg-[rgba(216,79,95,0.82)] text-[11px] font-semibold text-white shadow-[0_0_16px_rgba(216,79,95,0.22)]">
-                    {point.weight}
-                  </div>
-                </AdvancedMarker>
-              ))
-            : null}
+          <MapController selectedPolres={selectedPolres} emergency={emergency} />
         </Map>
-
-        {/* Custom Context Menu */}
-        <AnimatePresence>
-          {contextMenu && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              style={{ top: contextMenu.y, left: contextMenu.x }}
-              className="fixed z-[100] w-56 rounded-xl border border-white/10 bg-slate-950/90 p-1 shadow-2xl backdrop-blur-xl"
-            >
-              <div className="px-3 py-2 border-b border-white/5 mb-1">
-                <div className="text-[9px] text-white/40 uppercase tracking-widest font-mono">
-                  Coordinates: {contextMenu.lat.toFixed(4)}, {contextMenu.lng.toFixed(4)}
-                </div>
-              </div>
-              <button
-                onClick={() => handleDispatch("mission")}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-white hover:bg-blue-500/20 hover:text-blue-400 transition-colors"
-              >
-                <Navigation className="w-4 h-4" />
-                Kirim Unit Terdekat
-              </button>
-              <button
-                onClick={() => handleDispatch("checkpoint")}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-white hover:bg-[var(--color-brand-gold)]/20 hover:text-[var(--color-brand-gold)] transition-colors"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                Buat Titik Kumpul
-              </button>
-              <div className="h-px bg-white/5 my-1" />
-              <button
-                onClick={() => setContextMenu(null)}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-white/50 hover:bg-white/5 transition-colors"
-              >
-                <Plus className="w-4 h-4 rotate-45" />
-                Batalkan
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
       </APIProvider>
+      
+      <SOSOverlay />
     </div>
   );
+}
+
+function GeoJsonLayer({ polresList }: { polresList: PolresItem[] }) {
+  const map = useMap();
+  const setSelectedPolres = useAppStore((state) => state.setSelectedPolres);
+  const setSelectedPolsek = useAppStore((state) => state.setSelectedPolsek);
+
+  useEffect(() => {
+    if (!map) return;
+    
+    // Simulate Polsek Data Layer as well
+    const geoJson = {
+      type: "FeatureCollection",
+      features: polresList.flatMap((p) => {
+        // Main Polres area
+        const offset = 0.2;
+        return [{
+          type: "Feature",
+          id: p.id,
+          properties: { id: p.id, type: "polres", name: p.name, crimeStatus: p.crimeStatus || "Hijau" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[[p.lng - offset, p.lat - offset], [p.lng + offset, p.lat - offset], [p.lng + offset, p.lat + offset], [p.lng - offset, p.lat + offset], [p.lng - offset, p.lat - offset]]]
+          },
+        }];
+      }),
+    };
+
+    map.data.addGeoJson(geoJson as any);
+    map.data.setStyle((f) => {
+      const s = f.getProperty("crimeStatus");
+      let c = "#18C29C"; 
+      if (s === "Merah") c = "#ef4444";
+      if (s === "Kuning") c = "#eab308";
+      return { fillColor: c, fillOpacity: 0.15, strokeColor: c, strokeWeight: 2, strokeOpacity: 0.3 };
+    });
+
+    const clickListener = map.data.addListener("click", (e: google.maps.Data.MouseEvent) => {
+      const f = e.feature;
+      setSelectedPolres(f.getProperty("id") as string);
+      // Simulate selecting a polsek if zoomed in
+      if (map.getZoom()! > 10) {
+         setSelectedPolsek("polsek-sim-01");
+      }
+    });
+
+    return () => {
+      google.maps.event.removeListener(clickListener);
+      map.data.forEach((f) => map.data.remove(f));
+    };
+  }, [map, polresList, setSelectedPolres, setSelectedPolsek]);
+
+  return null;
 }
