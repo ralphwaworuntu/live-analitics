@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useAppStore } from "@/store";
-import { Search, MapPin, User, ShieldAlert, Command } from "lucide-react";
+import { Search, Command, MapPin, User, ShieldAlert } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function TacticalSearch() {
@@ -25,7 +25,6 @@ export default function TacticalSearch() {
   }, []);
 
   const handleSelect = (result: any) => {
-    // If location, trigger store select
     if (result.type === "location") {
       useAppStore.getState().setSelectedPolres(result.id);
       window.dispatchEvent(new CustomEvent('map:draw-tactical-plot', { 
@@ -38,23 +37,21 @@ export default function TacticalSearch() {
 
   return (
     <>
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-        <button
-          onClick={() => setOpen(true)}
-          className="pointer-events-auto flex items-center gap-6 rounded-full border border-white/10 bg-slate-950/60 pl-4 pr-3 py-2.5 backdrop-blur-xl shadow-2xl group transition-all hover:bg-slate-950/80 hover:border-white/20"
-        >
-          <div className="flex items-center gap-3">
-            <Search className="w-4 h-4 text-white/40 group-hover:text-white/70" />
-            <span className="text-[13px] text-white/40 group-hover:text-white/60 tracking-wide font-medium pr-8">
-              Cari NRP, Insiden, atau Koordinat...
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
-            <Command className="w-3 h-3 text-white/30" />
-            <span className="text-[10px] font-bold text-white/30">K</span>
-          </div>
-        </button>
-      </div>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex w-full items-center gap-6 rounded-full border border-white/10 bg-slate-950/60 pl-4 pr-3 py-2.5 backdrop-blur-xl shadow-2xl group transition-all hover:bg-slate-950/80 hover:border-white/20 pointer-events-auto"
+      >
+        <div className="flex items-center gap-3">
+          <Search className="w-4 h-4 text-white/40 group-hover:text-white/70" />
+          <span className="text-[13px] text-white/40 group-hover:text-white/60 tracking-wide font-medium pr-8 uppercase">
+             Tactical Entry / Search
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+          <Command className="w-3 h-3 text-white/30" />
+          <span className="text-[10px] font-bold text-white/30">K</span>
+        </div>
+      </button>
 
       <AnimatePresence>
         {open && (

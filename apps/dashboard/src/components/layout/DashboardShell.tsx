@@ -6,10 +6,16 @@ import {
   ResizablePanel, 
   ResizablePanelGroup 
 } from "@/components/ui/resizable";
+import { usePathname } from "next/navigation";
 import TacticalSidebar from "@/components/layout/TacticalSidebar";
 import IntelligencePanel from "@/components/ai/IntelligencePanel";
 
 export default function DashboardShell({ children }: { children?: React.ReactNode }) {
+  const pathname = usePathname();
+
+  // BYPASS FOR ABSOLUTE-ONLY HUD (HOME PAGE)
+  if (pathname === "/") return <>{children}</>;
+
   return (
     <div className="h-screen w-full bg-[#07111F] text-[#EAF2FF] overflow-hidden">
       <AnimatePresence mode="wait">

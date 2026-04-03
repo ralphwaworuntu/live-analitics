@@ -78,7 +78,7 @@ export default function LiveReportTicker() {
 
   return (
     <>
-      <div className="absolute bottom-24 left-4 z-10 w-72">
+      <div className="w-full">
         <div className="rounded-2xl border border-[var(--color-border)] bg-[rgba(11,27,50,0.85)] p-3 shadow-lg backdrop-blur-xl">
           <div className="flex items-center gap-2 mb-3 px-1">
             <Radio className="w-3.5 h-3.5 text-[var(--color-brand-gold)] animate-pulse" />

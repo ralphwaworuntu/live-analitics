@@ -1,10 +1,14 @@
 "use client";
 
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
+
 import GoogleMap from "@/components/map/GoogleMap";
-import OSINTPulse from "@/components/map/OSINTPulse";
 import TacticalSearch from "@/components/map/TacticalSearch";
 import TimeSlider from "@/components/map/TimeSlider";
 import IntelligencePanel from "@/components/ai/IntelligencePanel";
+import LiveReportTicker from "@/components/map/LiveReportTicker";
 import { getSelectedPolres, useAppStore } from "@/store";
 
 export default function CommandCenter() {
@@ -15,83 +19,117 @@ export default function CommandCenter() {
   const setHeatmapEnabled = useAppStore((state) => state.setHeatmapEnabled);
   const sandboxMode = useAppStore((state) => state.sandboxMode);
   const setSandboxMode = useAppStore((state) => state.setSandboxMode);
+  
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-slate-950 text-white">
+    <main className="flex h-screen w-screen overflow-hidden bg-[#020617] text-white">
       
-      {/* LAYER 0: BACKGROUND (GIS MAP) */}
-      <div className="absolute inset-0 z-0 bg-slate-900">
+      {/* KIRI - The Map Core */}
+      <div className="relative flex-1 h-full bg-black">
         <GoogleMap />
+        
+        {/* Floating Search Bar di atas peta */}
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[400px] z-50">
+          <TacticalSearch />
+        </div>
+
+        {/* Sidebar Toggle Button */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="absolute top-6 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/80 text-white shadow-2xl backdrop-blur-xl transition-all hover:bg-slate-900 hover:border-white/20"
+        >
+          {sidebarOpen ? <PanelRightClose className="h-5 w-5 opacity-70" /> : <PanelRightOpen className="h-5 w-5 opacity-70 cursor-pointer" />}
+        </button>
       </div>
 
-      {/* LAYER 10: TACTICAL HUD (SLOT-BASED POSITIONING) */}
-      
-      {/* SLOT: TOP-LEFT (Operating Picture & Controls) */}
-      <div className="absolute top-6 left-6 z-10 w-80 pointer-events-auto">
-        <div className="glass-card p-4 shadow-2xl backdrop-blur-2xl border-white/10">
-          <div className="eyebrow !text-[8px] opacity-50">SENTINEL COMMAND GRID</div>
-          <h1 className="mt-1.5 text-md font-bold text-white uppercase tracking-tight leading-tight">
-            {selectedPolres ? selectedPolres.name : "Polda NTT Operating Picture"}
+      {/* KANAN - Unified Command Sidebar */}
+      <AnimatePresence initial={false}>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 420, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+            className="h-full border-l border-white/10 bg-[#0B1B32] flex flex-col overflow-y-auto custom-scrollbar p-6 gap-6 origin-right shrink-0"
+          >
+            
+            {/* 1. Header Identity: SectorA1Card */}
+        <div className="glass-card p-4 rounded-xl shadow-lg bg-slate-950/60 border-white/10 ring-1 ring-white/5">
+          <div className="flex items-center justify-between mb-2">
+             <div className="eyebrow !text-[8px] tracking-[0.3em] opacity-40">SENTINEL • CMD ROOM</div>
+             <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse shadow-[0_0_8px_cyan]" />
+          </div>
+          <h1 className="text-sm font-black uppercase tracking-tight leading-tight">
+            {selectedPolres ? selectedPolres.name : "Polda NTT Sector A1"}
           </h1>
+          <div className="mt-0.5 text-[9px] text-white/40 uppercase tracking-widest font-mono">
+             Regional Threat Assessment Ready
+          </div>
           
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <div className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] font-bold text-[var(--color-brand-gold)] uppercase tracking-widest">
-              {selectedPolres ? "Fokus" : "Regional"}
-            </div>
-            <div className={`px-2 py-0.5 rounded border text-[9px] font-bold uppercase tracking-widest ${
-              emergency.active ? "bg-red-500/20 border-red-500/40 text-red-400 animate-pulse" : "bg-green-500/10 border-green-500/20 text-green-400"
+          <div className="mt-3 flex flex-wrap gap-2">
+            <div className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-[0.15em] transition-all ${
+              emergency.active 
+                ? "bg-red-500/20 border-red-500/40 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse" 
+                : "bg-green-500/10 border-green-500/20 text-green-400"
             }`}>
-              {emergency.active ? "Emergency" : "Kondusif"}
+              {emergency.active ? "Crisis Mode" : "Nominal Status"}
             </div>
           </div>
 
-          {/* INTEGRATED HEAT/SIM TOGGLES */}
-          <div className="mt-5 grid grid-cols-2 gap-1.5 h-10">
+          <div className="mt-4 grid grid-cols-2 gap-2 h-9">
             <button
               onClick={() => setHeatmapEnabled(!heatmapEnabled)}
-              className={`rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all ${
-                heatmapEnabled ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white shadow-[0_0_15px_rgba(31,103,204,0.3)]" : "border-white/5 bg-white/5 text-white/30"
+              className={`group relative overflow-hidden rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all ${
+                heatmapEnabled 
+                  ? "border-amber-500/50 bg-amber-500 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]" 
+                  : "border-white/5 bg-white/5 text-white/40 hover:bg-white/10"
               }`}
             >
-              Heat Map
+              <span className="relative z-10">Heat Map</span>
             </button>
             <button
               onClick={() => setSandboxMode(!sandboxMode)}
-              className={`rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all ${
-                sandboxMode ? "border-cyan-500 bg-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.3)]" : "border-white/5 bg-white/5 text-white/30"
+              className={`group relative overflow-hidden rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all ${
+                sandboxMode 
+                  ? "border-cyan-500/50 bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]" 
+                  : "border-white/5 bg-white/5 text-white/40 hover:bg-white/10"
               }`}
             >
-              Simulate
+              <span className="relative z-10">Simulate</span>
             </button>
           </div>
         </div>
-      </div>
 
-      {/* SLOT: LEFT-MIDDLE (Status & OSINT) */}
-      <div className="absolute top-64 left-6 z-10 w-80 pointer-events-auto flex flex-col gap-3">
-        {kpis.slice(0, 2).map((kpi) => (
-           <MetricCard key={kpi.id} {...kpi} />
-        ))}
-        <OSINTPulse />
-      </div>
+        {/* 2. Stats Section*/}
+        <div className="flex gap-4">
+          {kpis.slice(0, 2).map((kpi) => (
+             <div key={kpi.id} className="flex-1">
+                 <MetricCard {...kpi} />
+             </div>
+          ))}
+        </div>
 
-      {/* SLOT: TOP-CENTER (Tactical Search) */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 w-[450px] pointer-events-auto">
-        <TacticalSearch />
-      </div>
+        {/* 3. Intelligence Unit */}
+        <div className="flex-1 min-h-[350px]">
+           <div className="h-full rounded-2xl border border-white/5 bg-slate-950/60 shadow-xl overflow-hidden ring-1 ring-white/10">
+              <IntelligencePanel />
+           </div>
+        </div>
 
-      {/* SLOT: RIGHT (Intelligence Unit) */}
-      <div className="absolute top-6 right-6 bottom-6 z-10 w-[380px] pointer-events-auto">
-         <div className="h-full rounded-[28px] border border-white/5 bg-slate-950/40 backdrop-blur-3xl shadow-2xl overflow-hidden">
-            <IntelligencePanel />
-         </div>
-      </div>
+        {/* 4. Activity Log */}
+        <div className="w-full">
+           <LiveReportTicker />
+        </div>
 
-      {/* SLOT: BOTTOM (Temporal Control) */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 w-auto min-w-[800px] pointer-events-auto">
-        <TimeSlider />
-      </div>
+        {/* 5. Control Center */}
+        <div className="w-full shrink-0">
+           <TimeSlider />
+        </div>
 
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
@@ -108,19 +146,19 @@ function MetricCard({
   changeType: "positive" | "negative" | "neutral";
 }) {
   const toneClass = {
-    positive: "text-[var(--color-success)]",
-    negative: "text-[var(--color-danger)]",
-    neutral: "text-[var(--color-info)]",
+    positive: "text-emerald-400 border-emerald-500/20 bg-emerald-500/10",
+    negative: "text-rose-400 border-rose-500/20 bg-rose-500/10",
+    neutral: "text-amber-400 border-amber-500/20 bg-amber-500/10",
   }[changeType];
 
   return (
-    <div className="glass-card p-3">
-      <div className="flex items-start justify-between gap-2">
+    <div className="glass-card p-3 rounded-xl border border-white/5 bg-slate-950/60 backdrop-blur-md shadow-lg transition-all text-white">
+      <div className="flex items-center justify-between pointer-events-none">
         <div>
-          <div className="text-[8px] uppercase tracking-wider text-[var(--color-subtle)] line-clamp-1">{title}</div>
-          <div className="text-sm font-bold text-white mt-0.5">{value}</div>
+          <div className="text-[8px] uppercase tracking-[0.2em] text-white/40 font-bold mb-0.5">{title}</div>
+          <div className="text-lg font-mono font-bold tracking-tight text-white/90">{value}</div>
         </div>
-        <div className={`rounded px-1 py-0.5 text-[8px] font-bold ${toneClass} bg-white/5 border border-white/5`}>
+        <div className={`rounded px-1.5 py-0.5 text-[8px] font-black border tracking-widest ${toneClass}`}>
           {change}
         </div>
       </div>

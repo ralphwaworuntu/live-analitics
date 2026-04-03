@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import { APIProvider, AdvancedMarker, Map, Pin, useMap } from "@vis.gl/react-google-maps";
 import type { MapMouseEvent } from "@vis.gl/react-google-maps";
 
-import TimeSlider from "@/components/map/TimeSlider";
+
 import PatrolBreadcrumbs from "@/components/map/PatrolBreadcrumbs";
 import { getSelectedPolres, useAppStore } from "@/store";
 import type { PolresItem } from "@/lib/types";
-import LiveReportTicker from "@/components/map/LiveReportTicker";
 import { useState, useCallback } from "react";
 import { Navigation, Target, Plus, ShieldCheck, Newspaper, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -104,10 +103,8 @@ export default function GoogleMap() {
   const dispatchMission = useAppStore((state) => state.dispatchMission);
   const selectedPolres = useAppStore(getSelectedPolres);
   const setSelectedPolres = useAppStore((state) => state.setSelectedPolres);
-  const emergency = useAppStore((state) => state.emergency);
   const osintSignals = useAppStore((state) => state.osintSignals);
   const osintEnabled = useAppStore((state) => state.osintEnabled);
-  const sandboxMode = useAppStore((state) => state.sandboxMode);
 
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, lat: number, lng: number } | null>(null);
 
@@ -115,9 +112,8 @@ export default function GoogleMap() {
     if (e.detail.latLng) {
       const lat = e.detail.latLng.lat;
       const lng = e.detail.latLng.lng;
-      
       // Use the raw event to get clientX/Y
-      const domEvent = (e as any).domEvent as MouseEvent;
+      const domEvent = (e as unknown as { domEvent: MouseEvent }).domEvent;
       setContextMenu({ 
         x: domEvent.clientX, 
         y: domEvent.clientY, 
@@ -162,16 +158,17 @@ export default function GoogleMap() {
 
   if (!apiKey) {
     return (
-      <div className="relative flex h-full min-h-[480px] items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#fdfefe,#f1f6fc)]">
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(31,103,204,0.03)_1px,transparent_1px),linear-gradient(rgba(31,103,204,0.03)_1px,transparent_1px)] bg-[size:34px_34px]" />
-        <div className="relative z-10 mx-auto w-full max-w-3xl px-6">
-          <div className="rounded-[30px] border border-[var(--color-border)] bg-white p-6 shadow-[var(--shadow-float)] sm:p-8">
-            <div className="eyebrow">Fallback Tactical View</div>
-            <h3 className="mt-4 text-2xl font-semibold text-[var(--color-text)]">Map engine belum diaktifkan</h3>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)] sm:text-[15px]">
-              Tambahkan `NEXT_PUBLIC_GOOGLE_MAPS_KEY` untuk memunculkan peta live. Sementara itu, navigasi wilayah tetap aktif dan sinkron ke seluruh workspace.
+      <div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#0f172a,#020617)] overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(90deg,rgba(31,103,204,1)_1px,transparent_1px),linear-gradient(rgba(31,103,204,1)_1px,transparent_1px)] bg-[size:34px_34px]" />
+        <div className="relative z-10 flex flex-col items-center justify-center h-full max-w-3xl px-6 mx-auto text-center">
+          <div className="rounded-[40px] border border-white/5 bg-slate-950/40 p-8 shadow-2xl backdrop-blur-2xl">
+            <div className="eyebrow !text-[10px] opacity-40">SYSTEM FALLBACK</div>
+            <h3 className="mt-4 text-2xl font-bold text-white uppercase tracking-tight">Geospatial engine inactive</h3>
+            <p className="mt-3 text-sm leading-relaxed text-white/40">
+              `NEXT_PUBLIC_GOOGLE_MAPS_KEY` not found. 
+              Region-based tactical operations remain active.
             </p>
-            <div className="mt-6 grid gap-3 md:grid-cols-2">
+            <div className="mt-8 grid gap-2.5 grid-cols-2">
               {visiblePolres.slice(0, 4).map((item) => (
                 <button
                   key={item.id}
@@ -179,18 +176,17 @@ export default function GoogleMap() {
                     setSelectedPolres(item.id);
                     router.push(`/polres/${item.id}`);
                   }}
-                  className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] px-4 py-4 text-left transition-colors hover:border-[var(--color-brand-primary)]/40 hover:bg-[var(--color-surface-2)]"
+                  className="rounded-xl border border-white/5 bg-white/5 px-4 py-3 text-left transition-all hover:bg-white/10 hover:border-white/20"
                 >
-                  <div className="text-sm font-medium text-[var(--color-text)]">{item.name}</div>
-                  <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-[var(--color-subtle)]">
-                    {item.status} | {item.island}
+                  <div className="text-xs font-bold text-white">{item.name}</div>
+                  <div className="mt-1 text-[8px] uppercase tracking-widest text-[var(--color-brand-gold)]">
+                    {item.status}
                   </div>
                 </button>
               ))}
             </div>
           </div>
         </div>
-        <TimeSlider />
       </div>
     );
   }
@@ -374,26 +370,6 @@ export default function GoogleMap() {
           )}
         </AnimatePresence>
 
-        <div className="pointer-events-none absolute inset-0 bg-transparent" />
-        <TimeSlider />
-        <LiveReportTicker />
-        <div className="pointer-events-none absolute left-5 top-5 z-10 max-w-sm rounded-[24px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.92)] px-4 py-4 backdrop-blur-xl">
-          <div className="eyebrow">Map Overlay</div>
-          <div className="mt-3 text-sm text-[var(--color-text)]">
-            {selectedPolres ? selectedPolres.name : "Regional Situation Board"}
-          </div>
-          <div className="mt-1 text-sm text-[var(--color-muted)]">
-            {heatmapEnabled ? "Heat layer active. " : "Marker focus active. "}
-            Klik wilayah untuk mengunci context drawer, AI brief, dan dashboard state.
-          </div>
-        </div>
-        {emergency.active ? (
-          <div className="pointer-events-none absolute right-5 top-5 z-10 rounded-[24px] border border-[var(--color-danger)] bg-[rgba(255,255,255,0.95)] px-4 py-4 text-xs shadow-[var(--shadow-glow-danger)] backdrop-blur-xl">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-danger)]">Emergency Focus</div>
-            <div className="mt-2 text-sm text-[var(--color-text)]">{emergency.message}</div>
-            <div className="mt-1 text-[var(--color-muted)]">{emergency.location}</div>
-          </div>
-        ) : null}
       </APIProvider>
     </div>
   );

@@ -1,8 +1,8 @@
 "use client";
 
 import { useAppStore } from "@/store";
-import { motion, AnimatePresence } from "framer-motion";
-import { Radio, MessageSquare, TrendingUp, Newspaper } from "lucide-react";
+import { motion } from "framer-motion";
+import { Radio, MessageSquare, Newspaper } from "lucide-react";
 
 export default function OSINTPulse() {
   const osintSignals = useAppStore((state) => state.osintSignals);
@@ -13,7 +13,7 @@ export default function OSINTPulse() {
   const trends = ["#DemoKupang", "Blokade Soe", "Brimob BKO", "Panen Gagal", "NTT Melawan"];
 
   return (
-    <div className="absolute bottom-24 left-80 z-20 w-64 pointer-events-none">
+    <div className="absolute bottom-24 left-6 z-20 w-64 pointer-events-none">
       <div className="pointer-events-auto rounded-2xl border border-orange-500/30 bg-slate-950/80 p-3 shadow-[0_0_20px_rgba(249,115,22,0.15)] backdrop-blur-xl">
         <div className="flex items-center gap-2 mb-3 px-1">
           <Radio className="w-3.5 h-3.5 text-orange-400 animate-pulse" />
