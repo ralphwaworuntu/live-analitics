@@ -1,38 +1,42 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { 
   Search, 
   Download, 
   MapPin, 
   Eye, 
-  MoreVertical,
   Activity,
   Shield,
   User,
   Car,
   Clock,
   Navigation,
-  Fuel,
-  Info,
   Calendar,
   Filter,
-  CheckCircle2,
-  AlertTriangle,
   Zap,
-  Play
+  Play,
+  Bot,
+  PhoneCall,
+  FileText,
+  FileDown,
+  Fingerprint,
+  Video,
+  X
 } from "lucide-react";
+import Image from "next/image";
 import { 
   useReactTable, 
   getCoreRowModel, 
   flexRender, 
   createColumnHelper,
-  getFilteredRowModel,
-  getPaginationRowModel
+  getFilteredRowModel
 } from "@tanstack/react-table";
-import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import type { AuditLogEntry } from "@/lib/types";
 import { 
   Table, 
   TableBody, 
@@ -53,7 +57,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { motion } from "framer-motion";
 
 // --- TYPES FOR CORE DATA ---
 
@@ -137,6 +140,20 @@ const columnHelperHistory = createColumnHelper<PatrolHistory>();
 
 const IncidentTable = ({ searchQuery }: { searchQuery: string }) => {
   const setMapCenter = useAppStore(state => state.setMapCenter);
+  const addAuditLog = useAppStore(state => state.addAuditLog);
+  const auditLogs = useAppStore(state => state.auditLogs);
+
+  const [selectedAuditId, setSelectedAuditId] = useState<string | null>(null);
+
+  const handleAIIntervention = (id: string) => {
+    addAuditLog({
+      actor: "Operator Biro Ops (Live)",
+      action: "Trigger AI Intervention",
+      target: id,
+      details: "Sistem meminta rekomendasi pengerahan unit khusus untuk eskalasi insiden."
+    });
+    alert(`AI Intelligence: Menganalisa pengerahan unit untuk ${id}...`);
+  };
 
   const columns = [
     columnHelperIncident.accessor("id", {
@@ -193,6 +210,18 @@ const IncidentTable = ({ searchQuery }: { searchQuery: string }) => {
       }
     }),
     columnHelperIncident.display({
+      id: "tactical",
+      header: "Intervensi AI",
+      cell: props => (
+        <button 
+          onClick={() => handleAIIntervention(props.row.original.id)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[10px] font-black text-blue-400 hover:bg-blue-500 hover:text-white transition-all cursor-pointer"
+        >
+          <Bot size={12} /> SARAN UNIT
+        </button>
+      )
+    }),
+    columnHelperIncident.display({
       id: "actions",
       header: "Aksi",
       cell: props => (
@@ -205,6 +234,12 @@ const IncidentTable = ({ searchQuery }: { searchQuery: string }) => {
           </button>
           <button className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-colors cursor-pointer">
             <Eye size={16} />
+          </button>
+          <button 
+            onClick={() => setSelectedAuditId(props.row.original.id)}
+            className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-[#D4AF37] transition-colors cursor-pointer"
+          >
+            <Fingerprint size={16} />
           </button>
         </div>
       )
@@ -220,40 +255,67 @@ const IncidentTable = ({ searchQuery }: { searchQuery: string }) => {
   });
 
   return (
-    <Table className="min-w-[1100px]">
-      <TableHeader>
-        {table.getHeaderGroups().map(headerGroup => (
-          <TableRow key={headerGroup.id}>
-            {headerGroup.headers.map(header => (
-              <TableHead key={header.id}>
-                {flexRender(header.column.columnDef.header, header.getContext())}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows.map(row => (
-          <TableRow 
-            key={row.id} 
-            className={cn(
-              row.original.type === "SOS" && "bg-red-500/[0.03] border-red-500/20 animate-[pulse-danger_3s_infinite]"
-            )}
-          >
-            {row.getVisibleCells().map(cell => (
-              <TableCell key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="relative">
+      <Table className="min-w-[1100px]">
+        <TableHeader>
+          {table.getHeaderGroups().map(headerGroup => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map(header => (
+                <TableHead key={header.id}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.map(row => (
+            <TableRow 
+              key={row.id} 
+              className={cn(
+                row.original.type === "SOS" && "bg-red-500/[0.03] border-red-500/20 animate-[pulse-danger_3s_infinite]"
+              )}
+            >
+              {row.getVisibleCells().map(cell => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      
+      <AnimatePresence>
+        {selectedAuditId && (
+          <AuditTrailSheet 
+            targetId={selectedAuditId} 
+            onClose={() => setSelectedAuditId(null)} 
+            logs={auditLogs.filter(l => l.target === selectedAuditId)}
+          />
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
 const PersonnelTable = ({ searchQuery }: { searchQuery: string }) => {
   const setMapCenter = useAppStore(state => state.setMapCenter);
+  const addAuditLog = useAppStore(state => state.addAuditLog);
+  const auditLogs = useAppStore(state => state.auditLogs);
+
+  const [selectedPersonnelId, setSelectedPersonnelId] = useState<string | null>(null);
+  const [selectedAuditId, setSelectedAuditId] = useState<string | null>(null);
+
+  const handleCallUnit = (name: string, nrp: string) => {
+    addAuditLog({
+      actor: "Operator Biro Ops (Live)",
+      action: "Panggil Unit (Comms)",
+      target: `${name} (${nrp})`,
+      details: "Membuka jalur komunikasi taktis via VOIP/Radio Link."
+    });
+    alert(`Menghubungi Unit: ${name}...`);
+  };
 
   const columns = [
     columnHelperPersonnel.accessor("id", {
@@ -265,7 +327,13 @@ const PersonnelTable = ({ searchQuery }: { searchQuery: string }) => {
               <div className="flex items-center gap-3 cursor-help group">
                 <div className="h-8 w-8 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center font-bold text-[10px] overflow-hidden">
                   {info.row.original.photo ? (
-                    <img src={info.row.original.photo} alt="" className="w-full h-full object-cover" />
+                    <Image 
+                      src={info.row.original.photo} 
+                      alt={info.row.original.name} 
+                      width={32} 
+                      height={32} 
+                      className="w-full h-full object-cover" 
+                    />
                   ) : (
                     <span className="text-slate-500">{info.row.original.name.charAt(0)}</span>
                   )}
@@ -334,6 +402,18 @@ const PersonnelTable = ({ searchQuery }: { searchQuery: string }) => {
       )
     }),
     columnHelperPersonnel.display({
+      id: "tactical",
+      header: "Panggil Unit",
+      cell: props => (
+        <button 
+          onClick={() => handleCallUnit(props.row.original.name, props.row.original.id)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-black text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 transition-all cursor-pointer"
+        >
+          <PhoneCall size={12} /> CALL UNIT
+        </button>
+      )
+    }),
+    columnHelperPersonnel.display({
       id: "actions",
       header: "Aksi",
       cell: props => (
@@ -356,34 +436,63 @@ const PersonnelTable = ({ searchQuery }: { searchQuery: string }) => {
   });
 
   return (
-    <Table className="min-w-[1100px]">
-      <TableHeader>
-        {table.getHeaderGroups().map(group => (
-          <TableRow key={group.id}>
-            {group.headers.map(header => (
-              <TableHead key={header.id}>
-                {flexRender(header.column.columnDef.header, header.getContext())}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows.map(row => (
-          <TableRow key={row.id}>
-            {row.getVisibleCells().map(cell => (
-              <TableCell key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="relative">
+      <Table className="min-w-[1100px]">
+        <TableHeader>
+          {table.getHeaderGroups().map(group => (
+            <TableRow key={group.id}>
+              {group.headers.map(header => (
+                <TableHead key={header.id}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.map(row => (
+            <TableRow key={row.id}>
+              {row.getVisibleCells().map(cell => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <AnimatePresence>
+        {selectedPersonnelId && (
+          <PersonnelDetailSheet 
+            person={mockPersonnel.find(p => p.id === selectedPersonnelId)!} 
+            onClose={() => setSelectedPersonnelId(null)} 
+          />
+        )}
+        {selectedAuditId && (
+          <AuditTrailSheet 
+            targetId={selectedAuditId} 
+            onClose={() => setSelectedAuditId(null)} 
+            logs={auditLogs.filter(l => l.target === selectedAuditId)}
+          />
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
 const AssetTable = ({ searchQuery }: { searchQuery: string }) => {
+  const addAuditLog = useAppStore(state => state.addAuditLog);
+
+  const handlePrintAudit = (id: string, deviation: number) => {
+    addAuditLog({
+      actor: "Operator Biro Ops (Live)",
+      action: "Cetak Nota Audit BBM",
+      target: id,
+      details: `Menghasilkan laporan penyimpangan konsumsi BBM (${deviation.toFixed(1)} KM/L).`
+    });
+    alert(`Nota Audit dicetak untuk kendaraan ${id}`);
+  };
   const columns = [
     columnHelperAsset.accessor("id", {
       header: "ID Ranmor",
@@ -451,6 +560,18 @@ const AssetTable = ({ searchQuery }: { searchQuery: string }) => {
           </Badge>
         );
       }
+    }),
+    columnHelperAsset.display({
+      id: "actions",
+      header: "Aksi",
+      cell: props => (
+        <button 
+          onClick={() => handlePrintAudit(props.row.original.id, props.row.original.efficiency)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black text-slate-400 hover:bg-white/20 hover:text-white transition-all cursor-pointer"
+        >
+          <FileText size={12} /> CETAK NOTA
+        </button>
+      )
     })
   ];
 
@@ -491,6 +612,17 @@ const AssetTable = ({ searchQuery }: { searchQuery: string }) => {
 };
 
 const HistoryTable = ({ searchQuery }: { searchQuery: string }) => {
+  const addAuditLog = useAppStore(state => state.addAuditLog);
+
+  const handleAnevReport = (id: string) => {
+    addAuditLog({
+      actor: "Operator Biro Ops (Live)",
+      action: "Generate Anev Report (PDF)",
+      target: id,
+      details: "Menghasilkan dokumen analisis kepatuhan dan evaluasi patroli mingguan."
+    });
+    alert(`Menghasilkan PDF Anev untuk Shift ${id}...`);
+  };
   const columns = [
     columnHelperHistory.accessor("id", {
       header: "ID Patroli",
@@ -539,10 +671,18 @@ const HistoryTable = ({ searchQuery }: { searchQuery: string }) => {
     columnHelperHistory.display({
       id: "actions",
       header: "Aksi",
-      cell: () => (
-        <button className="flex items-center gap-2 px-3 py-1.5 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-lg text-[10px] font-black text-[#D4AF37] hover:bg-[#D4AF37] hover:text-slate-950 transition-all cursor-pointer">
-          <Play size={10} fill="currentColor" /> PLAYBACK ROUTE
-        </button>
+      cell: props => (
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-2 px-3 py-1.5 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-lg text-[10px] font-black text-[#D4AF37] hover:bg-[#D4AF37] hover:text-slate-950 transition-all cursor-pointer">
+            <Play size={10} fill="currentColor" /> PLAYBACK
+          </button>
+          <button 
+            onClick={() => handleAnevReport(props.row.original.id)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border border-red-500/20 rounded-lg text-[10px] font-black text-red-500 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
+          >
+            <FileDown size={12} /> ANEV REPORT
+          </button>
+        </div>
       )
     })
   ];
@@ -648,7 +788,7 @@ export default function CoreDataView() {
       <Tabs 
         defaultValue="kejadian" 
         className="flex-1 flex flex-col min-h-0"
-        onValueChange={(val) => setActiveTab(val as any)}
+        onValueChange={(val) => setActiveTab(val as "kejadian" | "personil" | "aset" | "riwayat")}
       >
         <div className="px-6 shrink-0">
           <TabsList className="bg-[#0B1B32] border border-white/5 w-full justify-start gap-1 p-1 h-14">
@@ -709,3 +849,136 @@ export default function CoreDataView() {
     </div>
   );
 }
+
+// --- HELPER COMPONENTS: SHEETS ---
+
+const AuditTrailSheet = ({ targetId, onClose, logs }: { targetId: string, onClose: () => void, logs: AuditLogEntry[] }) => {
+  return (
+    <motion.div 
+      initial={{ x: "100%" }}
+      animate={{ x: 0 }}
+      exit={{ x: "100%" }}
+      className="fixed top-0 right-0 h-full w-[400px] bg-[#0B1B32] border-l border-white/10 z-[100] shadow-2xl p-8 flex flex-col"
+    >
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <Fingerprint className="text-[#D4AF37]" size={20} />
+          <h2 className="text-sm font-black uppercase tracking-widest text-white">Audit Trail System</h2>
+        </div>
+        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-all cursor-pointer">
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-1 mb-6">
+        <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Target Entity</span>
+        <span className="text-xs font-mono text-[#D4AF37] font-black">{targetId}</span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+        {logs.length > 0 ? logs.map((log, idx) => (
+          <div key={idx} className="p-4 bg-white/[0.03] border border-white/5 rounded-2xl relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-1 h-full bg-[#D4AF37] opacity-20" />
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-[10px] font-black text-slate-200 uppercase tracking-tight">{log.action}</span>
+              <span className="text-[9px] font-mono text-slate-500">{new Date(log.timestamp).toLocaleTimeString()}</span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed mb-3">{log.details}</p>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-slate-800 flex items-center justify-center text-[7px] text-blue-400 font-bold border border-blue-500/20">JS</div>
+              <span className="text-[9px] font-bold text-slate-300">{log.actor}</span>
+            </div>
+          </div>
+        )) : (
+          <div className="h-40 flex flex-col items-center justify-center text-slate-600 italic text-[10px]">
+            No audit logs found for this entity.
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+const PersonnelDetailSheet = ({ person, onClose }: { person: any, onClose: () => void }) => {
+  return (
+    <motion.div 
+      initial={{ x: "100%" }}
+      animate={{ x: 0 }}
+      exit={{ x: "100%" }}
+      className="fixed top-0 right-0 h-full w-[500px] bg-[#0B1B32] border-l border-white/10 z-[100] shadow-2xl p-8 flex flex-col"
+    >
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <Shield className="text-[#D4AF37]" size={20} />
+          <h2 className="text-sm font-black uppercase tracking-widest text-white">Personnel Dossier</h2>
+        </div>
+        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-all cursor-pointer">
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className="flex items-center gap-6 mb-10">
+        <div className="w-24 h-24 rounded-2xl bg-slate-800 border-2 border-[#D4AF37]/30 p-1">
+          <div className="w-full h-full rounded-xl overflow-hidden bg-slate-900 flex items-center justify-center border border-white/5 relative">
+            {person.photo ? (
+              <Image src={person.photo} alt={person.name} width={100} height={100} className="w-full h-full object-cover" />
+            ) : (
+              <User size={32} className="text-slate-700" />
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <h3 className="text-xl font-black text-white leading-none mb-1 tracking-tight">{person.name}</h3>
+          <span className="text-xs font-mono font-bold text-[#D4AF37] mb-3 uppercase tracking-widest">NRP: {person.id}</span>
+          <div className="flex gap-2">
+            <Badge variant="success" className="text-[8px] px-2 py-0.5">TERVERIFIKASI</Badge>
+            <Badge variant="gold" className="text-[8px] px-2 py-0.5 font-bold">COMMANDER PREFERRED</Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* VIDEO FEED PLAYER (SIMULATION) */}
+      <div className="flex flex-col gap-3 mb-8">
+        <div className="flex items-center justify-between">
+           <div className="flex items-center gap-2">
+              <Video size={14} className="text-red-500 animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-200">Body-cam Tactical Feed</span>
+           </div>
+           <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
+              <span className="text-[9px] font-bold text-red-500 uppercase tracking-wider">Live</span>
+           </div>
+        </div>
+        <div className="aspect-video bg-slate-950 rounded-2xl border border-white/5 relative overflow-hidden shadow-inner group">
+           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0)_0%,rgba(0,0,0,0.5)_100%)] z-10 pointer-events-none" />
+           {/* Static/Grain Overlay */}
+           <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay animate-[pulse_0.1s_infinite] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
+           
+           <div className="absolute top-4 left-4 z-20 flex flex-col gap-1">
+              <div className="bg-black/60 px-2 py-1 rounded text-[8px] font-mono text-white/80 border border-white/10 uppercase italic">REC 00:42:15</div>
+              <div className="bg-black/60 px-2 py-1 rounded text-[8px] font-mono text-white/50 border border-white/10 uppercase italic tracking-tighter">POLDA_NTT_LIVE_01</div>
+           </div>
+
+           <div className="w-full h-full flex items-center justify-center bg-slate-900 group-hover:bg-slate-800 transition-colors">
+              <Video size={48} className="text-slate-800 group-hover:text-slate-700" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                 <span className="text-[10px] font-mono text-slate-600 uppercase tracking-widest rotate-[-15deg] border-2 border-slate-600/20 px-4 py-2 rounded-xl">Establishing Connection...</span>
+              </div>
+           </div>
+
+           {/* Scanline Effect */}
+           <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,128,0.06))] bg-[length:100%_4px,3px_100%] opacity-40" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mt-auto">
+        <button className="py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase text-slate-300 transition-all cursor-pointer">
+          Lihat Profil Lengkap
+        </button>
+        <button className="py-3 bg-[#D4AF37] hover:bg-[#B8962F] rounded-xl text-[10px] font-black uppercase text-[#0B1B32] shadow-lg shadow-[#D4AF37]/20 transition-all cursor-pointer">
+          Hubungi Radio (Comms)
+        </button>
+      </div>
+    </motion.div>
+  );
+};

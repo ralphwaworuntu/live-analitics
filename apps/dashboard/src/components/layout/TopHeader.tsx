@@ -6,23 +6,56 @@ import {
   Plus, 
   Settings, 
   Bell, 
-  ChevronDown 
+  ChevronDown,
+  X,
+  BellRing
 } from "lucide-react";
+import { useAppStore } from "@/store";
+import { motion, AnimatePresence } from "framer-motion";
 
 /**
  * TopHeader Component for Sentinel-AI Dashboard
- * Features breadcrumbs navigation and user utility actions.
  */
 export default function TopHeader() {
+  const { incomingPublicReport, clearPublicReport } = useAppStore();
   return (
     <header className="sticky top-0 z-[100] w-full h-16 bg-[#0B1B32] border-b border-white/5 flex items-center justify-between px-8 shadow-2xl">
       
       {/* SISI KIRI (Breadcrumbs / Page Title) */}
-      <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left duration-500">
-        <div className="p-2 bg-yellow-500/10 rounded-lg">
-          <Map size={18} className="text-yellow-500" />
+      <div className="flex items-center gap-6 animate-in fade-in slide-in-from-left duration-500">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-yellow-500/10 rounded-lg">
+            <Map size={18} className="text-yellow-500" />
+          </div>
+          <span className="text-sm font-medium text-slate-200 tracking-wide">Radar Operasional</span>
         </div>
-        <span className="text-sm font-medium text-slate-200 tracking-wide">Radar Operasional</span>
+
+        {/* CITIZEN REPORT NOTIFICATION (Animated) */}
+        <AnimatePresence>
+          {incomingPublicReport && (
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0, x: -20 }}
+              animate={{ scale: 1, opacity: 1, x: 0 }}
+              exit={{ scale: 0.8, opacity: 0, x: -20 }}
+              className="flex items-center gap-3 px-4 py-2 bg-red-600/20 border border-red-500/30 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.2)]"
+            >
+              <div className="relative">
+                <div className="absolute inset-0 bg-red-500 rounded-full animate-ping" />
+                <BellRing size={14} className="text-red-500 relative z-10" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-red-500 uppercase tracking-tighter leading-none">Incoming Public Report</span>
+                <span className="text-[9px] font-bold text-white uppercase italic tracking-widest">{incomingPublicReport.locationName}</span>
+              </div>
+              <button 
+                onClick={clearPublicReport}
+                className="p-1 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-colors ml-2 cursor-pointer"
+              >
+                <X size={12} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* SISI KANAN (Utility Icons Group) */}

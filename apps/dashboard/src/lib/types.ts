@@ -238,9 +238,19 @@ export interface SandboxImpact {
   riskAssesment: "Low" | "Medium" | "High";
 }
 
+export interface CctvPoint {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  type: "Dishub" | "Police";
+  status: "Online" | "Offline";
+  url?: string;
+}
+
 export interface SearchResult {
   id: string;
-  type: "personnel" | "incident" | "location" | "command";
+  type: "personnel" | "incident" | "location" | "command" | "cctv";
   title: string;
   subtitle: string;
   lat?: number;

@@ -21,6 +21,8 @@ import type {
   PatrolWaypoint,
   PolsekItem,
   PolicePost,
+  FieldReport,
+  CctvPoint,
 } from "@/lib/types";
 import { mockPersonnelTracks } from "@/lib/mockPatrolData";
 
@@ -111,6 +113,16 @@ interface AppState {
   // Map Tracking & Focus
   mapCenter: { lat: number; lng: number; zoom?: number } | null;
   setMapCenter: (center: { lat: number; lng: number; zoom?: number } | null) => void;
+
+  // Multi-Agency & Citizen Integration
+  bmkgOverlayEnabled: boolean;
+  cctvMarkersEnabled: boolean;
+  setBmkgOverlay: (enabled: boolean) => void;
+  setCctvMarkers: (enabled: boolean) => void;
+  cctvPoints: CctvPoint[];
+  incomingPublicReport: FieldReport | null;
+  triggerPublicReport: (report: FieldReport) => void;
+  clearPublicReport: () => void;
 }
 
 const defaultEmergency: EmergencyState = {
@@ -167,8 +179,12 @@ export const useAppStore = create<AppState>((set) => ({
 
   // C2 & Dispatch
   activeMissions: [],
-  predictiveMode: false,
-  predictionPoints: [],
+  predictiveMode: true,
+  predictionPoints: [
+    { id: 'pred-1', lat: -10.17, lng: 123.60, weight: 8, label: "Potensi Kejahatan Jalanan", confidence: 88, reasoning: "Tren mingguan menunjukkan tingginya aktivitas di jam malam." },
+    { id: 'pred-2', lat: -10.15, lng: 123.63, weight: 6, label: "Kemacetan Tinggi", confidence: 72, reasoning: "Analisis historis menunjukkan bottleneck di titik ini pada jam masuk kerja." },
+    { id: 'pred-3', lat: -8.50, lng: 119.88, weight: 9, label: "Risiko Laka Lantas", confidence: 91, reasoning: "Curah hujan tinggi dan volume kendaraan wisata meningkat di Labuan Bajo." },
+  ],
   polresAssets: [],
   auditLogs: [],
   osintEnabled: false,
@@ -297,6 +313,33 @@ export const useAppStore = create<AppState>((set) => ({
   // Map Focus
   mapCenter: null,
   setMapCenter: (center) => set({ mapCenter: center }),
+
+  // Multi-Agency & Citizen
+  bmkgOverlayEnabled: false,
+  cctvMarkersEnabled: true,
+  setBmkgOverlay: (enabled) => set({ bmkgOverlayEnabled: enabled }),
+  setCctvMarkers: (enabled) => set({ cctvMarkersEnabled: enabled }),
+  cctvPoints: [
+    { id: 'cam-01', name: "Simpang El Tari", lat: -10.165, lng: 123.605, type: 'Dishub', status: 'Online' },
+    { id: 'cam-02', name: "Bundaran TI", lat: -10.158, lng: 123.606, type: 'Police', status: 'Online' },
+    { id: 'cam-03', name: "Lippo Mall Area", lat: -10.150, lng: 123.615, type: 'Dishub', status: 'Offline' },
+  ],
+  incomingPublicReport: null,
+  triggerPublicReport: (report) => {
+    set({ incomingPublicReport: report, mapCenter: { lat: report.lat, lng: report.lng, zoom: 17 } });
+    // Add to audit trail
+    const auditLogs = useAppStore.getState().auditLogs;
+    const newEntry: AuditLogEntry = {
+      id: `audit-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      actor: "Sentinel-AI System",
+      action: "Incoming Public Report",
+      target: report.id,
+      details: `Citizen report from ${report.locationName} received.`
+    };
+    set({ auditLogs: [newEntry, ...auditLogs] });
+  },
+  clearPublicReport: () => set({ incomingPublicReport: null }),
 }));
 
 export function getSelectedPolres(state: AppState): PolresItem | null {

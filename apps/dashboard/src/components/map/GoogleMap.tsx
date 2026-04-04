@@ -3,10 +3,11 @@
 import { useEffect } from "react";
 import { APIProvider, Map, useMap, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { getSelectedPolres, useAppStore } from "@/store";
-import type { PolresItem, PolicePost, EmergencyState } from "@/lib/types";
-import { TowerControl, Siren, Zap } from "lucide-react";
+import type { PolresItem, PolicePost, EmergencyState, CctvPoint, PredictionPoint } from "@/lib/types";
+import { TowerControl, Siren, Zap, CloudRain, Video, Layers, Activity, ShieldAlert } from "lucide-react";
 import PatrolBreadcrumbs from "@/components/map/PatrolBreadcrumbs";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 function MapController({ selectedPolres, emergency, mapCenter }: { 
   selectedPolres: PolresItem | null, 
@@ -37,6 +38,122 @@ function MapController({ selectedPolres, emergency, mapCenter }: {
   }, [map, selectedPolres, emergency, mapCenter]);
 
   return null;
+}
+
+function CctvMarkersLayer({ points, enabled }: { points: CctvPoint[], enabled: boolean }) {
+  if (!enabled) return null;
+  return (
+    <>
+      {points.map(cam => (
+        <AdvancedMarker key={cam.id} position={{ lat: cam.lat, lng: cam.lng }}>
+          <div className="bg-[#0B1B32] border border-[#D4AF37]/50 rounded-full p-1 shadow-lg cursor-pointer group hover:scale-110 transition-transform">
+             <Video size={12} className={cam.status === 'Online' ? "text-[#D4AF37]" : "text-slate-600"} />
+             <div className="absolute top-8 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-[#0B1B32] border border-white/10 p-2 rounded text-[10px] text-white whitespace-nowrap z-50">
+                <div className="font-bold">{cam.name}</div>
+                <div className="text-[8px] opacity-50 uppercase tracking-widest">{cam.type} Monitoring</div>
+             </div>
+          </div>
+        </AdvancedMarker>
+      ))}
+    </>
+  );
+}
+
+function PredictedHotspotsLayer({ points, enabled }: { points: PredictionPoint[], enabled: boolean }) {
+  if (!enabled) return null;
+  return (
+    <>
+      {points.map(pt => (
+        <AdvancedMarker key={pt.id} position={{ lat: pt.lat, lng: pt.lng }}>
+          <div className="relative flex items-center justify-center">
+             <div className="absolute w-24 h-24 bg-red-500/20 rounded-full animate-pulse blur-xl" />
+             <div className="absolute w-12 h-12 border-2 border-red-500/30 rounded-full animate-ping" />
+             <ShieldAlert size={16} className="text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+             <div className="absolute top-10 bg-slate-950/90 border border-red-500/40 p-2 rounded text-[9px] text-white w-32 backdrop-blur-md">
+                <div className="font-black uppercase text-red-500 mb-0.5">AI Prediction: {pt.confidence}%</div>
+                <div className="leading-tight opacity-80">{pt.reasoning}</div>
+             </div>
+          </div>
+        </AdvancedMarker>
+      ))}
+    </>
+  );
+}
+
+function BmkgWeatherLayer({ enabled }: { enabled: boolean }) {
+  if (!enabled) return null;
+  // Simulating weather polygons near Ende/Maumere
+  return (
+    <AdvancedMarker position={{ lat: -8.8, lng: 121.6 }}>
+       <div className="relative">
+          <div className="absolute -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-500/10 border-2 border-dashed border-blue-400/20 rounded-full animate-[spin_20s_linear_infinite]" />
+          <div className="p-3 bg-blue-900/40 border border-blue-400/50 rounded-2xl backdrop-blur-lg flex items-center gap-3 text-blue-100">
+             <CloudRain size={20} className="animate-bounce" />
+             <div>
+                <div className="text-[10px] font-black uppercase tracking-tighter">BMKG Alert</div>
+                <div className="text-[9px] opacity-80">Potensi Hujan Lebat & Angin Kencang</div>
+             </div>
+          </div>
+       </div>
+    </AdvancedMarker>
+  );
+}
+
+function LayerControls() {
+  const { bmkgOverlayEnabled, cctvMarkersEnabled, predictiveMode, setBmkgOverlay, setCctvMarkers, setPredictiveMode } = useAppStore();
+  
+  return (
+    <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+       <div className="bg-[#0B1B32]/90 border border-white/10 backdrop-blur-xl p-3 rounded-2xl shadow-2xl flex flex-col gap-3 min-w-[180px]">
+          <div className="flex items-center gap-2 mb-1">
+             <Layers size={14} className="text-[#D4AF37]" />
+             <span className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37]">Tactical Layers</span>
+          </div>
+          
+          <button 
+            onClick={() => setPredictiveMode(!predictiveMode)}
+            className={cn(
+              "flex items-center justify-between px-3 py-2 rounded-xl transition-all border",
+              predictiveMode ? "bg-red-500/20 border-red-500/30 text-red-400" : "bg-white/5 border-white/5 text-slate-500"
+            )}
+          >
+             <div className="flex items-center gap-2">
+                <Activity size={12} />
+                <span className="text-[9px] font-bold uppercase tracking-tight">AI Predictions</span>
+             </div>
+             <div className={cn("w-2 h-2 rounded-full", predictiveMode ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" : "bg-slate-700")} />
+          </button>
+
+          <button 
+            onClick={() => setCctvMarkers(!cctvMarkersEnabled)}
+            className={cn(
+              "flex items-center justify-between px-3 py-2 rounded-xl transition-all border",
+              cctvMarkersEnabled ? "bg-[#D4AF37]/20 border-[#D4AF37]/30 text-[#D4AF37]" : "bg-white/5 border-white/5 text-slate-500"
+            )}
+          >
+             <div className="flex items-center gap-2">
+                <Video size={12} />
+                <span className="text-[9px] font-bold uppercase tracking-tight">CCTV Dishub</span>
+             </div>
+             <div className={cn("w-2 h-2 rounded-full", cctvMarkersEnabled ? "bg-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.8)]" : "bg-slate-700")} />
+          </button>
+
+          <button 
+            onClick={() => setBmkgOverlay(!bmkgOverlayEnabled)}
+            className={cn(
+              "flex items-center justify-between px-3 py-2 rounded-xl transition-all border",
+              bmkgOverlayEnabled ? "bg-blue-500/20 border-blue-500/30 text-blue-400" : "bg-white/5 border-white/5 text-slate-500"
+            )}
+          >
+             <div className="flex items-center gap-2">
+                <CloudRain size={12} />
+                <span className="text-[9px] font-bold uppercase tracking-tight">BMKG Weather</span>
+             </div>
+             <div className={cn("w-2 h-2 rounded-full", bmkgOverlayEnabled ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" : "bg-slate-700")} />
+          </button>
+       </div>
+    </div>
+  );
 }
 
 function PolicePostsLayer({ posts }: { posts: PolicePost[] }) {
@@ -108,6 +225,11 @@ export default function GoogleMap() {
   const emergency = useAppStore((state) => state.emergency);
   const mapCenter = useAppStore((state) => state.mapCenter);
   const posts = useAppStore((state) => state.policePosts);
+  const predictionPoints = useAppStore((state) => state.predictionPoints);
+  const predictiveMode = useAppStore((state) => state.predictiveMode);
+  const cctvPoints = useAppStore((state) => state.cctvPoints);
+  const cctvMarkersEnabled = useAppStore((state) => state.cctvMarkersEnabled);
+  const bmkgOverlayEnabled = useAppStore((state) => state.bmkgOverlayEnabled);
 
   if (!apiKey) return null;
 
@@ -126,6 +248,10 @@ export default function GoogleMap() {
           <GeoJsonLayer polresList={polres} />
           
           <PolicePostsLayer posts={posts} />
+          <CctvMarkersLayer points={cctvPoints} enabled={cctvMarkersEnabled} />
+          <PredictedHotspotsLayer points={predictionPoints} enabled={predictiveMode} />
+          <BmkgWeatherLayer enabled={bmkgOverlayEnabled} />
+
           <PatrolBreadcrumbs />
           <MapController 
             selectedPolres={selectedPolres} 
@@ -135,6 +261,7 @@ export default function GoogleMap() {
         </Map>
       </APIProvider>
       
+      <LayerControls />
       <SOSOverlay />
     </div>
   );
