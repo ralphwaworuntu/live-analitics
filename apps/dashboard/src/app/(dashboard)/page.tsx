@@ -6,6 +6,7 @@ import MissionView from "../../components/views/MissionView";
 import IntelligenceView from "../../components/views/IntelligenceView";
 import PatrolIntelView from "../../components/views/PatrolIntelView";
 import AnevView from "../../components/views/AnevView";
+import CoreDataView from "../../components/views/CoreDataView";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
@@ -18,12 +19,7 @@ function DashboardContent() {
       case "dashboard":
         return <DashboardView />;
       case "core-data":
-        return (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-in fade-in zoom-in duration-500">
-            <h2 className="text-xl font-bold uppercase tracking-widest font-mono">Biro Ops • Core Data Assets</h2>
-            <p className="mt-2 text-sm text-slate-600">Terintegrasi dengan Polda NTT DB - Menunggu Sinyal GIS</p>
-          </div>
-        );
+        return <CoreDataView />;
       case "statistics":
         return (
           <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-in fade-in zoom-in duration-500">

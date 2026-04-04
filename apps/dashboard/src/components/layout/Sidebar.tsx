@@ -3,11 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  ShieldAlert, 
-  Map as MapIcon, 
-  BrainCircuit, 
+import {
+  LayoutDashboard,
+  ShieldAlert,
+  Map as MapIcon,
+  BrainCircuit,
   Navigation,
   Settings,
   Activity,
@@ -41,9 +41,9 @@ const NavItem = ({ viewId, icon: Icon, label }: NavItemProps) => {
       {isActive && (
         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-yellow-500 rounded-r-full shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
       )}
-      
+
       <Icon size={18} className={cn("shrink-0 transition-colors", isActive ? "text-yellow-500" : "group-hover:text-white")} />
-      
+
       <span className="text-sm font-medium tracking-wide flex-1">{label}</span>
     </Link>
   );
@@ -52,7 +52,7 @@ const NavItem = ({ viewId, icon: Icon, label }: NavItemProps) => {
 export default function Sidebar() {
   return (
     <aside className="relative z-50 w-[280px] h-full bg-[#0B1B32] border-r border-white/5 flex flex-col overflow-hidden font-sans shrink-0">
-      
+
       {/* 1. BRANDING & TIMEFRAME GROUP */}
       <div className="p-6">
         <div className="flex items-center gap-3 mb-8">
@@ -87,9 +87,9 @@ export default function Sidebar() {
           Main Console
         </div>
         <div className="space-y-1">
-          <NavItem viewId="dashboard" icon={LayoutDashboard} label="Dashboard (GIS)" />
-          <NavItem viewId="core-data" icon={Gauge} label="Core Data Assets" />
-          <NavItem viewId="statistics" icon={Activity} label="Statistics Anev" />
+          <NavItem viewId="dashboard" icon={LayoutDashboard} label="Dashboard" />
+          <NavItem viewId="core-data" icon={Gauge} label="Core Data" />
+          <NavItem viewId="statistics" icon={Activity} label="Statistics" />
           <NavItem viewId="operasi" icon={ShieldAlert} label="Operasi" />
           <NavItem viewId="wilayah" icon={MapIcon} label="Wilayah (21 Polres)" />
           <NavItem viewId="patrol" icon={Navigation} label="Patrol Analysis" />

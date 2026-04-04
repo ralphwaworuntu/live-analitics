@@ -107,6 +107,10 @@ interface AppState {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   searchResults: SearchResult[];
+
+  // Map Tracking & Focus
+  mapCenter: { lat: number; lng: number; zoom?: number } | null;
+  setMapCenter: (center: { lat: number; lng: number; zoom?: number } | null) => void;
 }
 
 const defaultEmergency: EmergencyState = {
@@ -289,6 +293,10 @@ export const useAppStore = create<AppState>((set) => ({
     }
     return { searchQuery: query, searchResults: results };
   }),
+
+  // Map Focus
+  mapCenter: null,
+  setMapCenter: (center) => set({ mapCenter: center }),
 }));
 
 export function getSelectedPolres(state: AppState): PolresItem | null {

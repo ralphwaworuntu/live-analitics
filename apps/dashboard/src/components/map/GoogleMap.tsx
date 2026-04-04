@@ -3,12 +3,16 @@
 import { useEffect } from "react";
 import { APIProvider, Map, useMap, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { getSelectedPolres, useAppStore } from "@/store";
-import type { PolresItem, PolicePost } from "@/lib/types";
+import type { PolresItem, PolicePost, EmergencyState } from "@/lib/types";
 import { TowerControl, Siren, Zap } from "lucide-react";
 import PatrolBreadcrumbs from "@/components/map/PatrolBreadcrumbs";
 import { motion, AnimatePresence } from "framer-motion";
 
-function MapController({ selectedPolres, emergency }: { selectedPolres: PolresItem | null, emergency: any }) {
+function MapController({ selectedPolres, emergency, mapCenter }: { 
+  selectedPolres: PolresItem | null, 
+  emergency: EmergencyState,
+  mapCenter: { lat: number; lng: number, zoom?: number } | null
+}) {
   const map = useMap();
 
   useEffect(() => {
@@ -20,11 +24,17 @@ function MapController({ selectedPolres, emergency }: { selectedPolres: PolresIt
        return;
     }
 
+    if (mapCenter) {
+      map.panTo({ lat: mapCenter.lat, lng: mapCenter.lng });
+      if (mapCenter.zoom) map.setZoom(mapCenter.zoom);
+      return;
+    }
+
     if (selectedPolres) {
       map.panTo({ lat: selectedPolres.lat, lng: selectedPolres.lng });
       map.setZoom(11);
     }
-  }, [map, selectedPolres, emergency]);
+  }, [map, selectedPolres, emergency, mapCenter]);
 
   return null;
 }
@@ -96,6 +106,7 @@ export default function GoogleMap() {
   const polres = useAppStore((state) => state.polres);
   const selectedPolres = useAppStore(getSelectedPolres);
   const emergency = useAppStore((state) => state.emergency);
+  const mapCenter = useAppStore((state) => state.mapCenter);
   const posts = useAppStore((state) => state.policePosts);
 
   if (!apiKey) return null;
@@ -116,7 +127,11 @@ export default function GoogleMap() {
           
           <PolicePostsLayer posts={posts} />
           <PatrolBreadcrumbs />
-          <MapController selectedPolres={selectedPolres} emergency={emergency} />
+          <MapController 
+            selectedPolres={selectedPolres} 
+            emergency={emergency} 
+            mapCenter={mapCenter} 
+          />
         </Map>
       </APIProvider>
       
@@ -151,7 +166,7 @@ function GeoJsonLayer({ polresList }: { polresList: PolresItem[] }) {
       }),
     };
 
-    map.data.addGeoJson(geoJson as any);
+    map.data.addGeoJson(geoJson as object);
     map.data.setStyle((f) => {
       const s = f.getProperty("crimeStatus");
       let c = "#18C29C"; 
