@@ -7,62 +7,60 @@ import {
   ResizablePanelGroup 
 } from "@/components/ui/resizable";
 import { usePathname } from "next/navigation";
-import TacticalSidebar from "@/components/layout/TacticalSidebar";
+import Sidebar from "@/components/layout/Sidebar";
+import TopHeader from "@/components/layout/TopHeader";
 import IntelligencePanel from "@/components/ai/IntelligencePanel";
 
 export default function DashboardShell({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
 
-  // BYPASS FOR ABSOLUTE-ONLY HUD (HOME PAGE)
-  if (pathname === "/") return <>{children}</>;
-
   return (
-    <div className="h-screen w-full bg-[#07111F] text-[#EAF2FF] overflow-hidden">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="dashboard-root"
-          initial={{ opacity: 0, scale: 1.02 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="h-full w-full"
-        >
-          {/* @ts-expect-error react-resizable-panels types missing direction prop in this version */}
-          <ResizablePanelGroup direction="horizontal" className="h-[100dvh] w-full items-stretch relative">
-            
-            {/* Sidebar Taktis (Kiri) */}
-            <ResizablePanel
-              defaultSize={20}
-              minSize={15}
-              maxSize={25}
-              className="z-30"
+    <div className="h-screen w-full bg-[#07111F] text-[#EAF2FF] overflow-hidden flex">
+      {/* Sidebar - Fixed Width as requested (280px) */}
+      <Sidebar />
+      
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#07111F]">
+        <TopHeader />
+        
+        <div className="flex-1 overflow-hidden relative">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full"
             >
-               <TacticalSidebar />
-            </ResizablePanel>
+            {/* @ts-expect-error react-resizable-panels types missing direction prop in this version */}
+            <ResizablePanelGroup direction="horizontal" className="h-full w-full items-stretch relative">
+              
+              {/* Center Container (Map or Main View) */}
+              <ResizablePanel defaultSize={75} minSize={40} className="relative z-10 bg-[var(--color-bg)]">
+                <main className="h-full w-full relative overflow-hidden">
+                  {children}
+                </main>
+              </ResizablePanel>
 
-            <ResizableHandle withHandle className="z-40" />
+              <ResizableHandle withHandle className="z-40 border-l border-white/5 bg-slate-950" />
 
-            {/* Center Container */}
-            <ResizablePanel defaultSize={55} minSize={40} className="relative z-10 bg-[var(--color-bg)]">
-              <main className="h-full w-full relative overflow-hidden">
-                {children}
-              </main>
-            </ResizablePanel>
+              {/* Intelligence Panel (Right Sidebar) - Collapsed by default to keep it clean */}
+              <ResizablePanel
+                defaultSize={0}
+                minSize={0}
+                maxSize={35}
+                collapsible={true}
+                className="z-30"
+              >
+                <IntelligencePanel />
+              </ResizablePanel>
 
-            <ResizableHandle withHandle className="z-40 border-l border-white/5 bg-slate-950" />
-
-            {/* Intelligence Panel (Kanan) */}
-            <ResizablePanel
-              defaultSize={25}
-              minSize={20}
-              maxSize={35}
-              className="z-30"
-            >
-              <IntelligencePanel />
-            </ResizablePanel>
-
-          </ResizablePanelGroup>
-        </motion.div>
-      </AnimatePresence>
+            </ResizablePanelGroup>
+          </motion.div>
+        </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }

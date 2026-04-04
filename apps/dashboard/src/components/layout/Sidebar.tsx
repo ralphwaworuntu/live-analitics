@@ -1,146 +1,134 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { 
+  LayoutDashboard, 
+  ShieldAlert, 
+  Map as MapIcon, 
+  BrainCircuit, 
+  Navigation,
+  Settings,
+  Activity,
+  Gauge,
+  ChevronDown,
+  ShieldCheck
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-import { UserMenu } from "@/components/layout/UserMenu";
-import { navGroups } from "@/lib/nav";
-import { useAppStore } from "@/store";
+interface NavItemProps {
+  viewId: string;
+  icon: React.ElementType;
+  label: string;
+}
 
-export default function Sidebar() {
-  const pathname = usePathname();
-  const [expanded, setExpanded] = useState(true);
-  const searchQuery = useAppStore((state) => state.searchQuery);
-  const selectedPolresId = useAppStore((state) => state.selectedPolresId);
-
-  const visibleGroups = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return navGroups;
-    }
-
-    const query = searchQuery.toLowerCase();
-    return navGroups
-      .map((group) => ({
-        ...group,
-        items: group.items.filter((item) => item.label.toLowerCase().includes(query)),
-      }))
-      .filter((group) => group.items.length > 0);
-  }, [searchQuery]);
+const NavItem = ({ viewId, icon: Icon, label }: NavItemProps) => {
+  const searchParams = useSearchParams();
+  const currentView = searchParams.get("view") || "dashboard";
+  const isActive = currentView === viewId;
 
   return (
-    <aside
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-      style={{
-        width: expanded ? "var(--sidebar-expanded)" : "var(--sidebar-collapsed)",
-        transition: "width var(--transition-base)",
-      }}
-      className="fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden"
+    <Link
+      href={`/?view=${viewId}`}
+      className={cn(
+        "group relative flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg transition-all duration-200",
+        "text-slate-400 hover:text-white hover:bg-white/5",
+        isActive && "text-white bg-white/5"
+      )}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,#ffffff,#f8fbff)]" />
-      <div className="absolute inset-y-0 right-0 w-px bg-[linear-gradient(180deg,transparent,rgba(24,50,77,0.12),transparent)]" />
+      {/* Active Indicator */}
+      {isActive && (
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-yellow-500 rounded-r-full shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+      )}
+      
+      <Icon size={18} className={cn("shrink-0 transition-colors", isActive ? "text-yellow-500" : "group-hover:text-white")} />
+      
+      <span className="text-sm font-medium tracking-wide flex-1">{label}</span>
+    </Link>
+  );
+};
 
-      <div className="relative z-10 flex h-full flex-col">
-        <div
-          className="border-b border-[var(--color-border)] px-4 py-4"
-          style={{ minHeight: "var(--topbar-height)" }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(31,103,204,1),rgba(185,139,0,0.7))] text-sm font-black tracking-[0.18em] text-white shadow-[var(--shadow-soft)]">
-              SNT
-            </div>
-            {expanded ? (
-              <div className="min-w-0 animate-[fade-in_0.2s_ease] overflow-hidden whitespace-nowrap">
-                <div className="text-sm font-semibold text-[var(--color-text)]">SENTINEL</div>
-                <div className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-muted)]">
-                  Command Grid Polda NTT
-                </div>
-              </div>
-            ) : null}
+export default function Sidebar() {
+  return (
+    <aside className="relative z-50 w-[280px] h-full bg-[#0B1B32] border-r border-white/5 flex flex-col overflow-hidden font-sans shrink-0">
+      
+      {/* 1. BRANDING & TIMEFRAME GROUP */}
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/10 shrink-0">
+            <ShieldCheck size={24} className="text-[#0B1B32]" />
           </div>
-          {expanded ? (
-            <div className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] px-3 py-3 text-[11px] text-[var(--color-muted)]">
-              <div className="eyebrow">Focus</div>
-              <div className="mt-2 text-xs font-semibold text-[var(--color-text)]">
-                {selectedPolresId ? `Wilayah aktif: ${selectedPolresId}` : "NTT Regional Overview"}
-              </div>
-              <div className="mt-1">Navigasi, AI, dan peta mengikuti context yang sama.</div>
-            </div>
-          ) : null}
+          <div>
+            <h1 className="text-lg font-bold text-white leading-tight font-mono uppercase tracking-tight">Polda NTT</h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black">Command Center</p>
+          </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {visibleGroups.map((group) => (
-            <div key={group.title} className="mb-5">
-              {expanded ? (
-                <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--color-subtle)]">
-                  {group.title}
-                </div>
-              ) : null}
-              <ul className="space-y-1">
-                {group.items.map((item) => {
-                  const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-                  const isSelectedPolres = item.href.startsWith("/polres/") && item.id === selectedPolresId;
-
-                  return (
-                    <li key={item.id}>
-                      <Link
-                        href={item.href}
-                        className={`group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm transition-all duration-200 ${
-                          isActive
-                            ? "bg-[rgba(31,103,204,0.08)] text-[var(--color-text)] shadow-[var(--shadow-soft)]"
-                            : "text-[var(--color-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]"
-                        }`}
-                      >
-                        <span
-                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-[13px] font-semibold transition-colors ${
-                            isActive || isSelectedPolres
-                              ? "border-[var(--color-brand-primary)]/18 bg-[rgba(31,103,204,0.1)] text-[var(--color-brand-primary)]"
-                              : "border-[var(--color-border)] bg-white text-[var(--color-subtle)] group-hover:text-[var(--color-text)]"
-                          }`}
-                        >
-                          {item.label
-                            .split(" ")
-                            .slice(0, 2)
-                            .map((part) => part[0])
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </span>
-                        {expanded ? (
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium">{item.label}</div>
-                            <div className="truncate text-[10px] uppercase tracking-[0.16em] text-[var(--color-subtle)]">
-                              {item.id.replace(/-/g, " ")}
-                            </div>
-                          </div>
-                        ) : null}
-                        {expanded && (isActive || isSelectedPolres) ? (
-                          <div className="h-9 w-1 rounded-full bg-[linear-gradient(180deg,var(--color-brand-primary),transparent)]" />
-                        ) : null}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </nav>
-
-        <div className="border-t border-[var(--color-border)] p-3">
-          {expanded ? (
-            <UserMenu />
-          ) : (
-            <div className="relative mx-auto h-10 w-10 rounded-2xl border border-[var(--color-border)] bg-white">
-              <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-[var(--color-text)]">
-                SP
-              </div>
-              <div className="status-dot status-dot--online absolute -bottom-0.5 -right-0.5 border-2 border-white" />
-            </div>
-          )}
+        <div className="relative group pt-4 border-t border-white/5">
+          <label className="block text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black mb-2.5 ml-1">
+            Platform Timeframe
+          </label>
+          <div className="relative">
+            <select className="appearance-none w-full bg-slate-900/50 border border-white/10 rounded-lg px-3 py-2.5 text-xs font-bold text-slate-300 focus:outline-none focus:ring-1 focus:ring-yellow-500/50 cursor-pointer transition-all hover:bg-slate-900/80 uppercase tracking-widest">
+              <option value="current">Real-time / Live</option>
+              <option value="last-24h">Operasi 24 Jam</option>
+              <option value="last-week">Laporan Mingguan</option>
+              <option value="last-month">Arsip Bulanan</option>
+            </select>
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none group-hover:text-slate-300 transition-colors" />
+          </div>
         </div>
       </div>
+
+      {/* 2. NAVIGATION AREA */}
+      <nav className="flex-1 overflow-y-auto pt-2 pb-6 custom-scrollbar">
+        <div className="px-6 mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500/60">
+          Main Console
+        </div>
+        <div className="space-y-1">
+          <NavItem viewId="dashboard" icon={LayoutDashboard} label="Dashboard (GIS)" />
+          <NavItem viewId="core-data" icon={Gauge} label="Core Data Assets" />
+          <NavItem viewId="statistics" icon={Activity} label="Statistics Anev" />
+          <NavItem viewId="operasi" icon={ShieldAlert} label="Operasi" />
+          <NavItem viewId="wilayah" icon={MapIcon} label="Wilayah (21 Polres)" />
+          <NavItem viewId="patrol" icon={Navigation} label="Patrol Analysis" />
+          <NavItem viewId="intelijen" icon={BrainCircuit} label="Intelijen AI" />
+          <NavItem viewId="sistem" icon={Settings} label="Sistem Anev" />
+        </div>
+      </nav>
+
+      {/* 3. TACTICAL FOOTER */}
+      <div className="p-4 border-t border-white/5 bg-slate-900/20">
+        <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/5 shadow-inner">
+          <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center shrink-0 border border-white/10 shadow-lg">
+            <span className="text-[10px] font-black text-white uppercase italic">CP</span>
+          </div>
+          <div className="flex flex-col min-w-0 text-left">
+            <span className="text-[11px] font-black text-white truncate tracking-tight uppercase">Biro Ops Co-Pilot</span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
+              <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Tactical Locked</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+      `}</style>
     </aside>
   );
 }

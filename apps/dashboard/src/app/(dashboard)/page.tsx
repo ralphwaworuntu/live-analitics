@@ -1,29 +1,45 @@
 "use client";
 
-import React, { useState } from "react";
-import SidebarNav from "@/components/layout/SidebarNav";
+import React from "react";
 import DashboardView from "../../components/views/DashboardView";
 import MissionView from "../../components/views/MissionView";
 import IntelligenceView from "../../components/views/IntelligenceView";
 import PatrolIntelView from "../../components/views/PatrolIntelView";
 import AnevView from "../../components/views/AnevView";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function DashboardPage() {
-  const [activeMenu, setActiveMenu] = useState("Dashboard");
+function DashboardContent() {
+  const searchParams = useSearchParams();
+  const currentView = searchParams.get("view") || "dashboard";
 
   const renderContent = () => {
-    switch (activeMenu) {
-      case "Dashboard":
+    switch (currentView) {
+      case "dashboard":
         return <DashboardView />;
-      case "Operasi":
+      case "core-data":
+        return (
+          <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-in fade-in zoom-in duration-500">
+            <h2 className="text-xl font-bold uppercase tracking-widest font-mono">Biro Ops • Core Data Assets</h2>
+            <p className="mt-2 text-sm text-slate-600">Terintegrasi dengan Polda NTT DB - Menunggu Sinyal GIS</p>
+          </div>
+        );
+      case "statistics":
+        return (
+          <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-in fade-in zoom-in duration-500">
+            <h2 className="text-xl font-bold uppercase tracking-widest font-mono">Polda NTT • Statistics Anev</h2>
+            <p className="mt-2 text-sm text-slate-600">Sinkronisasi Laporan Operasional Sektor NTT</p>
+          </div>
+        );
+      case "operasi":
         return <MissionView />;
-      case "Patrol Analysis":
+      case "patrol":
         return <PatrolIntelView />;
-      case "Intelijen":
+      case "intelijen":
         return <IntelligenceView />;
-      case "Sistem":
+      case "sistem":
         return <AnevView />;
-      case "Wilayah (21 Polres)":
+      case "wilayah":
         return (
           <div className="flex items-center justify-center h-full text-slate-400">
             Peta Wilayah NTT (Menunggu Integrasi Map Engine)
@@ -35,11 +51,16 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#07111F] text-[#EAF2FF] overflow-hidden">
-      <SidebarNav activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
-      <main className="flex-1 overflow-auto bg-[#07111F] relative">
-        {renderContent()}
-      </main>
+    <div className="flex-1 h-full overflow-hidden relative bg-[#07111F]">
+      {renderContent()}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="h-full w-full bg-[#07111F]" />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

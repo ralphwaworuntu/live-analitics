@@ -26,13 +26,26 @@ const navItems = [
 interface SidebarNavProps {
   activeMenu: string;
   setActiveMenu: (menu: string) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export default function SidebarNav({ activeMenu, setActiveMenu }: SidebarNavProps) {
+export default function SidebarNav({ activeMenu, setActiveMenu, isOpen, onClose }: SidebarNavProps) {
   const tracks = useAppStore(state => state.personnelTracks);
   
   return (
-    <aside className="flex h-full w-64 flex-col bg-[#0B1B32] border-r border-white/10 text-slate-300 z-50">
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] transition-all"
+          onClick={onClose}
+        />
+      )}
+
+      <aside className={`fixed lg:static inset-y-0 left-0 flex h-full w-72 flex-col bg-[#0B1B32] border-r border-white/10 text-slate-300 z-[60] transform transition-transform duration-300 lg:translate-x-0 ${
+        isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+      }`}>
       <div className="flex items-center h-16 px-6 border-b border-white/10">
         <h1 className="text-lg font-bold tracking-widest text-white italic">SENTINEL-AI</h1>
       </div>
@@ -111,5 +124,6 @@ export default function SidebarNav({ activeMenu, setActiveMenu }: SidebarNavProp
         </div>
       </div>
     </aside>
+    </>
   );
 }

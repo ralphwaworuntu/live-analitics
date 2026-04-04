@@ -4,13 +4,13 @@
   "description": "PWA command center untuk live tracking dan koordinasi operasional Polda NTT.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#07111F",
+  "theme_color": "#0B4AA2",
   "orientation": "portrait",
   "icons": [
     {
       "src": "/favicon.ico",
-      "sizes": "any",
+      "sizes": "16x16 32x32 48x48",
       "type": "image/x-icon"
     }
   ]
