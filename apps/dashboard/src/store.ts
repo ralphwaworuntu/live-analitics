@@ -88,12 +88,21 @@ interface AppState {
   predictiveMode: boolean;
   setPredictiveMode: (enabled: boolean) => void;
   predictionPoints: PredictionPoint[];
+  shadowHotspots: ShadowHotspot[];
+  
+  // Tactical Dispatch
+  activePatrolRoute: { lat: number; lng: number }[] | null;
+  setPatrolRoute: (route: { lat: number; lng: number }[] | null) => void;
+  
+  dispatchModalOpen: boolean;
+  selectedIncident: FieldReport | null; // Incident for dispatch
+  setDispatchModal: (open: boolean, incident?: FieldReport | null) => void;
   
   // Logistics & Assets
   polresAssets: PolresAssetStrength[];
   auditLogs: AuditLogEntry[];
   addAuditLog: (entry: Omit<AuditLogEntry, "id" | "timestamp">) => void;
-
+  
   // OSINT
   osintEnabled: boolean;
   setOsintEnabled: (enabled: boolean) => void;
@@ -181,10 +190,42 @@ export const useAppStore = create<AppState>((set) => ({
   activeMissions: [],
   predictiveMode: true,
   predictionPoints: [
-    { id: 'pred-1', lat: -10.17, lng: 123.60, weight: 8, label: "Potensi Kejahatan Jalanan", confidence: 88, reasoning: "Tren mingguan menunjukkan tingginya aktivitas di jam malam." },
-    { id: 'pred-2', lat: -10.15, lng: 123.63, weight: 6, label: "Kemacetan Tinggi", confidence: 72, reasoning: "Analisis historis menunjukkan bottleneck di titik ini pada jam masuk kerja." },
-    { id: 'pred-3', lat: -8.50, lng: 119.88, weight: 9, label: "Risiko Laka Lantas", confidence: 91, reasoning: "Curah hujan tinggi dan volume kendaraan wisata meningkat di Labuan Bajo." },
+    { id: 'pred-1', lat: -10.170, lng: 123.600, weight: 8, label: "Potensi Kejahatan Jalanan", confidence: 88, reasoning: "Tren mingguan menunjukkan tingginya aktivitas di jam malam." },
+    { id: 'pred-2', lat: -10.150, lng: 123.630, weight: 6, label: "Kemacetan Tinggi", confidence: 72, reasoning: "Analisis historis menunjukkan bottleneck di titik ini pada jam masuk kerja." },
+    { id: 'pred-3', lat: -8.500, lng: 119.880, weight: 9, label: "Risiko Laka Lantas", confidence: 91, reasoning: "Curah hujan tinggi dan volume kendaraan wisata meningkat di Labuan Bajo." },
   ],
+  shadowHotspots: [
+    { 
+      id: 'shadow-1', 
+      center: { lat: -10.165, lng: 123.605 }, 
+      riskShift: "Curanmor", 
+      confidence: 94, 
+      intensity: 0.7,
+      points: [
+        { lat: -10.160, lng: 123.600 },
+        { lat: -10.160, lng: 123.610 },
+        { lat: -10.170, lng: 123.610 },
+        { lat: -10.170, lng: 123.600 }
+      ] 
+    },
+    { 
+      id: 'shadow-2', 
+      center: { lat: -10.145, lng: 123.625 }, 
+      riskShift: "High Occupancy", 
+      confidence: 82, 
+      intensity: 0.5,
+      points: [
+        { lat: -10.140, lng: 123.620 },
+        { lat: -10.140, lng: 123.630 },
+        { lat: -10.150, lng: 123.630 },
+        { lat: -10.150, lng: 123.620 }
+      ] 
+    },
+  ],
+  activePatrolRoute: null,
+  dispatchModalOpen: false,
+  selectedIncident: null,
+
   polresAssets: [],
   auditLogs: [],
   osintEnabled: false,
@@ -291,6 +332,8 @@ export const useAppStore = create<AppState>((set) => ({
   })),
 
   setPredictiveMode: (enabled) => set({ predictiveMode: enabled }),
+  setPatrolRoute: (route) => set({ activePatrolRoute: route }),
+  setDispatchModal: (open, incident) => set({ dispatchModalOpen: open, selectedIncident: incident || null }),
   addAuditLog: (entry) => set((state) => ({
     auditLogs: [{ ...entry, id: `audit-${Date.now()}`, timestamp: new Date().toISOString() }, ...state.auditLogs]
   })),

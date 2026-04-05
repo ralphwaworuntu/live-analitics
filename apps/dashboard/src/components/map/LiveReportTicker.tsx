@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, AlertTriangle, Radio } from "lucide-react";
+import { Eye, AlertTriangle, Radio, ShieldAlert } from "lucide-react";
 import { mockMobileReports } from "@/lib/mockMobileReports";
 import type { FieldReport, YoloBBox } from "@/lib/types";
+import { useAppStore } from "@/store";
 
 function VisionModal({ report, onClose }: { report: FieldReport; onClose: () => void }) {
   return (
@@ -69,6 +70,7 @@ function VisionModal({ report, onClose }: { report: FieldReport; onClose: () => 
 
 export default function LiveReportTicker() {
   const [selectedReport, setSelectedReport] = useState<FieldReport | null>(null);
+  const setDispatchModal = useAppStore(state => state.setDispatchModal);
   const reports = mockMobileReports;
 
   const formatTime = (iso: string) => {
@@ -91,7 +93,13 @@ export default function LiveReportTicker() {
                 key={report.id}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                onClick={() => report.yoloBoxes && report.yoloBoxes.length > 0 ? setSelectedReport(report) : null}
+                onClick={() => {
+                   if (report.yoloBoxes && report.yoloBoxes.length > 0) {
+                      setSelectedReport(report);
+                   } else {
+                      setDispatchModal(true, report);
+                   }
+                }}
                 className={`w-full text-left rounded-xl border p-2.5 transition-all ${
                   report.isSOS
                     ? "border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 hover:bg-[var(--color-danger)]/15"
@@ -116,6 +124,15 @@ export default function LiveReportTicker() {
                       <Eye className="w-2.5 h-2.5" /> AI Analyzed
                     </span>
                   )}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDispatchModal(true, report);
+                    }}
+                    className="ml-auto inline-flex items-center gap-1.5 rounded bg-[#D4AF37] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-black hover:bg-white transition-colors"
+                  >
+                    <ShieldAlert size={10} /> Smart Dispatch
+                  </button>
                 </div>
               </motion.button>
             ))}

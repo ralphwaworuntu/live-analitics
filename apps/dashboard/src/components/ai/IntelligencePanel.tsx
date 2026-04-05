@@ -115,7 +115,9 @@ export default function IntelligencePanel() {
           { title: "Intel Update 02/04/2026", snippet: "Analisis ancaman terkini menunjukkan peningkatan aktivitas penyelundupan di sektor barat..." },
         ],
         actionBtn: response.actionBtn || (
-          trimmedPrompt.toLowerCase().includes("strategi") || trimmedPrompt.toLowerCase().includes("geser")
+          trimmedPrompt.toLowerCase().includes("patroli") || trimmedPrompt.toLowerCase().includes("rute")
+            ? { label: "Optimasi Rute Patroli", type: "generate-patrol" as const }
+            : trimmedPrompt.toLowerCase().includes("strategi") || trimmedPrompt.toLowerCase().includes("geser")
             ? { label: "Plot Strategi", type: "plot-strategy" as const, lat: selectedPolres?.lat ?? -10.15, lng: selectedPolres?.lng ?? 123.58, radius: 5000 }
             : undefined
         ),
@@ -148,6 +150,25 @@ export default function IntelligencePanel() {
       }));
     } else if (action.type === "fly-to") {
       window.dispatchEvent(new CustomEvent("map:fly-to-emergency"));
+    } else if (action.type === "generate-patrol") {
+       // Logic for AI-Generated Patrol Routes
+       const hotspots = useAppStore.getState().shadowHotspots;
+       const posts = useAppStore.getState().policePosts;
+       const targetPost = posts[0]; // Logic: Must end at a designated Pos Polisi.
+       
+       if (hotspots.length >= 2) {
+          const route = [
+             { lat: -10.160, lng: 123.600 },
+             ...hotspots.slice(0, 3).map(h => h.center),
+             { lat: targetPost.lat, lng: targetPost.lng }
+          ];
+          useAppStore.getState().setPatrolRoute(route);
+          pushNotification({
+            title: "Optimasi Rute Selesai",
+            description: "Sentinel-AI telah memplot rute patroli melalui 3 hotspot prediktif.",
+            level: "info"
+          });
+       }
     }
   };
 

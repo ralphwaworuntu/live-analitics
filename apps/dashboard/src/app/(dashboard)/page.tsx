@@ -7,6 +7,7 @@ import IntelligenceView from "../../components/views/IntelligenceView";
 import PatrolIntelView from "../../components/views/PatrolIntelView";
 import AnevView from "../../components/views/AnevView";
 import CoreDataView from "../../components/views/CoreDataView";
+import StatisticsView from "../../components/views/StatisticsView";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
@@ -21,12 +22,7 @@ function DashboardContent() {
       case "core-data":
         return <CoreDataView />;
       case "statistics":
-        return (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-in fade-in zoom-in duration-500">
-            <h2 className="text-xl font-bold uppercase tracking-widest font-mono">Polda NTT • Statistics Anev</h2>
-            <p className="mt-2 text-sm text-slate-600">Sinkronisasi Laporan Operasional Sektor NTT</p>
-          </div>
-        );
+        return <StatisticsView />;
       case "operasi":
         return <MissionView />;
       case "patrol":

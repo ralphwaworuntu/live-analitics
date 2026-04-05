@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
-import { APIProvider, Map, useMap, AdvancedMarker } from "@vis.gl/react-google-maps";
+import { useEffect, useMemo, Fragment } from "react";
+import { APIProvider, Map, useMap, AdvancedMarker, Polyline, Polygon } from "@vis.gl/react-google-maps";
 import { getSelectedPolres, useAppStore } from "@/store";
-import type { PolresItem, PolicePost, EmergencyState, CctvPoint, PredictionPoint } from "@/lib/types";
-import { TowerControl, Siren, Zap, CloudRain, Video, Layers, Activity, ShieldAlert } from "lucide-react";
+import type { PolresItem, PolicePost, EmergencyState, CctvPoint, ShadowHotspot, FieldReport } from "@/lib/types";
+import { TowerControl, Siren, Zap, CloudRain, Video, Layers, Activity, AlertTriangle } from "lucide-react";
 import PatrolBreadcrumbs from "@/components/map/PatrolBreadcrumbs";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import SmartDispatchModal from "@/components/map/SmartDispatchModal";
+import { mockMobileReports } from "@/lib/mockMobileReports";
 
 function MapController({ selectedPolres, emergency, mapCenter }: { 
   selectedPolres: PolresItem | null, 
@@ -59,24 +61,70 @@ function CctvMarkersLayer({ points, enabled }: { points: CctvPoint[], enabled: b
   );
 }
 
-function PredictedHotspotsLayer({ points, enabled }: { points: PredictionPoint[], enabled: boolean }) {
+function ShadowHotspotsLayer({ hotspots, enabled, timeShift }: { hotspots: ShadowHotspot[], enabled: boolean, timeShift: number }) {
+  // Shift positions based on time slider for dynamic risk movement
+  const shiftedHotspots = useMemo(() => {
+    return hotspots.map(h => ({
+      ...h,
+      points: h.points.map(p => ({
+        lat: p.lat + (timeShift / 10000) * (h.id === 'shadow-1' ? 1 : -1),
+        lng: p.lng + (timeShift / 10000) * (h.id === 'shadow-1' ? -1 : 1)
+      }))
+    }));
+  }, [hotspots, timeShift]);
+
   if (!enabled) return null;
+
   return (
     <>
-      {points.map(pt => (
-        <AdvancedMarker key={pt.id} position={{ lat: pt.lat, lng: pt.lng }}>
-          <div className="relative flex items-center justify-center">
-             <div className="absolute w-24 h-24 bg-red-500/20 rounded-full animate-pulse blur-xl" />
-             <div className="absolute w-12 h-12 border-2 border-red-500/30 rounded-full animate-ping" />
-             <ShieldAlert size={16} className="text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-             <div className="absolute top-10 bg-slate-950/90 border border-red-500/40 p-2 rounded text-[9px] text-white w-32 backdrop-blur-md">
-                <div className="font-black uppercase text-red-500 mb-0.5">AI Prediction: {pt.confidence}%</div>
-                <div className="leading-tight opacity-80">{pt.reasoning}</div>
+      {shiftedHotspots.map(h => (
+        <Fragment key={h.id}>
+          <Polygon 
+             paths={h.points}
+             fillColor="#ff00ff"
+             fillOpacity={0.3}
+             strokeColor="#ff00ff"
+             strokeWeight={2}
+             strokeOpacity={0.8}
+          />
+          <AdvancedMarker position={h.center}>
+             <div className="relative flex flex-col items-center">
+                <div className="w-4 h-4 bg-magenta-500 rounded-full animate-ping absolute bg-[#ff00ff]" />
+                <div className="bg-[#ff00ff] text-white text-[8px] font-black px-2 py-0.5 rounded shadow-lg uppercase tracking-widest whitespace-nowrap border border-white/20">
+                  SHADOW: {h.riskShift} ({h.confidence}%)
+                </div>
              </div>
-          </div>
-        </AdvancedMarker>
+          </AdvancedMarker>
+        </Fragment>
       ))}
     </>
+  );
+}
+
+function AIPatrolRouteLayer({ route }: { route: { lat: number; lng: number }[] | null }) {
+  if (!route) return null;
+  return (
+     <>
+       <Polyline 
+         path={route}
+         strokeColor="#D4AF37"
+         strokeWeight={4}
+         strokeOpacity={0} // Invisible line for icons to follow
+         icons={[{
+            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
+            offset: '0',
+            repeat: '20px'
+         }]}
+       />
+       {route.map((pt, i) => (
+         <AdvancedMarker key={i} position={pt}>
+            <div className={cn(
+              "w-2 h-2 rounded-full border border-white",
+              i === 0 ? "bg-green-500" : i === route.length - 1 ? "bg-blue-600" : "bg-[#D4AF37]"
+            )} />
+         </AdvancedMarker>
+       ))}
+     </>
   );
 }
 
@@ -156,6 +204,65 @@ function LayerControls() {
   );
 }
 
+function FieldReportsLayer({ reports }: { reports: FieldReport[] }) {
+  const setDispatchModal = useAppStore(state => state.setDispatchModal);
+  return (
+    <>
+      {reports.map(report => (
+        <AdvancedMarker 
+          key={report.id} 
+          position={{ lat: report.lat, lng: report.lng }}
+          onClick={() => setDispatchModal(true, report)}
+        >
+          <div className={cn(
+            "p-1 rounded-full border-2 cursor-pointer animate-bounce shadow-xl",
+            report.isSOS ? "bg-red-600 border-white text-white" : "bg-white border-red-600 text-red-600"
+          )}>
+             <AlertTriangle size={14} className={report.isSOS ? "animate-pulse" : ""} />
+             <div className="absolute top-8 left-1/2 -track-x-1/2 scale-0 group-hover:scale-100 transition-all bg-slate-900 text-white p-2 rounded text-[10px] whitespace-nowrap z-50">
+                <div className="font-bold">{report.personnelName}</div>
+                <div>{report.locationName}</div>
+             </div>
+          </div>
+        </AdvancedMarker>
+      ))}
+    </>
+  );
+}
+
+function LiveTickerOverlay() {
+  return (
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 w-full max-w-2xl px-4">
+       <motion.div 
+         initial={{ y: 20, opacity: 0 }}
+         animate={{ y: 0, opacity: 1 }}
+         className="bg-[#0B1B32]/95 border border-[#D4AF37]/30 backdrop-blur-xl p-3 rounded-2xl shadow-2xl flex items-center gap-4 overflow-hidden"
+       >
+          <div className="flex items-center gap-2 flex-shrink-0 animate-pulse">
+             <div className="w-2 h-2 rounded-full bg-red-600" />
+             <span className="text-[10px] font-black uppercase text-red-500 tracking-tighter">AI Suggestion</span>
+          </div>
+          <div className="h-4 w-px bg-white/10" />
+          <div className="flex-1 overflow-hidden">
+             <motion.div 
+               animate={{ x: [300, -600] }}
+               transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+               className="text-[11px] font-bold text-white uppercase tracking-tight whitespace-nowrap"
+             >
+                AI Suggestion: Increased Curanmor risk in Oebufu sector. Suggesting unit patrol relocation. • 
+                Detecting unusual vehicle cluster in Labuan Bajo sector. Possible convoy activity detected. •
+                Weather alert: Heavy rain predicted for Kupang. Monitor drainage systems.
+             </motion.div>
+          </div>
+          <div className="h-4 w-px bg-white/10" />
+          <div className="p-1 px-2 bg-[#D4AF37]/20 border border-[#D4AF37]/40 rounded text-[9px] font-black text-[#D4AF37] uppercase tracking-widest shrink-0">
+             High Precision Tracking
+          </div>
+       </motion.div>
+    </div>
+  );
+}
+
 function PolicePostsLayer({ posts }: { posts: PolicePost[] }) {
   return (
     <>
@@ -225,11 +332,14 @@ export default function GoogleMap() {
   const emergency = useAppStore((state) => state.emergency);
   const mapCenter = useAppStore((state) => state.mapCenter);
   const posts = useAppStore((state) => state.policePosts);
-  const predictionPoints = useAppStore((state) => state.predictionPoints);
+  const shadowHotspots = useAppStore((state) => state.shadowHotspots);
   const predictiveMode = useAppStore((state) => state.predictiveMode);
+  const historyTimestamp = useAppStore((state) => state.historyTimestamp);
+  const activePatrolRoute = useAppStore((state) => state.activePatrolRoute);
   const cctvPoints = useAppStore((state) => state.cctvPoints);
   const cctvMarkersEnabled = useAppStore((state) => state.cctvMarkersEnabled);
   const bmkgOverlayEnabled = useAppStore((state) => state.bmkgOverlayEnabled);
+  const reports = useMemo(() => mockMobileReports, []);
 
   if (!apiKey) return null;
 
@@ -245,11 +355,13 @@ export default function GoogleMap() {
           style={{ width: "100%", height: "100%" }}
         >
           {/* Polres Layer */}
-          <GeoJsonLayer polresList={polres} />
+           <GeoJsonLayer polresList={polres} />
           
-          <PolicePostsLayer posts={posts} />
+           <PolicePostsLayer posts={posts} />
+          <FieldReportsLayer reports={reports} />
           <CctvMarkersLayer points={cctvPoints} enabled={cctvMarkersEnabled} />
-          <PredictedHotspotsLayer points={predictionPoints} enabled={predictiveMode} />
+          <ShadowHotspotsLayer hotspots={shadowHotspots} enabled={predictiveMode} timeShift={historyTimestamp} />
+          <AIPatrolRouteLayer route={activePatrolRoute} />
           <BmkgWeatherLayer enabled={bmkgOverlayEnabled} />
 
           <PatrolBreadcrumbs />
@@ -263,6 +375,8 @@ export default function GoogleMap() {
       
       <LayerControls />
       <SOSOverlay />
+      <LiveTickerOverlay />
+      <SmartDispatchModal />
     </div>
   );
 }

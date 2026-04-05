@@ -78,7 +78,7 @@ export interface AIReference {
 
 export interface AIChatAction {
   label: string;
-  type: "plot-strategy" | "fly-to" | "generate-anev";
+  type: "plot-strategy" | "fly-to" | "generate-anev" | "generate-patrol";
   lat?: number;
   lng?: number;
   radius?: number;
@@ -201,6 +201,17 @@ export interface PredictionPoint {
   label: string;
   confidence: number; 
   reasoning: string;
+  isShadow?: boolean; // New: indicates a predictive "shadow" hotspot
+  radius?: number; // For circular pulse
+}
+
+export interface ShadowHotspot {
+  id: string;
+  center: { lat: number; lng: number };
+  points: { lat: number; lng: number }[]; // Polygon points
+  intensity: number;
+  riskShift: string; // e.g. "Curanmor", "Laka Lantas"
+  confidence: number;
 }
 
 export interface PolresAssetStrength {
