@@ -23,6 +23,7 @@ import type {
   PolicePost,
   FieldReport,
   CctvPoint,
+  ShadowHotspot,
 } from "@/lib/types";
 import { mockPersonnelTracks } from "@/lib/mockPatrolData";
 
@@ -132,6 +133,16 @@ interface AppState {
   incomingPublicReport: FieldReport | null;
   triggerPublicReport: (report: FieldReport) => void;
   clearPublicReport: () => void;
+
+  // PLAYBACK ENGINE
+  playbackActive: boolean;
+  playbackSpeed: number;
+  setPlaybackActive: (active: boolean) => void;
+  setPlaybackSpeed: (speed: number) => void;
+
+  // GEOFENCE
+  geofenceAlerts: { unitId: string; message: string; timestamp: string }[];
+  addGeofenceAlert: (alert: { unitId: string; message: string; timestamp: string }) => void;
 }
 
 const defaultEmergency: EmergencyState = {
@@ -178,7 +189,12 @@ export const useAppStore = create<AppState>((set) => ({
      fuelStatus: 75 - (idx * 5),
      odometer: 1240 + (idx * 150),
      fuelInputShift: 15,
-     health: { engine: 92, tires: 88, lastServiceKm: 1200 }
+     health: { engine: 92, tires: 88, lastServiceKm: 1200 },
+     batteryLevel: 85 - (idx * 12),
+     signalStatus: idx % 2 === 0 ? "LTE" : "5G",
+     topSpeed: 45 + (idx * 10),
+     harshBrakingCount: idx === 1 ? 3 : 0,
+     isFakeGPS: idx === 2
   })),
 
   // HARDENING
@@ -383,6 +399,16 @@ export const useAppStore = create<AppState>((set) => ({
     set({ auditLogs: [newEntry, ...auditLogs] });
   },
   clearPublicReport: () => set({ incomingPublicReport: null }),
+
+  playbackActive: false,
+  playbackSpeed: 1,
+  setPlaybackActive: (active) => set({ playbackActive: active }),
+  setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
+
+  geofenceAlerts: [],
+  addGeofenceAlert: (alert) => set((state) => ({ 
+    geofenceAlerts: [alert, ...state.geofenceAlerts].slice(0, 50) 
+  })),
 }));
 
 export function getSelectedPolres(state: AppState): PolresItem | null {

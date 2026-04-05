@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
-import 'dashboard_screen.dart'; // Placeholder for dashboard route
+import 'duty_checkin_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

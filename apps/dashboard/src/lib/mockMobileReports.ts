@@ -12,6 +12,10 @@ export const mockMobileReports: FieldReport[] = [
     textReport: "Situasi pasar ramai menjelang sore. Tidak ada indikasi gangguan keamanan. Pedagang beroperasi normal.",
     imageSrc: "",
     yoloBoxes: [],
+    batteryLevel: 82,
+    signalStatus: "LTE",
+    isFakeGPS: false,
+    isUndercover: true
   },
   {
     id: "fr-002",
@@ -27,6 +31,9 @@ export const mockMobileReports: FieldReport[] = [
       { label: "Massa", confidence: 0.95, x: 10, y: 15, width: 60, height: 70 },
       { label: "Spanduk", confidence: 0.88, x: 30, y: 5, width: 40, height: 20 },
     ],
+    batteryLevel: 45,
+    signalStatus: "LTE",
+    isFakeGPS: false
   },
   {
     id: "fr-003",
@@ -42,6 +49,9 @@ export const mockMobileReports: FieldReport[] = [
       { label: "Sajam", confidence: 0.91, x: 55, y: 40, width: 15, height: 25 },
       { label: "Individu", confidence: 0.97, x: 40, y: 20, width: 30, height: 60 },
     ],
+    batteryLevel: 9,
+    signalStatus: "No Signal",
+    isFakeGPS: true
   },
   {
     id: "fr-004",
@@ -55,5 +65,8 @@ export const mockMobileReports: FieldReport[] = [
     imageSrc: "",
     yoloBoxes: [],
     isSOS: true,
+    batteryLevel: 31,
+    signalStatus: "5G",
+    isFakeGPS: false
   },
 ];

@@ -7,7 +7,7 @@ export interface PolsekItem {
   lat: number;
   lng: number;
   crimeStatus: "Merah" | "Kuning" | "Hijau";
-  polygons?: number[][]; // GeoJSON simplified
+  polygons?: { lat: number; lng: number }[][]; // GeoJSON simplified for Geofence
 }
 
 export interface PolicePost {
@@ -154,6 +154,13 @@ export interface PersonnelTrack {
   fuelInputShift?: number; // Liters
   isSOS?: boolean;
   health: AssetHealth;
+  // HIGH PRECISION TELEMETRY
+  batteryLevel: number; // 0-100
+  signalStatus: "LTE" | "5G" | "3G" | "H+" | "No Signal";
+  topSpeed: number; // km/h
+  harshBrakingCount: number;
+  isFakeGPS: boolean;
+  isUndercover?: boolean;
 }
 
 export interface YoloBBox {
@@ -177,6 +184,11 @@ export interface FieldReport {
   imageSrc?: string;
   yoloBoxes?: YoloBBox[];
   isSOS?: boolean;
+  // HIGH PRECISION TELEMETRY
+  batteryLevel?: number;
+  signalStatus?: "LTE" | "5G" | "3G" | "H+" | "No Signal";
+  isFakeGPS?: boolean;
+  isUndercover?: boolean;
 }
 
 export type MissionStatus = "en-route" | "on-site" | "completed";

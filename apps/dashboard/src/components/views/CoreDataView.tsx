@@ -106,6 +106,13 @@ type Personnel = {
   sync: SyncStatus;
   commandLog: { instruction: string; dispatcher: string; timestamp: string }[];
   auditTrail: AuditEntry[];
+  // HIGH PRECISION TELEMETRY
+  batteryLevel: number;
+  signalStatus: "LTE" | "5G" | "3G" | "H+" | "No Signal";
+  topSpeed: number;
+  harshBrakingCount: number;
+  isFakeGPS: boolean;
+  isUndercover: boolean;
 };
 
 type Asset = {
@@ -200,8 +207,37 @@ const mockPersonnel: Personnel[] = [
       { instruction: "Geser ke sektor Oebufu untuk patroli dialogis", dispatcher: "Ipda Bambang", timestamp: "2026-04-05 08:00" },
       { instruction: "Lakukan TPTKP pada insiden K-2026-KUPANG-042", dispatcher: "AKBP Simanjuntak", timestamp: "2026-04-05 08:15" }
     ],
-    auditTrail: []
+    auditTrail: [],
+    batteryLevel: 85,
+    signalStatus: "LTE",
+    topSpeed: 42,
+    harshBrakingCount: 0,
+    isFakeGPS: false,
+    isUndercover: false
   },
+  { 
+    id: "92010045", 
+    name: "Bripka Yohanis", 
+    rank: "Bripka", 
+    position: "Babin", 
+    satker: "Polres Belu", 
+    status: "Online", 
+    lastPing: "1 min ago", 
+    equipment: { weaponSerial: "HS112233", htStatus: "Active" }, 
+    photo: "", 
+    phone: "0812-4455-6677", 
+    lat: -9.15, 
+    lng: 124.9,
+    sync: "LIVE",
+    commandLog: [],
+    auditTrail: [],
+    batteryLevel: 12,
+    signalStatus: "No Signal",
+    topSpeed: 105,
+    harshBrakingCount: 4,
+    isFakeGPS: true,
+    isUndercover: true
+  }
 ];
 
 const mockAssets: Asset[] = [
@@ -580,20 +616,56 @@ const PersonnelTable = ({ searchQuery }: { searchQuery: string }) => {
       )
     }),
     columnHelperPersonnel.accessor("satker", {
-      header: "Satker / Polres",
-      cell: info => <span className="text-xs font-medium text-slate-300">{info.getValue()}</span>
+      header: "Satker / Unit",
+      cell: info => (
+        <div className="flex flex-col">
+           <span className="text-xs font-medium text-slate-300">{info.getValue()}</span>
+           <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-1">
+                 <Zap size={10} className={cn(info.row.original.batteryLevel < 20 ? "text-red-500" : "text-emerald-500")} />
+                 <span className={cn("text-[9px] font-black", info.row.original.batteryLevel < 20 ? "text-red-500" : "text-slate-400")}>{info.row.original.batteryLevel}%</span>
+              </div>
+              <div className="flex items-center gap-1">
+                 <div className="h-2 w-px bg-slate-700" />
+                 <span className={cn("text-[9px] font-black", info.row.original.signalStatus === "No Signal" ? "text-red-500" : "text-blue-500")}>{info.row.original.signalStatus}</span>
+              </div>
+           </div>
+        </div>
+      )
+    }),
+    columnHelperPersonnel.display({
+      id: "driving",
+      header: "Driving Analytics",
+      cell: props => (
+        <div className="flex items-center gap-4">
+           <div className="flex flex-col">
+              <span className="text-[8px] text-slate-600 uppercase font-black">Top Speed</span>
+              <span className={cn("text-xs font-mono font-black", props.row.original.topSpeed > 80 ? "text-red-500" : "text-slate-400")}>{props.row.original.topSpeed} <span className="text-[8px] text-slate-700">km/h</span></span>
+           </div>
+           <div className="flex flex-col">
+              <span className="text-[8px] text-slate-600 uppercase font-black">Braking</span>
+              <span className={cn("text-xs font-mono font-black", props.row.original.harshBrakingCount > 2 ? "text-orange-500" : "text-slate-400")}>{props.row.original.harshBrakingCount}x</span>
+           </div>
+        </div>
+      )
     }),
     columnHelperPersonnel.accessor("status", {
-      header: "Status Real-time",
+      header: "Location Integrity",
       cell: info => {
         const val = info.getValue();
+        const { isFakeGPS } = info.row.original;
         return (
-          <div className="flex items-center gap-2">
-             <div className={cn(
-               "w-2 h-2 rounded-full",
-               val === "Online" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-700"
-             )} />
-             <span className="text-[10px] font-black uppercase text-slate-400">{val}</span>
+          <div className="flex items-center gap-3">
+             <div className="flex items-center gap-2">
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  val === "Online" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-700"
+                )} />
+                <span className="text-[10px] font-black uppercase text-slate-400">{val}</span>
+             </div>
+             {isFakeGPS && (
+               <Badge variant="danger" className="text-[8px] animate-pulse">FAKE GPS DETECTED</Badge>
+             )}
           </div>
         );
       }

@@ -64,6 +64,10 @@ class Personnel(Base):
     locked_until = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # GAMIFICATION ENGINE (AI-Patrol & Ren-Ops Compliance)
+    points = Column(Integer, default=0)
+    achievements = Column(Text) # JSON list: e.g. ["Top Patrol", "Early Responder"]
 
     polres = relationship("Polres", back_populates="personnel")
 
@@ -134,3 +138,11 @@ class ChatMessage(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (Index("ix_chat_polres", "polres_id"),)
+
+class ExternalWebhook(Base):
+    """External Agencies (Ambulance, Fire, etc)"""
+    __tablename__ = "external_webhooks"
+    id = Column(Integer, primary_key=True)
+    agency_name = Column(String(100), nullable=False)
+    webhook_url = Column(String(500), nullable=False)
+    is_active = Column(Boolean, default=True)

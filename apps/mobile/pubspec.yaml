@@ -18,6 +18,19 @@ dependencies:
   provider: ^6.1.1
   dio: ^5.4.0
   socket_io_client: ^2.0.3
+  battery_plus: ^5.0.2
+  connectivity_plus: ^5.0.2
+  flutter_background_service: ^5.0.0
+  flutter_local_notifications: ^17.0.0
+  sqflite: ^2.3.0
+  path_provider: ^2.1.2
+  record: ^5.0.4
+  # Tactical Intelligence
+  flutter_tts: ^3.8.5
+  mobile_scanner: ^3.5.2
+  qr_flutter: ^4.1.0
+  # Activity recognition for smart power profiles
+  flutter_activity_recognition: ^2.1.0
   
   # Auth & Security
   local_auth: ^2.1.7 # Biometric Login

@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
+import 'services/tracking_service.dart';
 
 void main() {
-  runApp(const SentinelMobileApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TrackingService()),
+      ],
+      child: const SentinelMobileApp(),
+    ),
+  );
 }
 
 class SentinelMobileApp extends StatelessWidget {
