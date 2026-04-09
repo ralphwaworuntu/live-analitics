@@ -7,6 +7,7 @@ import { useAppStore } from "@/store";
 import { Shield, MapPin, Users, AlertTriangle, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import EventInputModal from "../dashboard/EventInputModal";
 
 /**
  * SENTINEL Command Center View
@@ -15,6 +16,13 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function DashboardView() {
   const { polres, searchQuery, filterStatus, filterPriority } = useAppStore();
   const [activeView, setActiveView] = useState<"list" | "map">("map");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState("");
+
+  const handlePolresClick = (name: string) => {
+    setSelectedLocation(name);
+    setIsModalOpen(true);
+  };
 
   const filteredPolres = useMemo(() => {
     return polres.filter(p => {
@@ -67,82 +75,101 @@ export default function DashboardView() {
               className="absolute inset-0 w-full h-full p-6 overflow-y-auto custom-scrollbar bg-[#07111F]"
             >
               <div className="max-w-6xl mx-auto space-y-6">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center justify-between mb-8 px-2">
                   <div>
-                    <h2 className="text-xl font-black text-white uppercase tracking-widest italic">Inventory Wilayah</h2>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter mt-1">SENTINEL-AI Geolocation Index • Regional NTT</p>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-widest italic">Inventory Wilayah</h2>
+                    <p className="text-[10px] text-[#D4AF37] font-black uppercase tracking-widest mt-1 opacity-80">Regional NTT Operational Index • Total 21 Polresta/Polres</p>
                   </div>
                   <div className="flex gap-4">
                      <div className="flex flex-col items-end">
-                       <span className="text-2xl font-black text-white font-mono">{filteredPolres.length}</span>
-                       <span className="text-[9px] font-black text-slate-600 uppercase">Results Found</span>
+                       <span className="text-3xl font-black text-white font-mono tracking-tighter">{filteredPolres.length}</span>
+                       <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Wilayah Terdeteksi</span>
                      </div>
                   </div>
                 </div>
 
                 {filteredPolres.length === 0 ? (
-                  <div className="py-20 flex flex-col items-center justify-center text-center border-2 border-dashed border-white/5 rounded-3xl">
-                    <div className="p-4 bg-white/5 rounded-full mb-4">
-                      <Search size={32} className="text-slate-700" />
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="py-32 flex flex-col items-center justify-center text-center border-2 border-dashed border-white/5 rounded-[40px] bg-white/[0.02]"
+                  >
+                    <div className="relative mb-6">
+                      <div className="absolute inset-0 bg-[#D4AF37]/20 blur-3xl rounded-full" />
+                      <div className="relative p-8 bg-white/5 rounded-full border border-white/10 shadow-2xl">
+                        <Search size={48} className="text-slate-600" />
+                      </div>
                     </div>
-                    <h3 className="text-lg font-black text-slate-300 uppercase tracking-tighter italic">Wilayah/Kejadian tidak ditemukan</h3>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2">Database SENTINEL tidak mencatat entri untuk query ini.</p>
-                  </div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">Data Tidak Terdeteksi</h3>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-[0.2em] mt-3 max-w-sm leading-relaxed">
+                      Sistem tidak menemukan wilayah atau entitas yang sesuai dengan query pencarian Anda.
+                    </p>
+                  </motion.div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {filteredPolres.map(p => (
                       <motion.div 
                         key={p.id}
-                        whileHover={{ scale: 1.02 }}
+                        layout
+                        whileHover={{ scale: 1.02, y: -5 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handlePolresClick(p.name)}
                         className={cn(
-                          "relative group bg-[#0B1B32] border rounded-2xl p-5 transition-all overflow-hidden",
-                          p.status === "kritis" ? "border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.1)]" : "border-white/5"
+                          "relative group bg-[#0B1B32] border rounded-[24px] p-6 transition-all duration-300 cursor-pointer overflow-hidden",
+                          p.status === "kritis" ? "border-red-500/40 shadow-[0_20px_40px_-15px_rgba(239,68,68,0.2)]" : "border-white/5 hover:border-white/20 shadow-xl"
                         )}
                       >
                         {p.status === "kritis" && (
-                          <div className="absolute top-0 left-0 w-full h-0.5 bg-red-500 animate-pulse" />
+                          <div className="absolute top-0 left-0 w-full h-1 bg-red-500 animate-pulse overflow-hidden">
+                             <div className="w-full h-full bg-white/30 animate-[slide_1.5s_infinite]" />
+                          </div>
                         )}
                         
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex items-center gap-3">
+                        <div className="flex justify-between items-start mb-6">
+                          <div className="flex items-center gap-4">
                             <div className={cn(
-                              "p-2 rounded-lg transition-colors",
-                              p.status === "kritis" ? "bg-red-500/10 text-red-500" : "bg-white/5 text-slate-400"
+                              "p-3 rounded-2xl transition-all duration-500",
+                              p.status === "kritis" ? "bg-red-500/10 text-red-500 scale-110" : "bg-white/5 text-slate-500 group-hover:bg-[#D4AF37]/10 group-hover:text-[#D4AF37]"
                             )}>
-                              {p.status === "kritis" ? <AlertTriangle size={18} /> : <Shield size={18} />}
+                              {p.status === "kritis" ? <AlertTriangle size={22} /> : <Shield size={22} />}
                             </div>
                             <div>
-                              <h4 className="text-sm font-black text-white uppercase tracking-tight">{p.name}</h4>
-                              <span className="text-[10px] text-slate-500 font-mono">ID: {p.id.toUpperCase()}</span>
+                              <h4 className="text-sm font-black text-white uppercase tracking-tight group-hover:text-[#D4AF37] transition-colors">{p.name}</h4>
+                              <span className="text-[10px] text-slate-500 font-mono font-bold tracking-widest">{p.id.toUpperCase()}</span>
                             </div>
                           </div>
-                          <Badge variant={p.status === "kritis" ? "destructive" : p.status === "waspada" ? "warning" : "success"} className="text-[8px]">
+                          <Badge variant={p.status === "kritis" ? "destructive" : p.status === "waspada" ? "warning" : "success"} className="text-[9px] px-2.5 py-1">
                             {p.status.toUpperCase()}
                           </Badge>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                            <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <Users size={12} className="text-slate-500" />
-                                <span className="text-[10px] font-bold text-slate-300 uppercase">Personil</span>
+                                <Users size={14} className="text-slate-500" />
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Kekuatan Personil</span>
                               </div>
-                              <span className="text-[10px] font-mono text-slate-400">{(p.online || 0)} / {(p.personnel || 0)}</span>
+                              <span className="text-[12px] font-black font-mono text-white">{(p.online || 0)} <span className="text-slate-600">/</span> {(p.personnel || 0)}</span>
                            </div>
-                           <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                              <div 
-                                className={cn("h-full transition-all duration-1000", p.status === "kritis" ? "bg-red-500" : "bg-[#D4AF37]")}
-                                style={{ width: `${((p.online || 0) / (p.personnel || 1)) * 100}%` }}
+                           <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden p-[1px]">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${((p.online || 0) / (p.personnel || 1)) * 100}%` }}
+                                transition={{ duration: 1.5, ease: "easeOut" }}
+                                className={cn("h-full rounded-full", p.status === "kritis" ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-gradient-to-r from-[#D4AF37] to-[#F1C40F]")}
                               />
                            </div>
                         </div>
 
-                        <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between group-hover:bg-white/5 -mx-5 px-5 transition-colors cursor-pointer">
+                        <div className="mt-8 pt-5 border-t border-white/5 flex items-center justify-between group-hover:bg-white/[0.03] -mx-6 px-6 transition-all">
                            <div className="flex items-center gap-2">
-                              <MapPin size={12} className="text-[#D4AF37]" />
-                              <span className="text-[10px] font-black text-[#D4AF37] uppercase tracking-tighter">{p.island} Range</span>
+                              <MapPin size={14} className="text-[#D4AF37]" />
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Sektor {p.island}</span>
                            </div>
-                           <ChevronRight size={14} className="text-slate-600 group-hover:text-white transition-all transform group-hover:translate-x-1" />
+                           <div className="flex items-center gap-2 text-[#D4AF37] font-black uppercase text-[9px] tracking-widest opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                              Dispatch
+                              <ChevronRight size={14} />
+                           </div>
                         </div>
                       </motion.div>
                     ))}
@@ -153,6 +180,12 @@ export default function DashboardView() {
           )}
         </AnimatePresence>
       </div>
+
+      <EventInputModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        initialLocation={selectedLocation}
+      />
 
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }

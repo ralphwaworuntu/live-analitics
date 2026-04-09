@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Search, Filter, List, Map as MapIcon, Plus, ChevronDown, Check } from "lucide-react";
 import { useAppStore } from "@/store";
 import { cn } from "@/lib/utils";
-import QuickDispatchModal from "./QuickDispatchModal";
+import EventInputModal from "./EventInputModal";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ActionBarProps {
@@ -151,7 +151,7 @@ export default function ActionBar({
         </div>
       </div>
 
-      <QuickDispatchModal 
+      <EventInputModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
         initialLocation={searchQuery}
