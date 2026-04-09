@@ -53,6 +53,7 @@ import jsPDF from "jspdf";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/store";
 import { playTacticalSound } from "@/lib/tactical-feedback";
+import { ReportService } from "@/lib/ReportService";
 
 // --- TYPES ---
 
@@ -152,7 +153,6 @@ const AlertCard = ({ alert }: { alert: TacticalAlert }) => (
         : "bg-orange-500/10 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.1)]"
     )}
   >
-    {/* Soft Pulse Background for Critical */}
     {alert.severity === "CRITICAL" && (
       <div className="absolute inset-0 bg-red-500/5 animate-pulse-slow pointer-events-none" />
     )}
@@ -179,7 +179,7 @@ const AlertCard = ({ alert }: { alert: TacticalAlert }) => (
        <button className="text-slate-500 hover:text-white transition-colors"><MoreVertical size={16} /></button>
     </div>
 
-    <div className="mt-4 relative z-10">
+    <div className="mt-4 relative z-10 text-left">
        <p className="text-[11px] font-bold text-slate-400 leading-relaxed uppercase italic">
           {alert.detail}
        </p>
@@ -219,7 +219,7 @@ const KPICard = ({ title, value, unit, trend, icon: Icon, trendValue, pciScore }
           <Icon className={cn("h-4 w-4", isTargetAchieved ? "text-yellow-500" : "text-slate-400")} />
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="text-left">
         <div className="flex items-baseline gap-2">
           <div className="text-3xl font-black font-mono tracking-tighter text-white">{value}</div>
           <p className="text-[10px] font-black text-slate-500 uppercase font-mono">{unit}</p>
@@ -238,10 +238,18 @@ const KPICard = ({ title, value, unit, trend, icon: Icon, trendValue, pciScore }
 
 export default function StatisticsView() {
   const dashboardRef = useRef<HTMLDivElement>(null);
-  const { executeAction } = useAppStore();
+  const { executeAction, activeMissions, auditLogs } = useAppStore();
 
-  const exportDashboard = async (format: "png" | "pdf") => {
+  const exportDashboard = async (format: "png" | "pdf" | "report") => {
     if (!dashboardRef.current) return;
+    
+    if (format === "report") {
+       await ReportService.generateSmartAnev(activeMissions, auditLogs);
+       executeAction("EXPORT_ANEV");
+       playTacticalSound("click");
+       return;
+    }
+
     const canvas = await html2canvas(dashboardRef.current, { backgroundColor: "#07111F", scale: 2 });
     if (format === "png") {
       const link = document.createElement("a");
@@ -266,7 +274,7 @@ export default function StatisticsView() {
     <div ref={dashboardRef} className="flex flex-col h-full w-full bg-[#07111F] overflow-y-auto p-10 gap-10 custom-scrollbar text-white relative">
       
       {/* HEADER TACTICAL */}
-      <div className="flex items-center justify-between no-export shrink-0">
+      <div className="flex items-center justify-between no-export shrink-0 pb-10">
          <div className="flex flex-col">
             <div className="flex items-center gap-4">
                <div className="h-14 w-14 rounded-2xl bg-[#D4AF37] flex items-center justify-center shadow-lg shadow-yellow-500/10 border border-yellow-500/20">
@@ -279,20 +287,23 @@ export default function StatisticsView() {
             </div>
          </div>
          <div className="flex items-center gap-3">
-            <button onClick={() => exportDashboard("png")} className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all border border-white/5"><Download size={20} /></button>
-            <button onClick={() => exportDashboard("pdf")} className="bg-[#D4AF37] text-[#07111F] h-12 px-8 rounded-2xl text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-3 shadow-lg shadow-yellow-500/20 border border-yellow-500/20">
-               <FileDown size={20} /> Generate Operational Anev
+            <button onClick={() => exportDashboard("png")} title="Save PNG" className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all border border-white/5"><Download size={20} /></button>
+            <button 
+                onClick={() => exportDashboard("report")} 
+                className="bg-[#D4AF37] text-[#07111F] h-12 px-8 rounded-2xl text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-3 shadow-lg shadow-yellow-500/20 border border-yellow-500/20"
+            >
+               <FileDown size={20} /> Unduh Laporan Shift (Anev)
             </button>
          </div>
       </div>
 
       {/* NEW: CRITICAL ALERT PANEL (Top, Ordered by Severity) */}
-      <div className="flex flex-col gap-6 no-export">
+      <div className="flex flex-col gap-6 no-export text-left">
          <div className="flex items-center gap-4">
             <div className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />
             <h3 className="text-xs font-black uppercase tracking-[0.4em] text-red-500 italic">Threat Intelligent Detection Active</h3>
          </div>
-         <div className="grid grid-cols-3 gap-6">
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {criticalAlerts.map((alert) => (
                <AlertCard key={alert.id} alert={alert} />
             ))}
@@ -300,7 +311,7 @@ export default function StatisticsView() {
       </div>
 
       {/* KPI GRID */}
-      <div className="grid grid-cols-4 gap-8 shrink-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 shrink-0">
         <KPICard title="Total Incidents" value="1,492" unit="Case" trend="down" trendValue="12%" icon={Activity} />
         <KPICard title="Tactical Response" value="04m" unit="Avg" trend="up" trendValue="1.2m" icon={Clock} />
         <KPICard title="Logistics Readiness" value="96.2" unit="%" trend="up" trendValue="2.1%" icon={Zap} />
@@ -312,7 +323,7 @@ export default function StatisticsView() {
         
         {/* Crime Clock */}
         <Card className="col-span-12 h-[320px] overflow-hidden bg-transparent border-white/5">
-           <CardHeader className="py-6 px-10">
+           <CardHeader className="py-6 px-10 text-left">
               <CardTitle className="text-sm font-black uppercase tracking-widest text-[#D4AF37] flex items-center gap-3"><Clock size={16} /> Operational Crime Load Analysis</CardTitle>
            </CardHeader>
            <CardContent className="h-[220px]">
@@ -330,7 +341,7 @@ export default function StatisticsView() {
 
         {/* AI ACCURACY TRACKER */}
         <Card className="col-span-12 lg:col-span-8 bg-[#0B1B32]/40 border-white/5 h-[480px] relative">
-           <CardHeader>
+           <CardHeader className="text-left">
               <CardTitle className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-3 text-blue-500"><BrainCircuit size={18} /> Turangga AI Accuracy Index</CardTitle>
            </CardHeader>
            <CardContent className="h-[360px] relative">
@@ -356,7 +367,7 @@ export default function StatisticsView() {
 
         {/* MOST IMPROVED POLRES */}
         <Card className="col-span-12 lg:col-span-4 bg-[#0B1B32]/40 border-white/5 h-[480px]">
-           <CardHeader>
+           <CardHeader className="text-left">
               <CardTitle className="text-sm font-black uppercase tracking-widest text-[#10B981] flex items-center gap-3"><TrendingUp size={18} /> Strategic Most Improved</CardTitle>
            </CardHeader>
            <CardContent className="px-8 pt-4">
@@ -386,7 +397,7 @@ export default function StatisticsView() {
         {/* STRATEGIC INSIGHT PANEL (BENTO) */}
         <div className="col-span-12 grid grid-cols-12 gap-8 mt-4 no-export">
            <Card className="col-span-12 lg:col-span-4 bg-white/5 border-white/5">
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 text-left">
                  <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-3"><Users size={16} /> Personnel Fatigue</CardTitle>
               </CardHeader>
               <CardContent className="h-[220px]">
@@ -405,7 +416,7 @@ export default function StatisticsView() {
            </Card>
 
            <Card className="col-span-12 lg:col-span-4 bg-white/5 border-white/5">
-              <CardHeader>
+              <CardHeader className="text-left">
                  <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-3"><MessageSquare size={16} /> Public Sentiment</CardTitle>
               </CardHeader>
               <CardContent className="p-8">
@@ -423,7 +434,7 @@ export default function StatisticsView() {
            </Card>
 
            <Card className="col-span-12 lg:col-span-4 bg-white/5 border-white/5">
-              <CardHeader>
+              <CardHeader className="text-left">
                  <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-3"><Car size={16} /> Asset Readiness</CardTitle>
               </CardHeader>
               <CardContent className="h-[220px] relative flex items-center justify-center">

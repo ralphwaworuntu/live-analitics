@@ -24,6 +24,18 @@ import { cn } from "@/lib/utils";
 import SmartDispatchModal from "@/components/map/SmartDispatchModal";
 import { mockMobileReports } from "@/lib/mockMobileReports";
 
+// SOS Pulse Animation CSS
+const pulseStyles = `
+  @keyframes tactical-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  }
+  .animate-tactical-pulse {
+    animation: tactical-pulse 2s infinite;
+  }
+`;
+
 function MapController({ selectedPolres, emergency, mapCenter }: { 
   selectedPolres: PolresItem | null, 
   emergency: EmergencyState,
@@ -208,15 +220,18 @@ export default function GoogleMap() {
     <div className="relative h-full w-full overflow-hidden">
       <APIProvider apiKey={apiKey}>
         <Map defaultCenter={{ lat: -9.0, lng: 121.5 }} defaultZoom={7} mapId="SENTINEL_DASHBOARD_MAP_ID" gestureHandling="greedy" disableDefaultUI style={{ width: "100%", height: "100%" }}>
-           <GeoJsonLayer polresList={polres} />
-           <PolicePostsLayer posts={posts} />
-           <FieldReportsLayer reports={reports} undercoverVisible={undercoverVisible} />
-           <CctvMarkersLayer points={cctvPoints} enabled={cctvMarkersEnabled} />
-           <ShadowHotspotsLayer hotspots={shadowHotspots} enabled={predictiveMode} timeShift={historyTimestamp} />
-           <AIPatrolRouteLayer route={activePatrolRoute} />
-           <GeofenceAlertLayer reports={reports} />
-           <MapController selectedPolres={selectedPolres} emergency={emergency} mapCenter={mapCenter} />
-        </Map>
+            <GeoJsonLayer polresList={polres} />
+            <PolicePostsLayer posts={posts} />
+            <ActiveMissionsLayer />
+            <FieldReportsLayer reports={reports} undercoverVisible={undercoverVisible} />
+            <TacticalHeatmapLayer />
+            <CctvMarkersLayer points={cctvPoints} enabled={cctvMarkersEnabled} />
+            <ShadowHotspotsLayer hotspots={shadowHotspots} enabled={predictiveMode} timeShift={historyTimestamp} />
+            <AIPatrolRouteLayer route={activePatrolRoute} />
+            <GeofenceAlertLayer reports={reports} />
+            <MapController selectedPolres={selectedPolres} emergency={emergency} mapCenter={mapCenter} />
+         </Map>
+         <style>{pulseStyles}</style>
       </APIProvider>
       <PlaybackControls />
       <LayerControls undercoverVisible={undercoverVisible} onToggleUndercover={setUndercoverVisible} />
@@ -319,6 +334,69 @@ function ShadowHotspotsLayer({ hotspots, enabled, timeShift }: { hotspots: Shado
         <Fragment key={h.id}>
           <Polygon paths={h.points} fillColor="#ff00ff" fillOpacity={0.3} strokeColor="#ff00ff" strokeWeight={2} strokeOpacity={0.8} />
         </Fragment>
+      ))}
+    </>
+  );
+}
+
+function ActiveMissionsLayer() {
+  const activeMissions = useAppStore(state => state.activeMissions);
+  
+  return (
+    <>
+      {activeMissions.map(m => (
+        <AdvancedMarker 
+          key={m.id} 
+          position={{ lat: m.targetLat, lng: m.targetLng }}
+        >
+          <div className={cn(
+            "relative flex items-center justify-center",
+            m.priority === "Critical" && "animate-tactical-pulse"
+          )}>
+            <div className={cn(
+              "p-2 rounded-full border-2 border-white shadow-2xl relative z-10",
+              m.priority === "Critical" ? "bg-red-600" : "bg-blue-600"
+            )}>
+              <Siren size={16} className="text-white" />
+            </div>
+            {m.priority === "Critical" && (
+                <div className="absolute -top-12 bg-red-600 text-white text-[8px] font-black px-2 py-1 rounded-md uppercase tracking-widest whitespace-nowrap border border-white/20">
+                   {m.title} - SOS
+                </div>
+            )}
+          </div>
+        </AdvancedMarker>
+      ))}
+    </>
+  );
+}
+
+function TacticalHeatmapLayer() {
+  const auditLogs = useAppStore(state => state.auditLogs);
+  const heatmapEnabled = useAppStore(state => state.heatmapEnabled);
+  
+  if (!heatmapEnabled) return null;
+
+  // Mock geographic distribution for audit logs
+  const heatmapData = auditLogs.slice(0, 50).map((log, i) => ({
+    lat: -10.15 + (Math.random() * 0.1 - 0.05),
+    lng: 123.60 + (Math.random() * 0.1 - 0.05),
+    intensity: Math.random()
+  }));
+
+  return (
+    <>
+      {heatmapData.map((point, i) => (
+        <AdvancedMarker key={i} position={{ lat: point.lat, lng: point.lng }}>
+          <div 
+            className="rounded-full blur-xl pointer-events-none"
+            style={{
+              width: `${point.intensity * 100}px`,
+              height: `${point.intensity * 100}px`,
+              backgroundColor: `rgba(212, 175, 55, ${point.intensity * 0.3})`
+            }}
+          />
+        </AdvancedMarker>
       ))}
     </>
   );
