@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useAppStore } from "@/store";
 import {
   LayoutDashboard,
   ShieldAlert,
@@ -13,7 +14,8 @@ import {
   Activity,
   Gauge,
   ChevronDown,
-  ShieldCheck
+  ShieldCheck,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,9 +23,10 @@ interface NavItemProps {
   viewId: string;
   icon: React.ElementType;
   label: string;
+  onNavigate?: () => void;
 }
 
-const NavItem = ({ viewId, icon: Icon, label }: NavItemProps) => {
+const NavItem = ({ viewId, icon: Icon, label, onNavigate }: NavItemProps) => {
   const searchParams = useSearchParams();
   const currentView = searchParams.get("view") || "dashboard";
   const isActive = currentView === viewId;
@@ -31,8 +34,9 @@ const NavItem = ({ viewId, icon: Icon, label }: NavItemProps) => {
   return (
     <Link
       href={`/?view=${viewId}`}
+      onClick={onNavigate}
       className={cn(
-        "group relative flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg transition-all duration-200",
+        "group relative flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg transition-all duration-200 min-h-[44px]",
         "text-slate-400 hover:text-white hover:bg-white/5",
         isActive && "text-white bg-white/5"
       )}
@@ -49,20 +53,60 @@ const NavItem = ({ viewId, icon: Icon, label }: NavItemProps) => {
   );
 };
 
-export default function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
+  const setLiveMode = useAppStore(state => state.setLiveMode);
+  const setTimeRangeHours = useAppStore(state => state.setTimeRangeHours);
+  const liveMode = useAppStore(state => state.liveMode);
+  const timeRangeHours = useAppStore(state => state.timeRangeHours);
+  
+  const handleTimeframeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    switch (e.target.value) {
+      case "current":
+        setLiveMode(true);
+        break;
+      case "last-24h":
+        setLiveMode(false);
+        setTimeRangeHours(24);
+        break;
+      case "last-week":
+        setLiveMode(false);
+        setTimeRangeHours(168);
+        break;
+      case "last-month":
+        setLiveMode(false);
+        setTimeRangeHours(720);
+        break;
+    }
+  };
+
+  const selectValue = liveMode ? "current" : (timeRangeHours === 24 ? "last-24h" : (timeRangeHours === 168 ? "last-week" : "last-month"));
+
   return (
     <aside className="relative z-50 w-[280px] h-full bg-[#0B1B32] border-r border-white/5 flex flex-col overflow-hidden font-sans shrink-0">
 
       {/* 1. BRANDING & TIMEFRAME GROUP */}
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-8">
+      <div className="p-4 sm:p-6">
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/10 shrink-0">
             <ShieldCheck size={24} className="text-[#0B1B32]" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-white leading-tight font-mono uppercase tracking-tight">Polda NTT</h1>
             <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black">Command Center</p>
           </div>
+          {/* Close button - only in mobile drawer mode */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
 
         <div className="relative group pt-4 border-t border-white/5">
@@ -70,7 +114,11 @@ export default function Sidebar() {
             Platform Timeframe
           </label>
           <div className="relative">
-            <select className="appearance-none w-full bg-slate-900/50 border border-white/10 rounded-lg px-3 py-2.5 text-xs font-bold text-slate-300 focus:outline-none focus:ring-1 focus:ring-yellow-500/50 cursor-pointer transition-all hover:bg-slate-900/80 uppercase tracking-widest">
+            <select 
+              value={selectValue}
+              onChange={handleTimeframeChange}
+              className="appearance-none w-full bg-slate-900/50 border border-white/10 rounded-lg px-3 py-2.5 text-xs font-bold text-slate-300 focus:outline-none focus:ring-1 focus:ring-yellow-500/50 cursor-pointer transition-all hover:bg-slate-900/80 uppercase tracking-widest min-h-[44px]"
+            >
               <option value="current">Real-time / Live</option>
               <option value="last-24h">Operasi 24 Jam</option>
               <option value="last-week">Laporan Mingguan</option>
@@ -83,23 +131,23 @@ export default function Sidebar() {
 
       {/* 2. NAVIGATION AREA */}
       <nav className="flex-1 overflow-y-auto pt-2 pb-6 custom-scrollbar">
-        <div className="px-6 mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500/60">
+        <div className="px-4 sm:px-6 mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500/60">
           Main Console
         </div>
         <div className="space-y-1">
-          <NavItem viewId="dashboard" icon={LayoutDashboard} label="Dashboard" />
-          <NavItem viewId="core-data" icon={Gauge} label="Core Data" />
-          <NavItem viewId="statistics" icon={Activity} label="Statistics" />
-          <NavItem viewId="operasi" icon={ShieldAlert} label="Operasi" />
-          <NavItem viewId="wilayah" icon={MapIcon} label="Wilayah (21 Polres)" />
-          <NavItem viewId="patrol" icon={Navigation} label="Patrol Analysis" />
-          <NavItem viewId="intelijen" icon={BrainCircuit} label="Intelijen AI" />
-          <NavItem viewId="sistem" icon={Settings} label="Sistem Anev" />
+          <NavItem viewId="dashboard" icon={LayoutDashboard} label="Dashboard" onNavigate={onClose} />
+          <NavItem viewId="core-data" icon={Gauge} label="Core Data" onNavigate={onClose} />
+          <NavItem viewId="statistics" icon={Activity} label="Statistics" onNavigate={onClose} />
+          <NavItem viewId="operasi" icon={ShieldAlert} label="Operasi" onNavigate={onClose} />
+          <NavItem viewId="wilayah" icon={MapIcon} label="Wilayah (21 Polres)" onNavigate={onClose} />
+          <NavItem viewId="patrol" icon={Navigation} label="Patrol Analysis" onNavigate={onClose} />
+          <NavItem viewId="intelijen" icon={BrainCircuit} label="Intelijen AI" onNavigate={onClose} />
+          <NavItem viewId="sistem" icon={Settings} label="Sistem Anev" onNavigate={onClose} />
         </div>
       </nav>
 
       {/* 3. TACTICAL FOOTER */}
-      <div className="p-4 border-t border-white/5 bg-slate-900/20">
+      <div className="p-3 sm:p-4 border-t border-white/5 bg-slate-900/20">
         <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/5 shadow-inner">
           <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center shrink-0 border border-white/10 shadow-lg">
             <span className="text-[10px] font-black text-white uppercase italic">CP</span>

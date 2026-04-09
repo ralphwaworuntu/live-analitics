@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 
-import { buildMockKpis, mockActivities } from "@/lib/mock-data";
+import { buildMockKpis, mockActivities, mockPolresData } from "@/lib/mock-data";
 import type {
   ActivityItem,
   AIChatMessage,
@@ -62,6 +62,10 @@ interface AppState {
   triggerEmergency: (payload: Partial<EmergencyState> & { message: string; location: string }) => void;
   handleSOS: (unitId: string) => void;
   clearEmergency: () => void;
+  filterStatus: "all" | "SOS" | "Online" | "Offline";
+  filterPriority: "all" | "Low" | "Medium" | "High" | "Critical";
+  setFilterStatus: (status: "all" | "SOS" | "Online" | "Offline") => void;
+  setFilterPriority: (priority: "all" | "Low" | "Medium" | "High" | "Critical") => void;
   
   // History & Patrol
   historyTimestamp: number;
@@ -143,6 +147,13 @@ interface AppState {
   // GEOFENCE
   geofenceAlerts: { unitId: string; message: string; timestamp: string }[];
   addGeofenceAlert: (alert: { unitId: string; message: string; timestamp: string }) => void;
+  // GLOBAL ACTIONS & UI STATE
+  isSettingsOpen: boolean;
+  isNotificationsOpen: boolean;
+  toggleSettings: (open?: boolean) => void;
+  toggleNotifications: (open?: boolean) => void;
+  executeAction: (actionType: string, payload?: any) => void;
+  clearOperationalData: () => void;
 }
 
 const defaultEmergency: EmergencyState = {
@@ -155,8 +166,8 @@ const defaultEmergency: EmergencyState = {
   lng: null,
 };
 
-export const useAppStore = create<AppState>((set) => ({
-  polres: [],
+export const useAppStore = create<AppState>((set, get) => ({
+  polres: mockPolresData,
   polsek: [],
   policePosts: [
     { id: 'post-1', polresId: 'p-001', name: "Pos Polisi Pelabuhan", lat: -10.158, lng: 123.606, type: "Pos Polisi" },
@@ -186,6 +197,7 @@ export const useAppStore = create<AppState>((set) => ({
   selectedPersonnelId: null,
   personnelTracks: mockPersonnelTracks.map((t, idx) => ({
      ...t,
+     unitType: t.unitType as any,
      fuelStatus: 75 - (idx * 5),
      odometer: 1240 + (idx * 150),
      fuelInputShift: 15,
@@ -195,7 +207,7 @@ export const useAppStore = create<AppState>((set) => ({
      topSpeed: 45 + (idx * 10),
      harshBrakingCount: idx === 1 ? 3 : 0,
      isFakeGPS: idx === 2
-  })),
+  })) as any,
 
   // HARDENING
   activeShift: "pagi",
@@ -409,6 +421,66 @@ export const useAppStore = create<AppState>((set) => ({
   addGeofenceAlert: (alert) => set((state) => ({ 
     geofenceAlerts: [alert, ...state.geofenceAlerts].slice(0, 50) 
   })),
+
+  filterStatus: "all",
+  filterPriority: "all",
+  setFilterStatus: (status) => set({ filterStatus: status }),
+  setFilterPriority: (priority) => set({ filterPriority: priority }),
+  isSettingsOpen: false,
+  isNotificationsOpen: false,
+  toggleSettings: (open) => set((state) => ({ isSettingsOpen: open ?? !state.isSettingsOpen })),
+  toggleNotifications: (open) => set((state) => ({ isNotificationsOpen: open ?? !state.isNotificationsOpen })),
+
+  executeAction: (actionType, payload) => {
+    let title = "Action Executed";
+    let description = `Aksi ${actionType} berhasil dijalankan.`;
+    let level: "info" | "success" | "warning" | "critical" = "info";
+
+    switch (actionType) {
+      case "DISPATCH_MISSION":
+        title = "Tactical Dispatch";
+        description = `Unit ${payload?.unitName || 'Unknown'} telah dikerahkan ke lokasi ${payload?.locationName || 'Target'}.`;
+        level = "success";
+        break;
+      case "EXPORT_ANEV":
+        title = "Export ANEV Success";
+        description = `Dokumen ANEV operasional periode ${new Date().toLocaleDateString()} telah diekspor.`;
+        level = "success";
+        break;
+      default:
+        break;
+    }
+
+    get().pushNotification({
+      title,
+      description,
+      level,
+    });
+
+    get().addAuditLog({
+      actor: "Irjen Pol. Daniel T.M. Silitonga",
+      action: actionType,
+      target: payload?.id || "Global Dashboard",
+      details: description
+    });
+  },
+
+  clearOperationalData: () => {
+    set({
+      activeMissions: [],
+      notifications: [],
+      aiMessages: [],
+      auditLogs: [],
+      emergency: defaultEmergency,
+    });
+    localStorage.removeItem("sentinel-tactical-storage");
+
+    get().pushNotification({
+      title: "Security Clearing Success",
+      description: "Seluruh data operasional dan riwayat log telah dihapus dari terminal.",
+      level: "critical"
+    });
+  },
 }));
 
 export function getSelectedPolres(state: AppState): PolresItem | null {

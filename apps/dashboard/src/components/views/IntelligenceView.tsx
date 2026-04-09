@@ -45,44 +45,89 @@ export default function IntelligenceView() {
   );
 }
 
+import { useAppStore } from "@/store";
+
 function TuranggaAI() {
+  const [inputVal, setInputVal] = useState("");
+  const aiMessages = useAppStore(state => state.aiMessages);
+  const addAIMessage = useAppStore(state => state.addAIMessage);
+
+  const handleSend = () => {
+    if (!inputVal.trim()) return;
+
+    // Add User message
+    addAIMessage({
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: inputVal,
+      createdAt: new Date().toISOString()
+    });
+
+    const currentInput = inputVal;
+    setInputVal("");
+
+    // Simulate AI response
+    setTimeout(() => {
+      addAIMessage({
+        id: `ai-${Date.now()}`,
+        role: "assistant",
+        content: `Berdasarkan analisis Turangga-AI terkait "${currentInput}", kami mendeteksi tidak ada anomali siginifikan saat ini. Namun disarankan memperketat patroli preventif.`,
+        createdAt: new Date().toISOString(),
+      });
+    }, 1000);
+  };
+
   return (
     <div className="flex h-full w-full wrapper overflow-hidden">
       <div className="flex-1 flex flex-col relative shrink-0 min-w-0">
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-          <div className="flex gap-4 max-w-3xl mx-auto w-full">
-            <div className="w-10 h-10 rounded-full bg-blue-900/50 flex flex-shrink-0 items-center justify-center">
-               <User size={20} className="text-blue-400" />
+          {aiMessages.map((msg) => (
+            <div key={msg.id} className="flex gap-4 max-w-3xl mx-auto w-full">
+              {msg.role === "user" ? (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-blue-900/50 flex flex-shrink-0 items-center justify-center">
+                    <User size={20} className="text-blue-400" />
+                  </div>
+                  <div className="pt-2 flex-1 min-w-0">
+                    <p className="text-slate-200">{msg.content}</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 flex flex-shrink-0 items-center justify-center">
+                    <Bot size={20} className="text-[#D4AF37]" />
+                  </div>
+                  <div className="bg-[#0B1B32] border border-white/10 p-5 rounded-2xl rounded-tl-none w-full shadow-lg flex-1 min-w-0">
+                    <p className="text-slate-300 leading-relaxed mb-4">
+                      {msg.content}
+                    </p>
+                    {msg.references && msg.references.length > 0 && (
+                      <div className="pt-3 border-t border-white/10 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                        <span className="break-all">Verified Source: <strong>{msg.references.join(", ")}</strong></span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
-            <div className="pt-2 flex-1 min-w-0">
-              <p className="text-slate-200">Tolong analisa tren kriminalitas di wilayah perbatasan minggu ini.</p>
-            </div>
-          </div>
-
-          <div className="flex gap-4 max-w-3xl mx-auto w-full">
-            <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 flex flex-shrink-0 items-center justify-center">
-               <Bot size={20} className="text-[#D4AF37]" />
-            </div>
-            <div className="bg-[#0B1B32] border border-white/10 p-5 rounded-2xl rounded-tl-none w-full shadow-lg flex-1 min-w-0">
-              <p className="text-slate-300 leading-relaxed mb-4">
-                Berdasarkan data laporan 7 hari terakhir, terjadi peningkatan 15% pada kasus penyelundupan di wilayah perbatasan. Fokus utama berada di area pos lintas batas Atambua. Disarankan untuk meningkatan patroli pada jam 02:00 - 05:00 WITA.
-              </p>
-              <div className="pt-3 border-t border-white/10 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                <span className="break-all">Verified Source: <strong>Ren Ops BIK 2026 / Laporan Intelkam Polda NTT</strong></span>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
         <div className="p-4 bg-[#0B1B32] border-t border-white/10 shrink-0 w-full">
           <div className="max-w-3xl mx-auto relative flex overflow-hidden">
             <input 
               type="text" 
+              value={inputVal}
+              onChange={(e) => setInputVal(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
               className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-4 text-white focus:outline-none focus:border-[#D4AF37] focus:bg-white/10 transition-colors"
               placeholder="Tanyakan analisis strategis kepada Turangga-AI..."
             />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-[#D4AF37] rounded-lg text-slate-900 hover:bg-[#b8952b] cursor-pointer">
+            <button 
+              onClick={handleSend}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-[#D4AF37] rounded-lg text-slate-900 hover:bg-[#b8952b] cursor-pointer"
+            >
               <Search size={18} />
             </button>
           </div>

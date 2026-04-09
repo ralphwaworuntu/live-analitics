@@ -98,7 +98,7 @@ export interface AppNotification {
   id: string;
   title: string;
   description: string;
-  level: "info" | "warning" | "critical";
+  level: "info" | "warning" | "critical" | "success";
   createdAt: string;
   read: boolean;
 }
@@ -191,12 +191,16 @@ export interface FieldReport {
   isUndercover?: boolean;
 }
 
-export type MissionStatus = "en-route" | "on-site" | "completed";
+export type MissionStatus = "en-route" | "on-site" | "completed" | "SOS/Darurat";
 
 export interface TacticalMission {
   id: string;
   title: string;
   description: string;
+  type?: string;
+  locationName?: string;
+  priority?: "Low" | "Medium" | "High" | "Critical";
+  unitName?: string;
   status: MissionStatus;
   assignedPersonnelId: string;
   targetLat: number;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { 
   FileUp, 
   ShieldAlert, 
@@ -21,6 +21,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { useAppStore } from "@/store";
 import GoogleMap from "@/components/map/GoogleMap";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 export default function PatrolIntelView() {
   const [activeTab, setActiveTab] = useState<"planning" | "monitoring" | "review">("monitoring");
@@ -30,51 +32,64 @@ export default function PatrolIntelView() {
   const setActiveShift = useAppStore((state) => state.setActiveShift);
   const selectedPolsekId = useAppStore((state) => state.selectedPolsekId);
 
-  const generateWeeklyReport = () => {
-    alert("GENERATING TACTICAL ANEV...\n\n- Compliance Ranking Extracted\n- Fuel Efficiency Audit Performed\n- Polsek Hierarchy Performance Compiled\n\nPDF Download in progress.");
+  const pushNotification = useAppStore(state => state.pushNotification);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  const generateWeeklyReport = async () => {
+    if (!reportRef.current) return;
+    pushNotification({ title: "Generating ANEV", description: "Mengompilasi data taktikal ke PDF...", level: "info" });
+    const canvas = await html2canvas(reportRef.current, { backgroundColor: "#07111F", scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("l", "mm", "a4");
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`SENTINEL_PATROL_ANEV_${Date.now()}.pdf`);
+    pushNotification({ title: "ANEV Berhasil", description: "Dokumen PDF telah diunduh.", level: "warning" });
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#07111F] text-slate-100 p-6 space-y-6 overflow-hidden">
-      <div className="flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-4">
+    <div ref={reportRef} className="h-full flex flex-col bg-[#07111F] text-slate-100 p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6 overflow-hidden">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight italic">Sentinel Tactical Console</h1>
-            <p className="text-sm text-slate-400">Micro-Monitoring Hierarchy, SOS Emergency Dispatch, & Asset Fleet Audit.</p>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight italic">Sentinel Tactical Console</h1>
+            <p className="text-xs sm:text-sm text-slate-400 hidden sm:block">Micro-Monitoring & SOS Emergency Dispatch</p>
           </div>
           
           <button 
             onClick={() => setOnlineStatus(!isOnline)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer min-h-[44px] shrink-0 ${
               isOnline 
                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]" 
                 : "bg-red-500/10 border-red-500/30 text-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]"
             }`}
           >
             {isOnline ? <Wifi size={12} /> : <WifiOff size={12} />}
-            {isOnline ? "Live Telemetry" : "Network Blind (Buffer)"}
+            <span className="hidden sm:inline">{isOnline ? "Live Telemetry" : "Network Blind"}</span>
           </button>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="flex bg-[#0B1B32] p-1 rounded-xl border border-white/5 shadow-inner">
+        <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto hide-scrollbar pb-1">
+          <div className="flex bg-[#0B1B32] p-1 rounded-xl border border-white/5 shadow-inner shrink-0">
              <button 
                onClick={() => setActiveShift("pagi")}
-               className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-2 cursor-pointer ${activeShift === "pagi" ? "bg-amber-500 text-slate-950" : "text-slate-500 hover:text-slate-300"}`}
+               className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-2 cursor-pointer min-h-[40px] ${activeShift === "pagi" ? "bg-amber-500 text-slate-950" : "text-slate-500 hover:text-slate-300"}`}
              >
                 <Clock size={12} /> Pagi
              </button>
              <button 
                onClick={() => setActiveShift("malam")}
-               className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-2 cursor-pointer ${activeShift === "malam" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-300"}`}
+               className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-2 cursor-pointer min-h-[40px] ${activeShift === "malam" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-300"}`}
              >
                 <Clock size={12} /> Malam
              </button>
           </div>
 
-          <div className="h-8 w-px bg-white/10 mx-2"></div>
+          <div className="h-8 w-px bg-white/10 hidden sm:block"></div>
 
-          <div className="flex bg-[#0B1B32] p-1 rounded-xl border border-white/5">
+          <div className="flex bg-[#0B1B32] p-1 rounded-xl border border-white/5 shrink-0">
             {[
               { id: "planning" as const, label: "Planning", icon: FileUp },
               { id: "monitoring" as const, label: "Tactical GIS", icon: Navigation },
@@ -85,14 +100,14 @@ export default function PatrolIntelView() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer min-h-[40px] whitespace-nowrap ${
                     activeTab === tab.id 
                       ? "bg-[#D4AF37] text-slate-950 shadow-lg shadow-[#D4AF37]/20" 
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
                   <Icon size={16} />
-                  {tab.label}
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               )
             })}
@@ -111,6 +126,7 @@ export default function PatrolIntelView() {
 
 function PrePatrolSection() {
   const [analysisActive, setAnalysisActive] = useState(false);
+  const pushNotification = useAppStore(state => state.pushNotification);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 pb-10">
@@ -119,7 +135,15 @@ function PrePatrolSection() {
           <FileUp size={20} /> Regional Hotspot Data
         </h2>
         <div className="border-2 border-dashed border-white/5 rounded-2xl p-10 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-[#D4AF37]/40 transition-all bg-white/2 relative">
-          <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" />
+          <input 
+            type="file" 
+            className="absolute inset-0 opacity-0 cursor-pointer" 
+            onChange={(e) => {
+              if (e.target.files?.length) {
+                 pushNotification({ title: "GeoJSON Uploaded", description: `Memproses ${e.target.files[0].name} untuk analisis AI.`, level: "info" });
+              }
+            }} 
+          />
           <div className="p-4 bg-white/5 rounded-full mb-4">
              <FileUp size={32} className="text-slate-500 group-hover:text-[#D4AF37] transition-all" />
           </div>
@@ -165,8 +189,17 @@ function PrePatrolSection() {
                 Terdapat deviasi rute signifikan (Polsek Oebobo) yang tidak menyentuh zona rawan 3B (Curat/Curas/Curanmor).
              </p>
              <div className="flex justify-end gap-3">
-                <button className="px-4 py-2 border border-white/10 rounded-lg text-xs font-bold hover:bg-white/5 cursor-pointer uppercase">Revisi Manual</button>
-                <button className="px-4 py-2 bg-[#D4AF37] text-slate-950 font-black rounded-lg text-xs hover:bg-[#b8952b] cursor-pointer uppercase">Auto-Realign Route</button>
+                <button 
+                  onClick={() => setAnalysisActive(false)}
+                  className="px-4 py-2 border border-white/10 rounded-lg text-xs font-bold hover:bg-white/5 cursor-pointer uppercase"
+                >Revisi Manual</button>
+                <button 
+                  onClick={() => {
+                    pushNotification({ title: 'Rute Diperbarui', description: 'Auto-realign selesai via rekomendasi AI.', level: 'info' });
+                    setAnalysisActive(false);
+                  }}
+                  className="px-4 py-2 bg-[#D4AF37] text-slate-950 font-black rounded-lg text-xs hover:bg-[#b8952b] cursor-pointer uppercase"
+                >Auto-Realign Route</button>
              </div>
           </div>
         )}
@@ -180,7 +213,7 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
   const tracks = useAppStore(state => state.personnelTracks);
 
   return (
-    <div className="h-full grid grid-cols-1 xl:grid-cols-4 gap-6 animate-in slide-in-from-right-4 min-h-[600px] pb-10">
+    <div className="h-full grid grid-cols-1 xl:grid-cols-4 gap-4 md:gap-6 animate-in slide-in-from-right-4 min-h-[400px] md:min-h-[600px] pb-10">
       <div className="xl:col-span-1 space-y-4 flex flex-col h-full">
          <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-black text-[#D4AF37] uppercase tracking-widest px-1">Unit Asset Telemetry</h2>
@@ -236,7 +269,7 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
          </div>
       </div>
 
-      <div className="xl:col-span-3 h-full relative rounded-3xl border border-white/10 bg-[#0B1B32] overflow-hidden flex flex-col min-h-[550px] shadow-2xl">
+      <div className="xl:col-span-3 h-full relative rounded-3xl border border-white/10 bg-[#0B1B32] overflow-hidden flex flex-col min-h-[300px] md:min-h-[550px] shadow-2xl">
          <div className="flex-1">
             <GoogleMap />
          </div>

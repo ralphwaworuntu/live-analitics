@@ -27,9 +27,11 @@ import {
   getFilteredRowModel
 } from "@tanstack/react-table";
 import { useAppStore } from "@/store";
+import { TableSkeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { playTacticalSound } from "@/lib/tactical-feedback";
 import { 
   Table, 
   TableBody, 
@@ -549,11 +551,18 @@ const IncidentTable = ({ searchQuery, selectedIds = [], onSelectIds = () => {} }
 };
 
 const PersonnelTable = ({ searchQuery }: { searchQuery: string }) => {
+  const [isLoading, setIsLoading] = React.useState(true);
   const addAuditLog = useAppStore(state => state.addAuditLog);
   const auditLogs = useAppStore(state => state.auditLogs);
+  const pushNotification = useAppStore(state => state.pushNotification);
 
   const [selectedPersonnelId, setSelectedPersonnelId] = useState<string | null>(null);
   const [selectedAuditId, setSelectedAuditId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleCallUnit = (name: string, nrp: string) => {
     addAuditLog({
@@ -562,7 +571,12 @@ const PersonnelTable = ({ searchQuery }: { searchQuery: string }) => {
       target: `${name} (${nrp})`,
       details: "Membuka jalur komunikasi taktis via VOIP/Radio Link."
     });
-    alert(`Menghubungi Unit: ${name}...`);
+    pushNotification({
+      title: "Tactical Comms",
+      description: `Jalur radio/VOIP ke unit ${name} sedang disambungkan...`,
+      level: "info"
+    });
+    playTacticalSound("click");
   };
 
   const columns = [
@@ -733,6 +747,14 @@ const PersonnelTable = ({ searchQuery }: { searchQuery: string }) => {
     state: { globalFilter: searchQuery },
   });
 
+  if (isLoading) {
+    return (
+      <div className="p-4 bg-[#0B1B32] rounded-xl border border-white/5">
+        <TableSkeleton rows={12} cols={6} />
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       <Table className="min-w-[1100px]">
@@ -781,6 +803,7 @@ const PersonnelTable = ({ searchQuery }: { searchQuery: string }) => {
 
 const AssetTable = ({ searchQuery }: { searchQuery: string }) => {
   const addAuditLog = useAppStore(state => state.addAuditLog);
+  const pushNotification = useAppStore(state => state.pushNotification);
 
   const handlePrintAudit = (id: string, deviation: number) => {
     addAuditLog({
@@ -789,7 +812,12 @@ const AssetTable = ({ searchQuery }: { searchQuery: string }) => {
       target: id,
       details: `Menghasilkan laporan penyimpangan konsumsi BBM (${deviation.toFixed(1)} KM/L).`
     });
-    alert(`Nota Audit dicetak untuk kendaraan ${id}`);
+    pushNotification({
+      title: "Nota Audit Diterbitkan",
+      description: `Laporan audit BBM untuk ${id} telah berhasil digenerate.`,
+      level: "success"
+    });
+    playTacticalSound("click");
   };
   const columns = [
     columnHelperAsset.accessor("sync", {

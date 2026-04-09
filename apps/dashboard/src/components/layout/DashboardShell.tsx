@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ResizableHandle, 
@@ -13,15 +14,49 @@ import IntelligencePanel from "@/components/ai/IntelligencePanel";
 
 export default function DashboardShell({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const openSidebar = useCallback(() => setSidebarOpen(true), []);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   return (
     <div className="h-screen w-full bg-[#07111F] text-[#EAF2FF] overflow-hidden flex">
-      {/* Sidebar - Fixed Width as requested (280px) */}
-      <Sidebar />
-      
+
+      {/* Desktop Sidebar — permanent, hidden on mobile */}
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
+
+      {/* Mobile Sidebar — off-canvas drawer overlay */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-[200] md:hidden">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={closeSidebar}
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="absolute left-0 top-0 h-full w-[280px] shadow-2xl"
+            >
+              <Sidebar onClose={closeSidebar} />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#07111F]">
-        <TopHeader />
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#07111F] min-w-0">
+        <TopHeader onOpenSidebar={openSidebar} />
         
         <div className="flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait">
@@ -38,20 +73,20 @@ export default function DashboardShell({ children }: { children?: React.ReactNod
               
               {/* Center Container (Map or Main View) */}
               <ResizablePanel defaultSize={75} minSize={40} className="relative z-10 bg-[var(--color-bg)]">
-                <main className="h-full w-full relative overflow-hidden">
+                <main className="h-full w-full relative overflow-hidden overflow-y-auto">
                   {children}
                 </main>
               </ResizablePanel>
 
-              <ResizableHandle withHandle className="z-40 border-l border-white/5 bg-slate-950" />
+              <ResizableHandle withHandle className="z-40 border-l border-white/5 bg-slate-950 hidden md:flex" />
 
-              {/* Intelligence Panel (Right Sidebar) - Collapsed by default to keep it clean */}
+              {/* Intelligence Panel — hidden on mobile */}
               <ResizablePanel
                 defaultSize={0}
                 minSize={0}
                 maxSize={35}
                 collapsible={true}
-                className="z-30"
+                className="z-30 hidden md:block"
               >
                 <IntelligencePanel />
               </ResizablePanel>

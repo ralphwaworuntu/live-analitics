@@ -11,6 +11,8 @@ import StatisticsView from "../../components/views/StatisticsView";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+import { AnimatePresence, motion } from "framer-motion";
+
 function DashboardContent() {
   const searchParams = useSearchParams();
   const currentView = searchParams.get("view") || "dashboard";
@@ -44,7 +46,18 @@ function DashboardContent() {
 
   return (
     <div className="flex-1 h-full overflow-hidden relative bg-[#07111F]">
-      {renderContent()}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentView}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="h-full w-full"
+        >
+          {renderContent()}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

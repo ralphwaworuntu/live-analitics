@@ -51,6 +51,8 @@ import {
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAppStore } from "@/store";
+import { playTacticalSound } from "@/lib/tactical-feedback";
 
 // --- TYPES ---
 
@@ -202,10 +204,15 @@ const AlertCard = ({ alert }: { alert: TacticalAlert }) => (
 const KPICard = ({ title, value, unit, trend, icon: Icon, trendValue, pciScore }: KPICardProps) => {
   const isTargetAchieved = pciScore && pciScore > 90;
   return (
-    <Card className={cn(
-      "group relative overflow-hidden transition-all duration-500 h-full",
-      isTargetAchieved && "border-yellow-500/50 shadow-[0_0_20px_rgba(212,175,55,0.1)] bg-gradient-to-br from-[#0B1B32] to-[#1A2C44]"
-    )}>
+    <motion.div 
+      whileHover={{ scale: 1.02, y: -5 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn(
+        "group relative overflow-hidden transition-all duration-500 h-full bg-[#0B1B32] border border-white/5 rounded-[24px] p-6 shadow-2xl hover:border-[#D4AF37]/30 hover:shadow-[#D4AF37]/5",
+        isTargetAchieved && "border-yellow-500/50 shadow-[0_0_20px_rgba(212,175,55,0.1)] bg-gradient-to-br from-[#0B1B32] to-[#1A2C44]"
+      )}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">{title}</CardTitle>
         <div className={cn("p-2 rounded-xl transition-colors", isTargetAchieved ? "bg-yellow-500/10" : "bg-white/5")}>
@@ -225,12 +232,13 @@ const KPICard = ({ title, value, unit, trend, icon: Icon, trendValue, pciScore }
           <span className="text-[9px] font-black text-slate-600 uppercase">Trend Performance</span>
         </div>
       </CardContent>
-    </Card>
+    </motion.div>
   );
 };
 
 export default function StatisticsView() {
   const dashboardRef = useRef<HTMLDivElement>(null);
+  const { executeAction } = useAppStore();
 
   const exportDashboard = async (format: "png" | "pdf") => {
     if (!dashboardRef.current) return;
@@ -249,6 +257,9 @@ export default function StatisticsView() {
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save(`SENTINEL_ANEV_NTT_${Date.now()}.pdf`);
     }
+
+    executeAction("EXPORT_ANEV");
+    playTacticalSound("click");
   };
 
   return (

@@ -14,7 +14,7 @@ export default function PolresWorkspace() {
 
   const localActivities = useMemo(() => activities.slice(0, 4), [activities]);
   const localHeat = useMemo(
-    () => (selectedPolres ? heatPoints.filter((item) => item.polresId === selectedPolres.id) : heatPoints),
+    () => (selectedPolres ? heatPoints.filter((item: any) => item.polresId === selectedPolres.id) : heatPoints),
     [heatPoints, selectedPolres],
   );
 

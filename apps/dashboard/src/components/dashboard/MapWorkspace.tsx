@@ -87,7 +87,7 @@ export default function MapWorkspace() {
             <div className="eyebrow">Heat Priority</div>
             <h3 className="mt-3 text-base font-semibold">Hotspot Queue</h3>
             <div className="mt-4 space-y-3">
-              {heatPoints.slice(0, 5).map((point) => (
+              {heatPoints.slice(0, 5).map((point: any) => (
                 <div key={point.id} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] px-4 py-3">
                   <div className="text-sm font-medium text-[var(--color-text)]">{point.title}</div>
                   <div className="mt-1 text-sm text-[var(--color-muted)]">

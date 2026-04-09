@@ -1,6 +1,6 @@
 import type { PersonnelTrack } from "./types";
 
-export const mockPersonnelTracks: PersonnelTrack[] = [
+export const mockPersonnelTracks = [
   {
     id: "p-001",
     nrp: "85020112",

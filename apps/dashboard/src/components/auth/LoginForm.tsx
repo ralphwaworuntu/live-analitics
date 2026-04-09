@@ -232,7 +232,7 @@ export function LoginForm() {
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={isLoading}
+                    disabled={isLoading || isScanning}
                     className="relative w-full py-8 border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#D4AF37]/40 overflow-hidden group"
                     onClick={handleBiometricLogin}
                   >

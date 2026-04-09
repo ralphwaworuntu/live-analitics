@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import PWAProvider from "@/components/pwa/PWAProvider";
 
 export const metadata: Metadata = {
   title: "SENTINEL - Command Center Polda NTT",
@@ -7,10 +8,10 @@ export const metadata: Metadata = {
     "Sistem Live Tracking dan AI-Powered Command Center untuk Biro Operasi Polda NTT",
   keywords: ["Polda NTT", "Command Center", "Live Tracking", "SENTINEL"],
   applicationName: "SENTINEL",
-  manifest: "/manifest.webmanifest",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "SENTINEL",
   },
 };
@@ -30,8 +31,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className="h-full">
-      <body className="min-h-full">{children}</body>
+    <html lang="id" className="h-full bg-[#07111F]">
+      <body className="min-h-full h-full max-h-[100dvh] overflow-hidden">
+        <PWAProvider>
+          {children}
+        </PWAProvider>
+      </body>
     </html>
   );
 }
