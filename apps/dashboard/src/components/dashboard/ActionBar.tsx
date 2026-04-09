@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Search, Filter, List, Map as MapIcon, Plus, ChevronDown, Check } from "lucide-react";
 import { useAppStore } from "@/store";
 import { cn } from "@/lib/utils";
-import EventInputModal from "./EventInputModal";
+import TacticalDispatchModal from "./TacticalDispatchModal";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ActionBarProps {
@@ -16,7 +16,7 @@ export default function ActionBar({
   activeView,
   onToggleView,
 }: ActionBarProps) {
-  const { searchQuery, setSearchQuery, filterStatus, setFilterStatus, filterPriority, setFilterPriority } = useAppStore();
+  const { searchQuery, setSearchQuery, filterStatus, setFilterStatus, filterPriority, setFilterPriority, setSelectedPolres } = useAppStore();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -118,7 +118,10 @@ export default function ActionBar({
           {/* Slot 3: Action Button */}
           <div className="flex items-center px-2">
             <button 
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setSelectedPolres(null);
+                setIsModalOpen(true);
+              }}
               className="flex items-center gap-2 h-10 px-4 bg-[#D4AF37] hover:bg-[#EBC145] text-[#07111F] font-black rounded-lg transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)] group"
             >
               <Plus className="w-4 h-4 stroke-[3px]" />
@@ -151,7 +154,7 @@ export default function ActionBar({
         </div>
       </div>
 
-      <EventInputModal 
+      <TacticalDispatchModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
         initialLocation={searchQuery}

@@ -7,20 +7,21 @@ import { useAppStore } from "@/store";
 import { Shield, MapPin, Users, AlertTriangle, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import EventInputModal from "../dashboard/EventInputModal";
+import TacticalDispatchModal from "../dashboard/TacticalDispatchModal";
 
 /**
  * SENTINEL Command Center View
  * Focus: Full-screen tactical GIS tracker for live patrol monitoring and tactical AI intel.
  */
 export default function DashboardView() {
-  const { polres, searchQuery, filterStatus, filterPriority } = useAppStore();
+  const { polres, searchQuery, filterStatus, filterPriority, setSelectedPolres } = useAppStore();
   const [activeView, setActiveView] = useState<"list" | "map">("map");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("");
 
-  const handlePolresClick = (name: string) => {
-    setSelectedLocation(name);
+  const handlePolresClick = (p: { id: string, name: string }) => {
+    setSelectedPolres(p.id);
+    setSelectedLocation(""); // Let the modal filter handle it
     setIsModalOpen(true);
   };
 
@@ -113,7 +114,7 @@ export default function DashboardView() {
                         layout
                         whileHover={{ scale: 1.02, y: -5 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => handlePolresClick(p.name)}
+                        onClick={() => handlePolresClick(p)}
                         className={cn(
                           "relative group bg-[#0B1B32] border rounded-[24px] p-6 transition-all duration-300 cursor-pointer overflow-hidden",
                           p.status === "kritis" ? "border-red-500/40 shadow-[0_20px_40px_-15px_rgba(239,68,68,0.2)]" : "border-white/5 hover:border-white/20 shadow-xl"
@@ -181,7 +182,7 @@ export default function DashboardView() {
         </AnimatePresence>
       </div>
 
-      <EventInputModal 
+      <TacticalDispatchModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
         initialLocation={selectedLocation}
