@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 import { buildMockKpis, mockActivities, mockPolresData } from "@/lib/mock-data";
 import type {
@@ -24,6 +25,7 @@ import type {
   FieldReport,
   CctvPoint,
   ShadowHotspot,
+  HeatPoint,
 } from "@/lib/types";
 import { mockPersonnelTracks } from "@/lib/mockPatrolData";
 
@@ -83,6 +85,12 @@ interface AppState {
   setOnlineStatus: (status: boolean) => void;
   syncOfflineData: () => void;
   updatePersonnelPosition: (id: string, lat: number, lng: number) => void;
+  updatePersonnelTelemetry: (id: string, data: {
+    batteryLevel?: number;
+    isCharging?: boolean;
+    speedKmh?: number | null;
+    signalStatus?: "LTE" | "5G" | "3G" | "H+" | "No Signal";
+  }) => void;
 
   // C2 & Dispatch
   activeMissions: TacticalMission[];
@@ -127,6 +135,8 @@ interface AppState {
   // Map Tracking & Focus
   mapCenter: { lat: number; lng: number; zoom?: number } | null;
   setMapCenter: (center: { lat: number; lng: number; zoom?: number } | null) => void;
+  heatPoints: HeatPoint[];
+  setHeatPoints: (points: HeatPoint[]) => void;
 
   // Multi-Agency & Citizen Integration
   bmkgOverlayEnabled: boolean;
@@ -166,7 +176,9 @@ const defaultEmergency: EmergencyState = {
   lng: null,
 };
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>()(
+  persist(
+    (set, get) => ({
   polres: mockPolresData,
   polsek: [],
   policePosts: [
@@ -328,11 +340,69 @@ export const useAppStore = create<AppState>((set, get) => ({
     return {
       personnelTracks: state.personnelTracks.map(t => 
         t.id === id 
-          ? { ...t, waypoints: [...t.waypoints, { lat, lng, timestamp }], odometer: t.odometer + 0.05 } 
+          ? { ...t, waypoints: [...t.waypoints.slice(-100), { lat, lng, timestamp }], odometer: t.odometer + 0.05 } 
           : t
       )
     };
   }),
+
+  updatePersonnelTelemetry: (id, data) => {
+    const state = get();
+    const track = state.personnelTracks.find(t => t.id === id);
+    if (!track) return;
+
+    const updates: Partial<PersonnelTrack> = {};
+
+    // Battery update
+    if (data.batteryLevel !== undefined && data.batteryLevel >= 0) {
+      updates.batteryLevel = data.batteryLevel;
+
+      // Smart alert: low battery < 15%
+      if (data.batteryLevel < 15 && track.batteryLevel >= 15) {
+        get().pushNotification({
+          title: "⚡ Baterai Kritis",
+          description: `Unit ${track.name} (${track.nrp}) — baterai ${data.batteryLevel}%. Perintahkan kembali ke pos untuk pengisian daya.`,
+          level: "warning",
+        });
+        get().addAuditLog({
+          actor: "Sentinel-AI Telemetry",
+          action: "LOW_BATTERY_ALERT",
+          target: `${track.name} (${track.id})`,
+          details: `Baterai unit turun ke ${data.batteryLevel}%. Status: ${data.isCharging ? 'Charging' : 'Discharging'}.`,
+        });
+      }
+    }
+
+    // Speed update
+    if (data.speedKmh !== undefined && data.speedKmh !== null) {
+      updates.topSpeed = Math.max(track.topSpeed, data.speedKmh);
+    }
+
+    // Signal update
+    if (data.signalStatus) {
+      // Smart alert: signal lost
+      if (data.signalStatus === "No Signal" && track.signalStatus !== "No Signal") {
+        get().pushNotification({
+          title: "📡 Sinyal Hilang",
+          description: `Unit ${track.name} (${track.nrp}) kehilangan sinyal. Status diubah ke SIGNAL LOST.`,
+          level: "critical",
+        });
+        get().addAuditLog({
+          actor: "Sentinel-AI Telemetry",
+          action: "SIGNAL_LOST",
+          target: `${track.name} (${track.id})`,
+          details: `Koneksi terputus. Sinyal sebelumnya: ${track.signalStatus}.`,
+        });
+      }
+      updates.signalStatus = data.signalStatus;
+    }
+
+    set({
+      personnelTracks: state.personnelTracks.map(t =>
+        t.id === id ? { ...t, ...updates } : t
+      ),
+    });
+  },
 
   syncOfflineData: () => set({ offlineQueue: [] }),
   
@@ -384,6 +454,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Map Focus
   mapCenter: null,
   setMapCenter: (center) => set({ mapCenter: center }),
+  heatPoints: [],
+  setHeatPoints: (points) => set({ heatPoints: points }),
 
   // Multi-Agency & Citizen
   bmkgOverlayEnabled: false,
@@ -481,7 +553,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       level: "critical"
     });
   },
-}));
+    }),
+    {
+      name: "sentinel-tactical-storage",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        activeMissions: state.activeMissions,
+        auditLogs: state.auditLogs,
+        notifications: state.notifications,
+        activeShift: state.activeShift,
+      }),
+    }
+  )
+);
 
 export function getSelectedPolres(state: AppState): PolresItem | null {
   return state.polres.find((item) => item.id === state.selectedPolresId) ?? null;

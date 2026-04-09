@@ -221,9 +221,22 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
          </div>
          
          <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-6">
-            {tracks.map(unit => {
+          {tracks.map(unit => {
                const fuelEfficiency = (unit.odometer / (unit.fuelInputShift || 1)).toFixed(1);
                const isAnomaly = parseFloat(fuelEfficiency) < 8.0; // Simulated logic
+               const isHighSpeed = unit.topSpeed > 80;
+               const isLowBattery = unit.batteryLevel < 15;
+               const isSignalLost = unit.signalStatus === "No Signal";
+               const batteryColor = unit.batteryLevel > 50 
+                 ? "text-emerald-500" 
+                 : unit.batteryLevel > 15 
+                   ? "text-yellow-500" 
+                   : "text-red-500 animate-pulse";
+               const batteryBg = unit.batteryLevel > 50
+                 ? "bg-emerald-500"
+                 : unit.batteryLevel > 15
+                   ? "bg-yellow-500"
+                   : "bg-red-500";
 
                return (
                   <div key={unit.id} className="bg-[#0B1B32]/95 border border-white/10 rounded-xl p-4 hover:border-red-500/50 transition-all cursor-pointer group relative overflow-hidden">
@@ -231,7 +244,7 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
                         <div className="absolute top-0 right-0 p-1 bg-red-600 text-white font-black text-[8px] uppercase px-2 shadow-lg">Anomali BBM</div>
                      )}
                      
-                     <div className="flex items-center justify-between mb-4">
+                     <div className="flex items-center justify-between mb-3">
                         <div className="flex flex-col">
                            <span className="text-[10px] text-slate-500 font-black uppercase tracking-tighter">{unit.id}</span>
                            <span className="text-sm font-black text-white">{unit.name}</span>
@@ -242,6 +255,50 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
                         >
                            <Siren size={16} />
                         </button>
+                     </div>
+
+                     {/* TELEMETRY BADGES ROW */}
+                     <div className="flex items-center gap-2 mb-3 flex-wrap">
+                        {/* Battery Badge */}
+                        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[9px] font-black uppercase ${
+                          isLowBattery 
+                            ? "bg-red-500/10 border-red-500/30 text-red-500" 
+                            : "bg-white/5 border-white/10 text-slate-400"
+                        }`}>
+                           <Zap size={10} className={batteryColor} />
+                           <span>{unit.batteryLevel}%</span>
+                           <div className="w-8 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                             <div className={`h-full rounded-full transition-all ${batteryBg}`} style={{ width: `${unit.batteryLevel}%` }} />
+                           </div>
+                        </div>
+
+                        {/* Speed Badge */}
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-[9px] font-black uppercase ${
+                          isHighSpeed 
+                            ? "bg-orange-500/10 border-orange-500/30 text-orange-400 animate-pulse" 
+                            : "bg-white/5 border-white/10 text-slate-400"
+                        }`}>
+                           <Gauge size={10} />
+                           <span>{unit.topSpeed} km/h</span>
+                        </div>
+
+                        {/* Signal Badge */}
+                        {isSignalLost ? (
+                           <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-[9px] font-black uppercase text-red-500 animate-pulse">
+                              <WifiOff size={10} /> LOST
+                           </div>
+                        ) : (
+                           <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[9px] font-black uppercase text-slate-400">
+                              <Wifi size={10} className="text-emerald-500" /> {unit.signalStatus}
+                           </div>
+                        )}
+
+                        {/* High Speed Alert Label */}
+                        {isHighSpeed && (
+                           <div className="px-2 py-1 rounded-lg bg-orange-600 text-white text-[8px] font-black uppercase tracking-widest animate-bounce">
+                              HIGH SPEED
+                           </div>
+                        )}
                      </div>
 
                      <div className="grid grid-cols-2 gap-x-6 gap-y-3 mb-4">

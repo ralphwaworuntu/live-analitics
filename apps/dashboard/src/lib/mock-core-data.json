@@ -1,0 +1,115 @@
+{
+  "mockIncidents": [
+    { 
+      "id": "K-2026-KUPANG-042", 
+      "type": "SOS", 
+      "locationName": "Polres Kupang Kota", 
+      "lat": -10.158, 
+      "lng": 123.606, 
+      "responder": { "name": "Iptu Pratama", "nrp": "88050912" }, 
+      "responseTime": "04:15 min", 
+      "priority": "High", 
+      "status": "On-Progress",
+      "sync": "LIVE",
+      "evidence": [
+        { "type": "image", "url": "/mock/tkp1.jpg", "timestamp": "2026-04-05 08:12" },
+        { "type": "audio", "url": "/mock/radio.mp3", "timestamp": "2026-04-05 08:14" }
+      ],
+      "verification": "Verified",
+      "auditTrail": [
+        { "actor": { "name": "AKBP Simanjuntak", "nrp": "74010022" }, "action": "Verifikasi Kejadian", "oldValue": "Pending", "newValue": "Verified", "timestamp": "2026-04-05 08:42:12" },
+        { "actor": { "name": "Operator 01", "nrp": "99012233" }, "action": "Update Lokasi", "timestamp": "2026-04-05 08:15:00" }
+      ],
+      "responseTimeTrend": "down"
+    },
+    { 
+      "id": "K-2026-BELU-119", 
+      "type": "Curanmor", 
+      "locationName": "Polsek Atambua", 
+      "lat": -9.15, 
+      "lng": 124.9, 
+      "responder": { "name": "Bripka Yohanis", "nrp": "92120045" }, 
+      "responseTime": "12:30 min", 
+      "priority": "Medium", 
+      "status": "Pending",
+      "sync": "SYNCED",
+      "evidence": [{ "type": "file", "url": "/mock/report.pdf", "timestamp": "2026-04-05 09:00" }],
+      "verification": "Unverified",
+      "auditTrail": [],
+      "responseTimeTrend": "stable"
+    },
+    { 
+      "id": "K-2026-KUPANG-045", 
+      "type": "SOS", 
+      "locationName": "Polres Kupang Kota", 
+      "lat": -10.165, 
+      "lng": 123.610, 
+      "responder": { "name": "Bripka Satria", "nrp": "95010022" }, 
+      "responseTime": "06:20 min", 
+      "priority": "High", 
+      "status": "Pending",
+      "sync": "LIVE",
+      "evidence": [],
+      "verification": "Unverified",
+      "auditTrail": [],
+      "responseTimeTrend": "up"
+    }
+  ],
+  "mockPersonnel": [
+    { 
+      "id": "88050912", 
+      "name": "Iptu Pratama W. S.H.", 
+      "rank": "Iptu", 
+      "position": "Kanit Patroli", 
+      "satker": "Polres Kupang Kota", 
+      "status": "Online", 
+      "lastPing": "2 mins ago", 
+      "equipment": { "weaponSerial": "HS091244", "htStatus": "Active" }, 
+      "photo": "", 
+      "phone": "0812-3456-7890", 
+      "lat": -10.16, 
+      "lng": 123.61,
+      "sync": "LIVE",
+      "commandLog": [
+        { "instruction": "Geser ke sektor Oebufu untuk patroli dialogis", "dispatcher": "Ipda Bambang", "timestamp": "2026-04-05 08:00" },
+        { "instruction": "Lakukan TPTKP pada insiden K-2026-KUPANG-042", "dispatcher": "AKBP Simanjuntak", "timestamp": "2026-04-05 08:15" }
+      ],
+      "auditTrail": [],
+      "batteryLevel": 85,
+      "signalStatus": "LTE",
+      "topSpeed": 42,
+      "harshBrakingCount": 0,
+      "isFakeGPS": false,
+      "isUndercover": false
+    },
+    { 
+      "id": "92010045", 
+      "name": "Bripka Yohanis", 
+      "rank": "Bripka", 
+      "position": "Babin", 
+      "satker": "Polres Belu", 
+      "status": "Online", 
+      "lastPing": "1 min ago", 
+      "equipment": { "weaponSerial": "HS112233", "htStatus": "Active" }, 
+      "photo": "", 
+      "phone": "0812-4455-6677", 
+      "lat": -9.15, 
+      "lng": 124.9,
+      "sync": "LIVE",
+      "commandLog": [],
+      "auditTrail": [],
+      "batteryLevel": 12,
+      "signalStatus": "No Signal",
+      "topSpeed": 105,
+      "harshBrakingCount": 4,
+      "isFakeGPS": true,
+      "isUndercover": true
+    }
+  ],
+  "mockAssets": [
+    { "id": "DH-1234-AX", "type": "R4", "odometer": 15420, "fuelQuota": 50, "fuelConsumed": 42, "efficiency": 8.5, "condition": "Ready", "sync": "LIVE", "integrityFlag": false, "auditTrail": [], "distanceTrend": [12, 45, 32, 60, 44, 80, 110] },
+    { "id": "DH-9012-CZ", "type": "R6", "odometer": 28900, "fuelQuota": 120, "fuelConsumed": 118, "efficiency": 2.1, "condition": "Ready", "sync": "SYNCED", "integrityFlag": true, "auditTrail": [
+      { "actor": { "name": "Kasi Logistik", "nrp": "82010922" }, "action": "Flagged Anomaly", "timestamp": "2026-04-05 10:00" }
+    ], "distanceTrend": [80, 75, 90, 85, 70, 60, 65] }
+  ]
+}

@@ -17,7 +17,8 @@ import {
   Battery,
   Ghost,
   EyeOff,
-  Mic
+  Mic,
+  Map as MapIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -214,7 +215,16 @@ export default function GoogleMap() {
   const [undercoverVisible, setUndercoverVisible] = useState(false);
   const reports = useMemo(() => mockMobileReports, []);
 
-  if (!apiKey) return null;
+  if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_KEY") {
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#07111F] text-slate-500 gap-4">
+         <div className="p-4 rounded-full bg-white/5 animate-pulse">
+           <MapIcon className="w-8 h-8 text-slate-600" />
+         </div>
+         <span className="text-xs font-black uppercase tracking-[0.2em]">Map Engine Offline (No Valid API Key)</span>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -272,6 +282,31 @@ function PolicePostsLayer({ posts }: { posts: PolicePost[] }) {
 function SOSOverlay() {
   const emergency = useAppStore(state => state.emergency);
   const clearEmergency = useAppStore(state => state.clearEmergency);
+  const dispatchMission = useAppStore(state => state.dispatchMission);
+  const pushNotification = useAppStore(state => state.pushNotification);
+  
+  const handleAutoDispatch = () => {
+    dispatchMission({
+      title: emergency.message || "SOS RESPONSE",
+      type: "Darurat",
+      description: "Auto-dispatched emergency response via SOS Overlay",
+      locationName: emergency.location || "Target",
+      priority: "Critical",
+      status: "en-route",
+      assignedPersonnelId: "P-AUTO",
+      unitName: "QUICK-RESPONSE-01",
+      targetLat: emergency.lat || -10.158,
+      targetLng: emergency.lng || 123.606,
+      etaMinutes: 3
+    });
+    pushNotification({
+      title: "Unit Terdekat Dikerahkan",
+      description: `Unit QUICK-RESPONSE-01 menuju ke ${emergency.location || "TKP"}.`,
+      level: "success"
+    });
+    clearEmergency();
+  };
+
   if (!emergency.active) return null;
   return (
     <AnimatePresence>
@@ -282,8 +317,8 @@ function SOSOverlay() {
              <Siren size={40} className="text-white mb-6 animate-bounce" />
              <h2 className="text-3xl font-black text-white uppercase italic">Unit Membutuhkan Bantuan</h2>
              <div className="flex gap-4 mt-8">
-                <button onClick={clearEmergency} className="px-6 py-3 bg-white/5 text-slate-500 rounded-xl uppercase font-black text-xs">Abaikan</button>
-                <button className="px-6 py-3 bg-red-600 text-white rounded-xl uppercase font-black text-xs">Kirim Unit Terdekat</button>
+                <button onClick={clearEmergency} className="px-6 py-3 bg-white/5 text-slate-500 rounded-xl uppercase font-black text-xs cursor-pointer">Abaikan</button>
+                <button onClick={handleAutoDispatch} className="px-6 py-3 bg-red-600 text-white rounded-xl uppercase font-black text-xs cursor-pointer">Kirim Unit Terdekat</button>
              </div>
           </div>
         </div>
