@@ -20,6 +20,7 @@ export class ReportService {
 
     const now = new Date();
     const witaTimestamp = now.toLocaleString("id-ID", { timeZone: "Asia/Makassar" });
+    const docWithAutoTable = doc as jsPDF & { lastAutoTable?: { finalY?: number } };
 
     // 1. HEADER OFFICIAL
     doc.setFillColor(7, 17, 31); // Dark Sentinel Theme
@@ -68,12 +69,14 @@ export class ReportService {
     });
 
     // 3. TABEL AKTIVITAS TERBARU
-    const lastY = (doc as any).lastAutoTable?.finalY || 80;
+    const lastY = docWithAutoTable.lastAutoTable?.finalY || 80;
     doc.text("2. RINCIAN MISI AKTIF & DISPATCH", 15, lastY + 15);
     
     autoTable(doc, {
       startY: lastY + 20,
       head: [["ID", "Kejadian", "Lokasi", "Unit", "Prioritas", "Status"]],
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore jspdf-autotable RowInput typing is narrower than actual runtime values here
       body: activeMissions.slice(-10).map(m => [
         m.id.substring(4),
         m.title,
@@ -86,7 +89,7 @@ export class ReportService {
     });
 
     // 4. TURANGGA-AI BRIEFING
-    const finalY = (doc as any).lastAutoTable?.finalY || 150;
+    const finalY = docWithAutoTable.lastAutoTable?.finalY || 150;
     doc.setFillColor(250, 250, 250);
     doc.setDrawColor(212, 175, 55);
     doc.rect(15, finalY + 15, 180, 45, "FD");

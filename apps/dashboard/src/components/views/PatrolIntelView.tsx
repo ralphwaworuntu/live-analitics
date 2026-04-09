@@ -4,6 +4,9 @@ import React, { useState, useRef } from "react";
 import { 
   FileUp, 
   ShieldAlert, 
+  Battery,
+  BatteryCharging,
+  BatteryLow,
   Clock, 
   Navigation, 
   TrendingUp,
@@ -21,6 +24,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { useAppStore } from "@/store";
 import GoogleMap from "@/components/map/GoogleMap";
+import { cn } from "@/lib/utils";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -224,7 +228,7 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
           {tracks.map(unit => {
                const fuelEfficiency = (unit.odometer / (unit.fuelInputShift || 1)).toFixed(1);
                const isAnomaly = parseFloat(fuelEfficiency) < 8.0; // Simulated logic
-               const isHighSpeed = unit.topSpeed > 80;
+               const isHighSpeed = unit.speed > 90;
                const isLowBattery = unit.batteryLevel < 15;
                const isSignalLost = unit.signalStatus === "No Signal";
                const batteryColor = unit.batteryLevel > 50 
@@ -232,6 +236,11 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
                  : unit.batteryLevel > 15 
                    ? "text-yellow-500" 
                    : "text-red-500 animate-pulse";
+               const batteryIcon = unit.isCharging
+                 ? <BatteryCharging size={10} className="text-[#D4AF37]" />
+                 : isLowBattery
+                   ? <BatteryLow size={10} className={batteryColor} />
+                   : <Battery size={10} className={batteryColor} />;
                const batteryBg = unit.batteryLevel > 50
                  ? "bg-emerald-500"
                  : unit.batteryLevel > 15
@@ -239,7 +248,7 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
                    : "bg-red-500";
 
                return (
-                  <div key={unit.id} className="bg-[#0B1B32]/95 border border-white/10 rounded-xl p-4 hover:border-red-500/50 transition-all cursor-pointer group relative overflow-hidden">
+                  <div key={unit.id} className={cn("bg-[#0B1B32]/95 border border-white/10 rounded-xl p-4 hover:border-red-500/50 transition-all cursor-pointer group relative overflow-hidden", isSignalLost && "grayscale-[0.65] opacity-80")}>
                      {isAnomaly && (
                         <div className="absolute top-0 right-0 p-1 bg-red-600 text-white font-black text-[8px] uppercase px-2 shadow-lg">Anomali BBM</div>
                      )}
@@ -261,11 +270,13 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
                      <div className="flex items-center gap-2 mb-3 flex-wrap">
                         {/* Battery Badge */}
                         <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[9px] font-black uppercase ${
-                          isLowBattery 
+                          unit.isCharging
+                            ? "bg-[#D4AF37]/10 border-[#D4AF37]/30 text-[#D4AF37]"
+                            : isLowBattery 
                             ? "bg-red-500/10 border-red-500/30 text-red-500" 
                             : "bg-white/5 border-white/10 text-slate-400"
                         }`}>
-                           <Zap size={10} className={batteryColor} />
+                           {batteryIcon}
                            <span>{unit.batteryLevel}%</span>
                            <div className="w-8 h-1.5 bg-slate-800 rounded-full overflow-hidden">
                              <div className={`h-full rounded-full transition-all ${batteryBg}`} style={{ width: `${unit.batteryLevel}%` }} />
@@ -279,7 +290,7 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
                             : "bg-white/5 border-white/10 text-slate-400"
                         }`}>
                            <Gauge size={10} />
-                           <span>{unit.topSpeed} km/h</span>
+                           <span>⚡ {unit.speed} km/jam</span>
                         </div>
 
                         {/* Signal Badge */}

@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 import { buildMockKpis, mockActivities, mockPolresData } from "@/lib/mock-data";
+import { mapConnectionToSignal } from "@/lib/telemetryService";
 import type {
   ActivityItem,
   AIChatMessage,
@@ -20,6 +21,7 @@ import type {
   SandboxImpact,
   SearchResult,
   PatrolWaypoint,
+  PersonnelTelemetry,
   PolsekItem,
   PolicePost,
   FieldReport,
@@ -84,13 +86,8 @@ interface AppState {
   isOnline: boolean;
   setOnlineStatus: (status: boolean) => void;
   syncOfflineData: () => void;
-  updatePersonnelPosition: (id: string, lat: number, lng: number) => void;
-  updatePersonnelTelemetry: (id: string, data: {
-    batteryLevel?: number;
-    isCharging?: boolean;
-    speedKmh?: number | null;
-    signalStatus?: "LTE" | "5G" | "3G" | "H+" | "No Signal";
-  }) => void;
+  updatePersonnelPosition: (id: string, lat: number, lng: number, telemetry?: PersonnelTelemetry) => void;
+  updatePersonnelTelemetry: (id: string, data: PersonnelTelemetry) => void;
 
   // C2 & Dispatch
   activeMissions: TacticalMission[];
@@ -176,6 +173,31 @@ const defaultEmergency: EmergencyState = {
   lng: null,
 };
 
+function buildTelemetryUpdates(track: PersonnelTrack, data: PersonnelTelemetry): Partial<PersonnelTrack> {
+  const updates: Partial<PersonnelTrack> = {};
+
+  if (data.batteryLevel !== undefined && data.batteryLevel >= 0) {
+    updates.batteryLevel = Math.round(Math.max(0, Math.min(100, data.batteryLevel)));
+  }
+
+  if (data.isCharging !== undefined) {
+    updates.isCharging = data.isCharging;
+  }
+
+  if (data.speed !== undefined && data.speed !== null) {
+    const normalizedSpeed = Math.max(0, Math.round(data.speed));
+    updates.speed = normalizedSpeed;
+    updates.topSpeed = Math.max(track.topSpeed, normalizedSpeed);
+  }
+
+  if (data.connectionType !== undefined) {
+    updates.connectionType = data.connectionType;
+    updates.signalStatus = mapConnectionToSignal(data.connectionType);
+  }
+
+  return updates;
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -215,6 +237,9 @@ export const useAppStore = create<AppState>()(
      fuelInputShift: 15,
      health: { engine: 92, tires: 88, lastServiceKm: 1200 },
      batteryLevel: 85 - (idx * 12),
+     isCharging: idx === 0,
+     speed: 18 + (idx * 8),
+     connectionType: idx % 2 === 0 ? "4g" : "5g",
      signalStatus: idx % 2 === 0 ? "LTE" : "5G",
      topSpeed: 45 + (idx * 10),
      harshBrakingCount: idx === 1 ? 3 : 0,
@@ -335,12 +360,17 @@ export const useAppStore = create<AppState>()(
 
   clearEmergency: () => set({ emergency: defaultEmergency }),
 
-  updatePersonnelPosition: (id, lat, lng) => set((state) => {
+  updatePersonnelPosition: (id, lat, lng, telemetry) => set((state) => {
     const timestamp = new Date().toISOString();
     return {
       personnelTracks: state.personnelTracks.map(t => 
         t.id === id 
-          ? { ...t, waypoints: [...t.waypoints.slice(-100), { lat, lng, timestamp }], odometer: t.odometer + 0.05 } 
+          ? {
+              ...t,
+              ...buildTelemetryUpdates(t, telemetry ?? {}),
+              waypoints: [...t.waypoints.slice(-100), { lat, lng, timestamp }],
+              odometer: t.odometer + 0.05,
+            }
           : t
       )
     };
@@ -351,12 +381,10 @@ export const useAppStore = create<AppState>()(
     const track = state.personnelTracks.find(t => t.id === id);
     if (!track) return;
 
-    const updates: Partial<PersonnelTrack> = {};
+    const updates = buildTelemetryUpdates(track, data);
 
     // Battery update
     if (data.batteryLevel !== undefined && data.batteryLevel >= 0) {
-      updates.batteryLevel = data.batteryLevel;
-
       // Smart alert: low battery < 15%
       if (data.batteryLevel < 15 && track.batteryLevel >= 15) {
         get().pushNotification({
@@ -374,14 +402,25 @@ export const useAppStore = create<AppState>()(
     }
 
     // Speed update
-    if (data.speedKmh !== undefined && data.speedKmh !== null) {
-      updates.topSpeed = Math.max(track.topSpeed, data.speedKmh);
+    if (data.speed !== undefined && data.speed !== null && data.speed > 90 && track.speed <= 90) {
+      get().pushNotification({
+        title: "High Speed Pursuit",
+        description: `Unit ${track.name} (${track.nrp}) melaju ${Math.round(data.speed)} km/jam.`,
+        level: "critical",
+      });
+      get().addAuditLog({
+        actor: "Sentinel-AI Telemetry",
+        action: "HIGH_SPEED_PURSUIT",
+        target: `${track.name} (${track.id})`,
+        details: `Kecepatan unit mencapai ${Math.round(data.speed)} km/jam.`,
+      });
     }
 
     // Signal update
-    if (data.signalStatus) {
+    if (data.connectionType !== undefined) {
       // Smart alert: signal lost
-      if (data.signalStatus === "No Signal" && track.signalStatus !== "No Signal") {
+      const nextSignalStatus = mapConnectionToSignal(data.connectionType);
+      if (nextSignalStatus === "No Signal" && track.signalStatus !== "No Signal") {
         get().pushNotification({
           title: "📡 Sinyal Hilang",
           description: `Unit ${track.name} (${track.nrp}) kehilangan sinyal. Status diubah ke SIGNAL LOST.`,
@@ -389,12 +428,11 @@ export const useAppStore = create<AppState>()(
         });
         get().addAuditLog({
           actor: "Sentinel-AI Telemetry",
-          action: "SIGNAL_LOST",
+          action: `UNIT ${track.id} LOST CONNECTION`,
           target: `${track.name} (${track.id})`,
-          details: `Koneksi terputus. Sinyal sebelumnya: ${track.signalStatus}.`,
+          details: `Koneksi terputus. Jaringan terakhir: ${track.connectionType || track.signalStatus}.`,
         });
       }
-      updates.signalStatus = data.signalStatus;
     }
 
     set({

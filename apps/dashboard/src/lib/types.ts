@@ -140,6 +140,13 @@ export interface PatrolPlan {
 
 export type UnitType = "R2" | "R4";
 
+export interface PersonnelTelemetry {
+  batteryLevel?: number;
+  isCharging?: boolean;
+  speed?: number | null;
+  connectionType?: string;
+}
+
 export interface PersonnelTrack {
   id: string;
   nrp: string;
@@ -156,6 +163,9 @@ export interface PersonnelTrack {
   health: AssetHealth;
   // HIGH PRECISION TELEMETRY
   batteryLevel: number; // 0-100
+  isCharging: boolean;
+  speed: number; // km/h
+  connectionType: string;
   signalStatus: "LTE" | "5G" | "3G" | "H+" | "No Signal";
   topSpeed: number; // km/h
   harshBrakingCount: number;

@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import TopHeader from "@/components/layout/TopHeader";
 import IntelligencePanel from "@/components/ai/IntelligencePanel";
+import TacticalAlertBridge from "@/components/dashboard/TacticalAlertBridge";
 
 export default function DashboardShell({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
@@ -57,6 +58,7 @@ export default function DashboardShell({ children }: { children?: React.ReactNod
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#07111F] min-w-0">
         <TopHeader onOpenSidebar={openSidebar} />
+        <TacticalAlertBridge />
         
         <div className="flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait">

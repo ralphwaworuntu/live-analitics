@@ -11,7 +11,7 @@
 export interface TelemetrySnapshot {
   batteryLevel: number;       // 0-100
   isCharging: boolean;
-  speedKmh: number | null;    // km/h from GPS, null if unavailable
+  speed: number | null;       // km/h from GPS, null if unavailable
   connectionType: string;     // "4g" | "wifi" | "3g" | "none" | "unknown"
   isOnline: boolean;
   accuracy: number | null;    // meters
@@ -20,12 +20,12 @@ export interface TelemetrySnapshot {
 
 export interface TelemetryAlerts {
   lowBattery: boolean;        // < 15%
-  highSpeed: boolean;         // > 80 km/h
+  highSpeed: boolean;         // > 90 km/h
   signalLost: boolean;        // navigator.onLine === false
 }
 
 // Speed threshold in km/h — triggers "HIGH SPEED" label
-const SPEED_THRESHOLD_KMH = 80;
+const SPEED_THRESHOLD_KMH = 90;
 // Battery threshold — triggers warning notification
 const BATTERY_THRESHOLD_PERCENT = 15;
 
@@ -57,7 +57,7 @@ async function getBatteryInfo(): Promise<{ level: number; charging: boolean }> {
 
 // --- Network Information API ---
 
-interface NetworkInformation {
+interface NetworkInformation extends EventTarget {
   effectiveType: "slow-2g" | "2g" | "3g" | "4g";
   type?: string;
   downlink?: number;
@@ -121,14 +121,14 @@ export async function collectTelemetrySnapshot(): Promise<TelemetrySnapshot> {
 
   const batteryData = battery.status === "fulfilled" ? battery.value : { level: -1, charging: false };
 
-  let speedKmh: number | null = null;
+  let speed: number | null = null;
   let accuracy: number | null = null;
 
   if (position.status === "fulfilled") {
     const coords = position.value.coords;
     // coords.speed is in m/s → convert to km/h
     if (coords.speed !== null && coords.speed >= 0) {
-      speedKmh = Math.round(coords.speed * 3.6);
+      speed = Math.round(coords.speed * 3.6);
     }
     accuracy = coords.accuracy;
   }
@@ -138,7 +138,7 @@ export async function collectTelemetrySnapshot(): Promise<TelemetrySnapshot> {
   return {
     batteryLevel: batteryData.level,
     isCharging: batteryData.charging,
-    speedKmh,
+    speed,
     connectionType,
     isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
     accuracy,
@@ -152,7 +152,7 @@ export async function collectTelemetrySnapshot(): Promise<TelemetrySnapshot> {
 export function evaluateAlerts(snapshot: TelemetrySnapshot): TelemetryAlerts {
   return {
     lowBattery: snapshot.batteryLevel >= 0 && snapshot.batteryLevel < BATTERY_THRESHOLD_PERCENT,
-    highSpeed: snapshot.speedKmh !== null && snapshot.speedKmh > SPEED_THRESHOLD_KMH,
+    highSpeed: snapshot.speed !== null && snapshot.speed > SPEED_THRESHOLD_KMH,
     signalLost: !snapshot.isOnline || snapshot.connectionType === "none",
   };
 }
@@ -238,7 +238,7 @@ export function simulateTelemetry(trackId: string, tick: number): Partial<Teleme
   return {
     batteryLevel: Math.round(Math.max(3, Math.min(100, batteryDrain))),
     isCharging: false,
-    speedKmh: Math.round(Math.max(0, speedVariance)),
+    speed: Math.round(Math.max(0, speedVariance)),
     connectionType: seed % 15 === 0 ? "none" : seed % 4 === 0 ? "3g" : "4g",
     isOnline: seed % 15 !== 0,
     timestamp: new Date().toISOString(),
