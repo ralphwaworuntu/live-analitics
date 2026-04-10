@@ -9,6 +9,7 @@ import { getSelectedPolres, useAppStore } from "@/store";
 import { sendAIMessage } from "@/lib/api";
 import type { AIReference } from "@/lib/types";
 import { runTacticalDiagnostic, DiagnosticResult } from "@/lib/diagnosticService";
+import { sanitizeInput, sanitizePayload } from "@/lib/security";
 import MissionTracker from "./MissionTracker";
 
 function SecurityAuditWidget() {
@@ -147,13 +148,13 @@ export default function IntelligencePanel() {
 
   const handleSendPrompt = async (event: FormEvent) => {
     event.preventDefault();
-    const trimmedPrompt = prompt.trim();
-    if (!trimmedPrompt) return;
+    const sanitizedPrompt = sanitizeInput(prompt);
+    if (!sanitizedPrompt) return;
 
     addAIMessage({
       id: `user-${Date.now()}`,
       role: "user",
-      content: trimmedPrompt,
+      content: sanitizedPrompt,
       createdAt: new Date().toISOString(),
     });
     setPrompt("");
@@ -162,7 +163,7 @@ export default function IntelligencePanel() {
     try {
       const response = await sendAIMessage({
         polresId: selectedPolres?.id ?? "all",
-        message: trimmedPrompt,
+        message: sanitizedPrompt,
       });
 
       // Enrich with mock RAG grounding data if backend doesn't provide it
@@ -173,9 +174,9 @@ export default function IntelligencePanel() {
           { title: "Intel Update 02/04/2026", snippet: "Analisis ancaman terkini menunjukkan peningkatan aktivitas penyelundupan di sektor barat..." },
         ],
         actionBtn: response.actionBtn || (
-          trimmedPrompt.toLowerCase().includes("patroli") || trimmedPrompt.toLowerCase().includes("rute")
+          sanitizedPrompt.toLowerCase().includes("patroli") || sanitizedPrompt.toLowerCase().includes("rute")
             ? { label: "Optimasi Rute Patroli", type: "generate-patrol" as const }
-            : trimmedPrompt.toLowerCase().includes("strategi") || trimmedPrompt.toLowerCase().includes("geser")
+            : sanitizedPrompt.toLowerCase().includes("strategi") || sanitizedPrompt.toLowerCase().includes("geser")
             ? { label: "Plot Strategi", type: "plot-strategy" as const, lat: selectedPolres?.lat ?? -10.15, lng: selectedPolres?.lng ?? 123.58, radius: 5000 }
             : undefined
         ),

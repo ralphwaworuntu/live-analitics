@@ -6,6 +6,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { buildMockKpis, mockActivities, mockPolresData } from "@/lib/mock-data";
 import { mapConnectionToSignal } from "@/lib/telemetryService";
 import { generateIntegrityHash } from "@/lib/crypto";
+import { sanitizePayload } from "@/lib/security";
 import { runProactiveChecks } from "@/lib/tactical-ai";
 import type {
   ActivityItem,
@@ -114,7 +115,7 @@ interface AppState {
   // Logistics & Assets
   polresAssets: PolresAssetStrength[];
   auditLogs: AuditLogEntry[];
-  addAuditLog: (entry: Omit<AuditLogEntry, "id" | "timestamp">) => void;
+  addAuditLog: (entry: Omit<AuditLogEntry, "id" | "timestamp">) => Promise<void>;
   
   // OSINT
   osintEnabled: boolean;
@@ -507,7 +508,9 @@ export const useAppStore = create<AppState>()(
   setTimeRangeHours: (hours) => set({ timeRangeHours: hours }),
   setLiveMode: (value) => set({ liveMode: value }),
   setHeatmapEnabled: (value) => set({ heatmapEnabled: value }),
-  addAIMessage: (message) => set((state) => ({ aiMessages: [...state.aiMessages, message] })),
+  addAIMessage: (message) => set((state) => ({
+    aiMessages: [...state.aiMessages, sanitizePayload(message)]
+  })),
   pushNotification: (notification) => set((state) => ({
       notifications: [{ 
         id: typeof crypto !== 'undefined' && crypto.randomUUID 
@@ -543,21 +546,22 @@ export const useAppStore = create<AppState>()(
   setPredictiveMode: (enabled) => set({ predictiveMode: enabled }),
   setPatrolRoute: (route) => set({ activePatrolRoute: route }),
   setDispatchModal: (open, incident) => set({ dispatchModalOpen: open, selectedIncident: incident || null }),
-  addAuditLog: (entry) => set((state) => {
+  addAuditLog: async (entry) => {
     const timestamp = new Date().toISOString();
-    const hash = generateIntegrityHash({ ...entry, timestamp });
+    const sanitizedEntry = sanitizePayload(entry);
+    const hash = await generateIntegrityHash({ ...sanitizedEntry, timestamp });
     
-    return {
+    set((state) => ({
       auditLogs: [{ 
-        ...entry, 
+        ...sanitizedEntry, 
         id: typeof crypto !== 'undefined' && crypto.randomUUID 
             ? `audit-${crypto.randomUUID()}` 
             : `audit-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
         timestamp,
         hash
       }, ...state.auditLogs]
-    };
-  }),
+    }));
+  },
   setOsintEnabled: (enabled) => set({ osintEnabled: enabled }),
   setSandboxMode: (enabled) => set({ sandboxMode: enabled }),
   calculateSandboxImpact: (polresId, shifted) => set({

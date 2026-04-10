@@ -59,25 +59,28 @@ export function useLiveTracking() {
   }, [personnelTracks]);
 
   // --- Geofence Breach Detection ---
+  const lastCheckTime = useRef<number>(0);
+
   useEffect(() => {
     const now = Date.now();
+    // Only run expensive geofence checks every 2 seconds
+    if (now - lastCheckTime.current < 2000) return;
+    lastCheckTime.current = now;
 
     personnelTracks.forEach((track) => {
       const wp = track.waypoints[track.waypoints.length - 1];
       if (!wp) return;
 
-      // Find the Polres this unit belongs to
       const assignedPolres = polres.find((p) => p.id === track.polresId);
       if (!assignedPolres) return;
 
       const distFromBase = haversineKm(wp.lat, wp.lng, assignedPolres.lat, assignedPolres.lng);
-      const geofenceRadiusKm = 15; // 15km per sector
+      const geofenceRadiusKm = 15;
 
       if (distFromBase > geofenceRadiusKm) {
         const cooldownKey = `${track.id}-${assignedPolres.id}`;
         const lastAlert = breachCooldown.current.get(cooldownKey) ?? 0;
 
-        // Only alert once every 60 seconds per unit-sector pair
         if (now - lastAlert > 60000) {
           breachCooldown.current.set(cooldownKey, now);
           addGeofenceAlert({

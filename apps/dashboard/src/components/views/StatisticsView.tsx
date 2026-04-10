@@ -276,10 +276,10 @@ export default function StatisticsView() {
                <div className="h-10 w-10 lg:h-14 lg:w-14 rounded-2xl bg-[#D4AF37] flex items-center justify-center shadow-lg shadow-yellow-500/10 border border-yellow-500/20 shrink-0">
                   <Activity size={28} className="text-[#07111F]" />
                </div>
-               <div className="text-left">
-                  <h1 className="text-xl md:text-3xl lg:text-5xl font-black uppercase tracking-tighter italic leading-none text-white">Sentinel Anev Insights</h1>
-                  <p className="text-[10px] lg:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none mt-1 lg:mt-2">Strategic Intelligence Forensics • BIRO OPS POLDA NTT</p>
-               </div>
+                <div className="text-left">
+                  <h1 className="text-xl md:text-3xl lg:text-5xl font-black uppercase tracking-tighter italic leading-none text-white text-balance">Sentinel Anev Insights</h1>
+                  <p className="text-[10px] lg:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none mt-1 lg:mt-2 text-balance">Strategic Intelligence Forensics • BIRO OPS POLDA NTT</p>
+                </div>
             </div>
          </div>
          <div className="flex items-center gap-2 sm:gap-3 shrink-0">

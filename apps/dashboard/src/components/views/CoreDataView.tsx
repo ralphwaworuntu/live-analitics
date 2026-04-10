@@ -388,36 +388,38 @@ const IncidentTable = ({ searchQuery, selectedIds = [], onSelectIds = () => {} }
 
   return (
     <div className="relative">
-      <Table className="min-w-[1100px]">
-        <TableHeader>
-          {table.getHeaderGroups().map(headerGroup => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <TableHead key={header.id}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.map(row => (
-            <TableRow 
-              key={row.id} 
-              className={cn(
-                row.original.type === "SOS" && "bg-red-500/[0.03] border-red-500/20 animate-[pulse-danger_3s_infinite]",
-                selectedIds.includes(row.original.id) && "bg-[#D4AF37]/10 border-[#D4AF37]/30"
-              )}
-            >
-              {row.getVisibleCells().map(cell => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="overflow-x-auto custom-scrollbar">
+        <Table className="min-w-[1100px]">
+          <TableHeader>
+            {table.getHeaderGroups().map(headerGroup => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map(header => (
+                  <TableHead key={header.id}>
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.map(row => (
+              <TableRow 
+                key={row.id} 
+                className={cn(
+                  row.original.type === "SOS" && "bg-red-500/[0.03] border-red-500/20 animate-[pulse-danger_3s_infinite]",
+                  selectedIds.includes(row.original.id) && "bg-[#D4AF37]/10 border-[#D4AF37]/30"
+                )}
+              >
+                {row.getVisibleCells().map(cell => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
       
       <AnimatePresence>
         {selectedAuditId && (
@@ -645,30 +647,32 @@ const PersonnelTable = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <div className="relative">
-      <Table className="min-w-[1100px]">
-        <TableHeader>
-          {table.getHeaderGroups().map(group => (
-            <TableRow key={group.id}>
-              {group.headers.map(header => (
-                <TableHead key={header.id}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.map(row => (
-            <TableRow key={row.id}>
-              {row.getVisibleCells().map(cell => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="overflow-x-auto custom-scrollbar">
+        <Table className="min-w-[1100px]">
+          <TableHeader>
+            {table.getHeaderGroups().map(group => (
+              <TableRow key={group.id}>
+                {group.headers.map(header => (
+                  <TableHead key={header.id}>
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.map(row => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map(cell => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       <AnimatePresence>
         {selectedPersonnelId && (
@@ -847,30 +851,32 @@ const AssetTable = ({ searchQuery }: { searchQuery: string }) => {
   });
 
   return (
-    <Table className="min-w-[900px]">
-      <TableHeader>
-        {table.getHeaderGroups().map(group => (
-          <TableRow key={group.id}>
-            {group.headers.map(header => (
-              <TableHead key={header.id}>
-                {flexRender(header.column.columnDef.header, header.getContext())}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows.map(row => (
-          <TableRow key={row.id}>
-            {row.getVisibleCells().map(cell => (
-              <TableCell key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="overflow-x-auto custom-scrollbar">
+      <Table className="min-w-[900px]">
+        <TableHeader>
+          {table.getHeaderGroups().map(group => (
+            <TableRow key={group.id}>
+              {group.headers.map(header => (
+                <TableHead key={header.id}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.map(row => (
+            <TableRow key={row.id}>
+              {row.getVisibleCells().map(cell => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 
@@ -932,10 +938,10 @@ export default function CoreDataView() {
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl md:text-3xl lg:text-5xl font-black uppercase tracking-tighter text-white">Core Data Audit Engine</h2>
+            <h2 className="text-xl md:text-3xl lg:text-5xl font-black uppercase tracking-tighter text-white text-balance">Core Data Audit Engine</h2>
             {compareMode && <Badge variant="gold" className="animate-pulse">Benchmarking Mode: ACTIVE</Badge>}
           </div>
-          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.3em]">Biro Ops Polda Nusa Tenggara Timur</p>
+          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.3em] text-balance">Biro Ops Polda Nusa Tenggara Timur</p>
         </div>
         
         <div className="flex items-center gap-4">

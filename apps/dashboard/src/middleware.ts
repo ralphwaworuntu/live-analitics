@@ -25,6 +25,17 @@ export function middleware(request: NextRequest) {
     return new NextResponse('Too Many Tactical Requests (429)', { status: 429 });
   }
 
+  // --- Tactical Session Protection ---
+  const token = request.cookies.get('tactical_token');
+  const isProtectedPath = request.nextUrl.pathname.startsWith('/operations') || 
+                          request.nextUrl.pathname.startsWith('/dashboard') ||
+                          request.nextUrl.pathname.startsWith('/core-data');
+
+  if (isProtectedPath && !token) {
+    // In a real PNP environment, we'd redirect to the SSO login
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   const response = NextResponse.next();
 
   // Redundant but safe: Ensure headers are set if next.config.ts misses them
