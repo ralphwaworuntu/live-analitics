@@ -2,7 +2,7 @@
 
 import React from "react";
 import DashboardView from "../../components/views/DashboardView";
-import MissionView from "../../components/views/MissionView";
+import OperationsView from "../../components/views/OperationsView";
 import IntelligenceView from "../../components/views/IntelligenceView";
 import PatrolIntelView from "../../components/views/PatrolIntelView";
 import AnevView from "../../components/views/AnevView";
@@ -26,7 +26,7 @@ function DashboardContent() {
       case "statistics":
         return <StatisticsView />;
       case "operasi":
-        return <MissionView />;
+        return <OperationsView />;
       case "patrol":
         return <PatrolIntelView />;
       case "intelijen":

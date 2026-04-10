@@ -171,6 +171,10 @@ export interface PersonnelTrack {
   harshBrakingCount: number;
   isFakeGPS: boolean;
   isUndercover?: boolean;
+  // OPERATIONS VIEW
+  heading?: number; // 0-360 degrees, direction of movement
+  lastSyncAt?: string; // ISO timestamp of last position update
+  dutyStartedAt?: string; // ISO timestamp of duty start
 }
 
 export interface YoloBBox {

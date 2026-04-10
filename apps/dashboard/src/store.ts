@@ -155,6 +155,12 @@ interface AppState {
   // GEOFENCE
   geofenceAlerts: { unitId: string; message: string; timestamp: string }[];
   addGeofenceAlert: (alert: { unitId: string; message: string; timestamp: string }) => void;
+
+  // MAP LAYERS (Operations View)
+  mapTypeId: "roadmap" | "satellite" | "hybrid";
+  setMapTypeId: (id: "roadmap" | "satellite" | "hybrid") => void;
+  trafficLayerEnabled: boolean;
+  setTrafficLayer: (enabled: boolean) => void;
   // GLOBAL ACTIONS & UI STATE
   isSettingsOpen: boolean;
   isNotificationsOpen: boolean;
@@ -364,16 +370,28 @@ export const useAppStore = create<AppState>()(
   updatePersonnelPosition: (id, lat, lng, telemetry) => set((state) => {
     const timestamp = new Date().toISOString();
     return {
-      personnelTracks: state.personnelTracks.map(t => 
-        t.id === id 
-          ? {
-              ...t,
-              ...buildTelemetryUpdates(t, telemetry ?? {}),
-              waypoints: [...t.waypoints.slice(-100), { lat, lng, timestamp }],
-              odometer: t.odometer + 0.05,
-            }
-          : t
-      )
+      personnelTracks: state.personnelTracks.map(t => {
+        if (t.id !== id) return t;
+        // Compute heading from previous → new position
+        const prevWp = t.waypoints[t.waypoints.length - 1];
+        let heading = t.heading ?? 0;
+        if (prevWp) {
+          const dLng = lng - prevWp.lng;
+          const dLat = lat - prevWp.lat;
+          if (Math.abs(dLng) > 0.000001 || Math.abs(dLat) > 0.000001) {
+            heading = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360;
+          }
+        }
+        return {
+          ...t,
+          ...buildTelemetryUpdates(t, telemetry ?? {}),
+          waypoints: [...t.waypoints.slice(-100), { lat, lng, timestamp }],
+          odometer: t.odometer + 0.05,
+          heading,
+          lastSyncAt: timestamp,
+          dutyStartedAt: t.dutyStartedAt || timestamp,
+        };
+      })
     };
   }),
 
@@ -547,6 +565,11 @@ export const useAppStore = create<AppState>()(
   addGeofenceAlert: (alert) => set((state) => ({ 
     geofenceAlerts: [alert, ...state.geofenceAlerts].slice(0, 50) 
   })),
+
+  mapTypeId: "roadmap",
+  setMapTypeId: (id) => set({ mapTypeId: id }),
+  trafficLayerEnabled: false,
+  setTrafficLayer: (enabled) => set({ trafficLayerEnabled: enabled }),
 
   filterStatus: "all",
   filterPriority: "all",
