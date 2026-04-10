@@ -7,7 +7,7 @@ const LIMIT = 100; // 100 requests per minute
 const WINDOW = 60 * 1000;
 
 export function middleware(request: NextRequest) {
-  const ip = request.ip ?? '127.0.0.1';
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
   const now = Date.now();
   
   const current = rateLimitMap.get(ip) ?? { count: 0, lastReset: now };
