@@ -5,7 +5,7 @@ import { jwtVerify } from "jose";
 // The secret matching the one in FastAPI
 const JWT_SECRET = process.env.JWT_SECRET || "change-this-to-a-secure-random-string";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const token = request.cookies.get("sentinel_token")?.value;
   const isLoginPage = request.nextUrl.pathname.startsWith("/login");
 

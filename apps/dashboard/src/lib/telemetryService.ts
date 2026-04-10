@@ -43,7 +43,7 @@ interface BatteryManager extends EventTarget {
 async function getBatteryInfo(): Promise<{ level: number; charging: boolean }> {
   try {
     if ("getBattery" in navigator) {
-      const battery = await (navigator as any).getBattery() as BatteryManager;
+      const battery = await (navigator as unknown as { getBattery: () => Promise<BatteryManager> }).getBattery();
       return {
         level: Math.round(battery.level * 100),
         charging: battery.charging,
@@ -69,7 +69,7 @@ function getConnectionType(): string {
 
   if (!navigator.onLine) return "none";
 
-  const conn = (navigator as any).connection as NetworkInformation | undefined;
+  const conn = (navigator as unknown as { connection?: NetworkInformation }).connection;
   if (conn) {
     // Prefer effectiveType (4g/3g/2g)
     if (conn.effectiveType) return conn.effectiveType;
@@ -169,7 +169,7 @@ export async function subscribeBatteryChanges(
   }
 
   try {
-    const battery = await (navigator as any).getBattery() as BatteryManager;
+    const battery = await (navigator as unknown as { getBattery: () => Promise<BatteryManager> }).getBattery();
 
     const handleChange = () => {
       onLevelChange(Math.round(battery.level * 100), battery.charging);
@@ -205,7 +205,7 @@ export function subscribeNetworkChanges(
   window.addEventListener("online", handleOnline);
   window.addEventListener("offline", handleOffline);
 
-  const conn = (navigator as any).connection as NetworkInformation | undefined;
+  const conn = (navigator as unknown as { connection: NetworkInformation }).connection;
   const handleConnectionChange = () => onChange(navigator.onLine, getConnectionType());
   
   if (conn) {

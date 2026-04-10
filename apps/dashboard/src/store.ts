@@ -28,6 +28,7 @@ import type {
   CctvPoint,
   ShadowHotspot,
   HeatPoint,
+  UnitType,
 } from "@/lib/types";
 import { mockPersonnelTracks } from "@/lib/mockPatrolData";
 
@@ -159,7 +160,7 @@ interface AppState {
   isNotificationsOpen: boolean;
   toggleSettings: (open?: boolean) => void;
   toggleNotifications: (open?: boolean) => void;
-  executeAction: (actionType: string, payload?: any) => void;
+  executeAction: (actionType: string, payload?: Record<string, unknown>) => void;
   clearOperationalData: () => void;
 }
 
@@ -231,7 +232,7 @@ export const useAppStore = create<AppState>()(
   selectedPersonnelId: null,
   personnelTracks: mockPersonnelTracks.map((t, idx) => ({
      ...t,
-     unitType: t.unitType as any,
+     unitType: t.unitType as UnitType,
      fuelStatus: 75 - (idx * 5),
      odometer: 1240 + (idx * 150),
      fuelInputShift: 15,
@@ -244,7 +245,7 @@ export const useAppStore = create<AppState>()(
      topSpeed: 45 + (idx * 10),
      harshBrakingCount: idx === 1 ? 3 : 0,
      isFakeGPS: idx === 2
-  })) as any,
+  })) as PersonnelTrack[],
 
   // HARDENING
   activeShift: "pagi",
@@ -449,7 +450,14 @@ export const useAppStore = create<AppState>()(
   setHeatmapEnabled: (value) => set({ heatmapEnabled: value }),
   addAIMessage: (message) => set((state) => ({ aiMessages: [...state.aiMessages, message] })),
   pushNotification: (notification) => set((state) => ({
-      notifications: [{ id: `notif-${Date.now()}`, read: false, createdAt: new Date().toISOString(), ...notification }, ...state.notifications],
+      notifications: [{ 
+        id: typeof crypto !== 'undefined' && crypto.randomUUID 
+            ? `notif-${crypto.randomUUID()}` 
+            : `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
+        read: false, 
+        createdAt: new Date().toISOString(), 
+        ...notification 
+      }, ...state.notifications],
   })),
   markNotificationRead: (id) => set((state) => ({
       notifications: state.notifications.map((n) => n.id === id ? { ...n, read: true } : n),
@@ -460,7 +468,13 @@ export const useAppStore = create<AppState>()(
   setPersonnelTracks: (tracks) => set({ personnelTracks: tracks }),
 
   dispatchMission: (mission) => set((state) => ({
-     activeMissions: [...state.activeMissions, { ...mission, id: `msn-${Date.now()}`, createdAt: new Date().toISOString() }] 
+     activeMissions: [...state.activeMissions, { 
+       ...mission, 
+       id: typeof crypto !== 'undefined' && crypto.randomUUID 
+           ? `msn-${crypto.randomUUID()}` 
+           : `msn-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
+       createdAt: new Date().toISOString() 
+     }] 
   })),
 
   updateMissionStatus: (id, status) => set((state) => ({
@@ -471,7 +485,13 @@ export const useAppStore = create<AppState>()(
   setPatrolRoute: (route) => set({ activePatrolRoute: route }),
   setDispatchModal: (open, incident) => set({ dispatchModalOpen: open, selectedIncident: incident || null }),
   addAuditLog: (entry) => set((state) => ({
-    auditLogs: [{ ...entry, id: `audit-${Date.now()}`, timestamp: new Date().toISOString() }, ...state.auditLogs]
+    auditLogs: [{ 
+      ...entry, 
+      id: typeof crypto !== 'undefined' && crypto.randomUUID 
+          ? `audit-${crypto.randomUUID()}` 
+          : `audit-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
+      timestamp: new Date().toISOString() 
+    }, ...state.auditLogs]
   })),
   setOsintEnabled: (enabled) => set({ osintEnabled: enabled }),
   setSandboxMode: (enabled) => set({ sandboxMode: enabled }),
@@ -509,16 +529,12 @@ export const useAppStore = create<AppState>()(
   triggerPublicReport: (report) => {
     set({ incomingPublicReport: report, mapCenter: { lat: report.lat, lng: report.lng, zoom: 17 } });
     // Add to audit trail
-    const auditLogs = useAppStore.getState().auditLogs;
-    const newEntry: AuditLogEntry = {
-      id: `audit-${Date.now()}`,
-      timestamp: new Date().toISOString(),
+    get().addAuditLog({
       actor: "Sentinel-AI System",
       action: "Incoming Public Report",
       target: report.id,
       details: `Citizen report from ${report.locationName} received.`
-    };
-    set({ auditLogs: [newEntry, ...auditLogs] });
+    });
   },
   clearPublicReport: () => set({ incomingPublicReport: null }),
 
@@ -570,7 +586,7 @@ export const useAppStore = create<AppState>()(
     get().addAuditLog({
       actor: "Irjen Pol. Daniel T.M. Silitonga",
       action: actionType,
-      target: payload?.id || "Global Dashboard",
+      target: payload?.id ? String(payload.id) : "Global Dashboard",
       details: description
     });
   },

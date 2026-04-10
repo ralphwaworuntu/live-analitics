@@ -8,7 +8,7 @@
 export const playTacticalSound = (type: "click" | "beep" | "alert" | "error") => {
   if (typeof window === "undefined") return;
 
-  const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
   const oscillator = audioCtx.createOscillator();
   const gainNode = audioCtx.createGain();
 
