@@ -175,6 +175,10 @@ export interface PersonnelTrack {
   heading?: number; // 0-360 degrees, direction of movement
   lastSyncAt?: string; // ISO timestamp of last position update
   dutyStartedAt?: string; // ISO timestamp of duty start
+  // OFFLINE RESILIENCY
+  isGhost?: boolean;
+  lastActiveAt?: string;
+  offlineSince?: string;
 }
 
 export interface YoloBBox {
@@ -203,6 +207,7 @@ export interface FieldReport {
   signalStatus?: "LTE" | "5G" | "3G" | "H+" | "No Signal";
   isFakeGPS?: boolean;
   isUndercover?: boolean;
+  hash?: string; // Cryptographic integrity hash
 }
 
 export type MissionStatus = "en-route" | "on-site" | "completed" | "SOS/Darurat";
@@ -259,6 +264,7 @@ export interface AuditLogEntry {
   action: string;
   target: string;
   details: string;
+  hash?: string; // Legal Defensibility Hash
 }
 
 export interface OSINTSignal {

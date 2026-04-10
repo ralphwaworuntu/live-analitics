@@ -13,6 +13,8 @@ import TopHeader from "@/components/layout/TopHeader";
 import IntelligencePanel from "@/components/ai/IntelligencePanel";
 import TacticalAlertBridge from "@/components/dashboard/TacticalAlertBridge";
 import TacticalComms from "@/components/dashboard/TacticalComms";
+import DashboardErrorBoundary from "@/components/shared/ErrorBoundary";
+import { Suspense } from "react";
 import { useAppStore } from "@/store";
 
 function useBreakpoint(query: string) {
@@ -108,7 +110,16 @@ export default function DashboardShell({ children }: { children?: React.ReactNod
               {/* Center Container (Map or Main View) */}
               <ResizablePanel defaultSize={75} minSize={40} className="relative z-10 bg-[var(--color-bg)]">
                 <main className="h-full w-full relative overflow-hidden overflow-y-auto">
-                  {children}
+                  <DashboardErrorBoundary fallbackTitle="Tactical View Processor">
+                    <Suspense fallback={
+                      <div className="flex flex-col items-center justify-center h-full bg-[#07111F]">
+                        <div className="w-12 h-12 border-4 border-t-blue-500 border-r-transparent border-b-blue-500 border-l-transparent rounded-full animate-spin" />
+                        <span className="mt-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Synchronizing Stream...</span>
+                      </div>
+                    }>
+                      {children}
+                    </Suspense>
+                  </DashboardErrorBoundary>
                 </main>
               </ResizablePanel>
 

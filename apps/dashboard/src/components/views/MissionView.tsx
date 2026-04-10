@@ -61,8 +61,67 @@ export default function MissionView() {
     triggerHaptic([20, 50, 20]);
   };
 
+  const [showRadial, setShowRadial] = useState(false);
+
+  const quickReports = [
+    { label: "Laka", color: "bg-blue-500", icon: <Shield size={16} /> },
+    { label: "Kriminal", color: "bg-red-500", icon: <AlertTriangle size={16} /> },
+    { label: "Bencana", color: "bg-amber-500", icon: <MapPin size={16} /> },
+  ];
+
   return (
-    <div className="p-3 sm:p-4 md:p-6 h-full flex flex-col">
+    <div className="p-3 sm:p-4 md:p-6 h-full flex flex-col relative overflow-hidden">
+      
+      {/* Neural Alerts Quick Radial Control (Mobile) */}
+      <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <AnimatePresence>
+          {showRadial && (
+            <div className="absolute bottom-0 right-0 w-48 h-48 pointer-events-none">
+              {quickReports.map((report, i) => {
+                const angle = (i * 60) + 210; // Position them in an arc
+                const rad = (angle * Math.PI) / 180;
+                const dist = 80;
+                const x = Math.cos(rad) * dist;
+                const y = Math.sin(rad) * dist;
+
+                return (
+                  <motion.button
+                    key={report.label}
+                    initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                    animate={{ opacity: 1, scale: 1, x, y }}
+                    exit={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                    className={cn(
+                      "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full shadow-2xl flex flex-col items-center justify-center text-white p-0 pointer-events-auto border-2 border-white/20",
+                      report.color
+                    )}
+                    onClick={() => {
+                      pushNotification({ title: `Quick Report: ${report.label}`, description: "Draft report created via Neural Radial Menu.", level: "info" });
+                      setShowRadial(false);
+                      triggerHaptic([50]);
+                    }}
+                  >
+                    {report.icon}
+                    <span className="text-[6px] font-black uppercase tracking-tighter">{report.label}</span>
+                  </motion.button>
+                );
+              })}
+            </div>
+          )}
+        </AnimatePresence>
+        
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onContextMenu={(e) => { e.preventDefault(); setShowRadial(!showRadial); }}
+          onClick={() => setShowRadial(!showRadial)}
+          className={cn(
+            "w-14 h-14 rounded-full flex items-center justify-center shadow-2xl border-2 transition-all duration-300",
+            showRadial ? "bg-white text-slate-900 border-white rotate-45" : "bg-[#D4AF37] text-slate-900 border-[#D4AF37]"
+          )}
+        >
+          <Plus size={28} />
+        </motion.button>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 md:mb-6">
         <div>
           <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Pusat Misi & Dispatch</h2>
@@ -70,7 +129,7 @@ export default function MissionView() {
         </div>
         <button 
           onClick={() => setIsDialogOpen(true)}
-          className="bg-[#D4AF37] hover:bg-[#b8952b] text-slate-900 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer min-h-[44px] shrink-0 w-full sm:w-auto justify-center sm:justify-start"
+          className="bg-[#D4AF37] hover:bg-[#b8952b] text-slate-900 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer min-h-[44px] shrink-0 w-full sm:w-auto justify-center sm:justify-start shadow-lg shadow-black/40"
         >
           <Plus size={18} />
           Buat Misi Baru

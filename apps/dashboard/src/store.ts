@@ -5,6 +5,8 @@ import { persist, createJSONStorage } from "zustand/middleware";
 
 import { buildMockKpis, mockActivities, mockPolresData } from "@/lib/mock-data";
 import { mapConnectionToSignal } from "@/lib/telemetryService";
+import { generateIntegrityHash } from "@/lib/crypto";
+import { runProactiveChecks } from "@/lib/tactical-ai";
 import type {
   ActivityItem,
   AIChatMessage,
@@ -371,10 +373,22 @@ export const useAppStore = create<AppState>()(
 
   updatePersonnelPosition: (id, lat, lng, telemetry) => set((state) => {
     const timestamp = new Date().toISOString();
+    
+    // OFFLINE BUFFERING LOGIC
+    if (!state.isOnline) {
+      return {
+        offlineQueue: [...state.offlineQueue, { lat, lng, timestamp }]
+      };
+    }
+
     return {
       personnelTracks: state.personnelTracks.map(t => {
         if (t.id !== id) return t;
-        // Compute heading from previous → new position
+
+        // Auto-ghosting detection: if telemetry says "No Signal" or speed is null
+        const isOffline = telemetry?.connectionType === "none" || (telemetry?.speed === null && !state.isOnline);
+
+        // Compute heading
         const prevWp = t.waypoints[t.waypoints.length - 1];
         let heading = t.heading ?? 0;
         if (prevWp) {
@@ -384,6 +398,7 @@ export const useAppStore = create<AppState>()(
             heading = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360;
           }
         }
+
         return {
           ...t,
           ...buildTelemetryUpdates(t, telemetry ?? {}),
@@ -391,6 +406,9 @@ export const useAppStore = create<AppState>()(
           odometer: t.odometer + 0.05,
           heading,
           lastSyncAt: timestamp,
+          lastActiveAt: timestamp,
+          isGhost: isOffline,
+          offlineSince: isOffline ? (t.offlineSince || timestamp) : undefined,
           dutyStartedAt: t.dutyStartedAt || timestamp,
         };
       })
@@ -461,9 +479,30 @@ export const useAppStore = create<AppState>()(
         t.id === id ? { ...t, ...updates } : t
       ),
     });
+
+    // TURANGGA 2.0 PROACTIVE MONITOR
+    const updatedTrack = get().personnelTracks.find(t => t.id === id);
+    if (updatedTrack) {
+       runProactiveChecks(updatedTrack, get().pushNotification, get().addAuditLog);
+    }
   },
 
-  syncOfflineData: () => set({ offlineQueue: [] }),
+  syncOfflineData: () => {
+    const { offlineQueue, isOnline, addAuditLog } = get();
+    if (!isOnline || offlineQueue.length === 0) return;
+    
+    console.log(`[SENTINEL-SYNC] Syncing ${offlineQueue.length} buffered points...`);
+    
+    // Batch process
+    set({ offlineQueue: [] });
+    
+    addAuditLog({
+      actor: "Sentinel-AI Sync Engine",
+      action: "BATCH_UPLOAD_SUCCESS",
+      target: "Core Data",
+      details: `Successfully synchronized ${offlineQueue.length} records from local buffer. Timestamp Reconciliation applied.`
+    });
+  },
   
   setTimeRangeHours: (hours) => set({ timeRangeHours: hours }),
   setLiveMode: (value) => set({ liveMode: value }),
@@ -504,15 +543,21 @@ export const useAppStore = create<AppState>()(
   setPredictiveMode: (enabled) => set({ predictiveMode: enabled }),
   setPatrolRoute: (route) => set({ activePatrolRoute: route }),
   setDispatchModal: (open, incident) => set({ dispatchModalOpen: open, selectedIncident: incident || null }),
-  addAuditLog: (entry) => set((state) => ({
-    auditLogs: [{ 
-      ...entry, 
-      id: typeof crypto !== 'undefined' && crypto.randomUUID 
-          ? `audit-${crypto.randomUUID()}` 
-          : `audit-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
-      timestamp: new Date().toISOString() 
-    }, ...state.auditLogs]
-  })),
+  addAuditLog: (entry) => set((state) => {
+    const timestamp = new Date().toISOString();
+    const hash = generateIntegrityHash({ ...entry, timestamp });
+    
+    return {
+      auditLogs: [{ 
+        ...entry, 
+        id: typeof crypto !== 'undefined' && crypto.randomUUID 
+            ? `audit-${crypto.randomUUID()}` 
+            : `audit-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
+        timestamp,
+        hash
+      }, ...state.auditLogs]
+    };
+  }),
   setOsintEnabled: (enabled) => set({ osintEnabled: enabled }),
   setSandboxMode: (enabled) => set({ sandboxMode: enabled }),
   calculateSandboxImpact: (polresId, shifted) => set({

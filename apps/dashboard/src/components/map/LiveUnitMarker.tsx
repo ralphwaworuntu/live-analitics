@@ -50,15 +50,18 @@ const LiveUnitMarker = React.memo(function LiveUnitMarker({
   const isLowBattery = track.batteryLevel < 20;
   const heading = track.heading ?? 0;
   const isOnline = track.connectionType !== "none" && track.signalStatus !== "No Signal";
+  const isGhost = track.isGhost || !isOnline;
 
   // Color scheme
   const baseColor = isExternal 
     ? "#94A3B8" // Slate Gray
     : isSOS
       ? "#EF4444" // Crimson Red
-      : isSelected
-        ? "#D4AF37" // Gold
-        : "#3B82F6"; // Neon Blue
+      : isGhost
+        ? "#64748B" // Muted Slate for Ghost
+        : isSelected
+          ? "#D4AF37" // Gold
+          : "#3B82F6"; // Neon Blue
 
   return (
     <AdvancedMarker
@@ -66,10 +69,20 @@ const LiveUnitMarker = React.memo(function LiveUnitMarker({
       onClick={() => onSelect(track.id)}
     >
       <div
-        className="relative flex flex-col items-center cursor-pointer"
+        className={cn(
+            "relative flex flex-col items-center cursor-pointer transition-all duration-1000",
+            isGhost && "opacity-60 grayscale-[0.5]"
+        )}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
+        {/* Ghost Position Pulsing Ring */}
+        {isGhost && (
+            <div className="absolute inset-x-0 -inset-y-2 flex items-center justify-center pointer-events-none">
+                <div className="w-12 h-12 rounded-full border border-slate-500/30 animate-ping opacity-20" />
+            </div>
+        )}
+
         {/* Heading Arrow */}
         <div
           className="absolute -top-3 z-10 transition-transform duration-700"
@@ -87,13 +100,18 @@ const LiveUnitMarker = React.memo(function LiveUnitMarker({
             isSOS && "animate-pulse shadow-[0_0_16px_rgba(239,68,68,0.8)]",
             isLowBattery && !isSOS && "shadow-[0_0_12px_rgba(239,68,68,0.6)]",
             isSelected && "scale-125 shadow-[0_0_20px_rgba(212,175,55,0.6)]",
+            isGhost && "border-dashed"
           )}
           style={{
             backgroundColor: `${baseColor}22`,
             borderColor: baseColor,
           }}
         >
-          <Shield size={14} style={{ color: baseColor }} />
+          {isGhost ? (
+              <WifiOff size={14} className="text-slate-400 opacity-50" />
+          ) : (
+              <Shield size={14} style={{ color: baseColor }} />
+          )}
           {/* Low battery pulsing glow */}
           {isLowBattery && (
             <div className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse" />
@@ -121,10 +139,17 @@ const LiveUnitMarker = React.memo(function LiveUnitMarker({
 
         {/* Unit Type Label */}
         <div
-          className="mt-0.5 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider bg-[#0B1B32]/90 border border-white/5"
-          style={{ color: baseColor }}
+          className={cn(
+              "mt-0.5 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider bg-[#0B1B32]/90 border transition-colors",
+              isGhost ? "border-slate-500/30 text-slate-400" : "border-white/5"
+          )}
+          style={{ color: isGhost ? undefined : baseColor }}
         >
+          {isGhost && <span className="text-amber-500 mr-1 opacity-80">Ghost •</span>}
           {track.unitType} • {track.name.split(" ")[0]}
+          {isGhost && track.offlineSince && (
+              <span className="ml-1.5 font-mono text-[6px] text-slate-500">[{formatTimeAgo(track.offlineSince)}]</span>
+          )}
         </div>
 
         {/* Tactical Tooltip — shown on hover */}

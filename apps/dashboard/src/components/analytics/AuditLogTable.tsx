@@ -74,13 +74,13 @@ export default function AuditLogTable() {
                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Aktor</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Aksi</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">ID Objek</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Integrity Hash</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 italic text-sm">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500 italic text-sm">
                     Belum ada riwayat aktivitas yang tercatat.
                   </td>
                 </tr>
@@ -108,6 +108,11 @@ export default function AuditLogTable() {
                     <td className="px-6 py-4">
                       <span className="font-mono text-[10px] text-slate-500 group-hover:text-slate-300 transition-colors">
                         {log.target}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right overflow-hidden">
+                      <span className="font-mono text-[9px] text-[#D4AF37] bg-[#D4AF37]/5 px-2 py-1 rounded border border-[#D4AF37]/20">
+                        {log.hash || "SEC-PENDING"}
                       </span>
                     </td>
                   </tr>
