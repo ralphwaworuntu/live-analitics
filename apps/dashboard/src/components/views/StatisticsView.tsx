@@ -15,6 +15,9 @@ import {
   Users,
   MessageSquare,
   Car,
+  BellRing,
+  MoreVertical,
+  Send,
   ChevronRight
 } from "lucide-react";
 import { 
@@ -38,13 +41,12 @@ import { cn } from "@/lib/utils";
 import { 
   Card, 
   CardContent, 
-  CardDescription, 
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAppStore } from "@/store";
 import { playTacticalSound } from "@/lib/tactical-feedback";
 import { ReportService } from "@/lib/ReportService";
