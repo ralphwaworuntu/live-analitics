@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ResizableHandle, 
@@ -13,9 +13,31 @@ import TopHeader from "@/components/layout/TopHeader";
 import IntelligencePanel from "@/components/ai/IntelligencePanel";
 import TacticalAlertBridge from "@/components/dashboard/TacticalAlertBridge";
 
+function useBreakpoint(query: string) {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia(query).matches;
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia(query);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, [query]);
+  return matches;
+}
+
 export default function DashboardShell({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Breakpoints
+  const isAboveLg = useBreakpoint("(min-width: 1024px)");  // lg
+  const isAboveMd = useBreakpoint("(min-width: 768px)");   // md
+
+  // Sidebar is collapsed when between md-lg or when window is between lg and xl
+  const sidebarCollapsed = isAboveMd && !isAboveLg;
 
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -23,12 +45,12 @@ export default function DashboardShell({ children }: { children?: React.ReactNod
   return (
     <div className="h-screen w-full bg-[#07111F] text-[#EAF2FF] overflow-hidden flex">
 
-      {/* Desktop Sidebar — permanent, hidden on mobile */}
+      {/* Desktop Sidebar — permanent, hidden on mobile (<768px) */}
       <div className="hidden md:block">
-        <Sidebar />
+        <Sidebar collapsed={sidebarCollapsed} />
       </div>
 
-      {/* Mobile Sidebar — off-canvas drawer overlay */}
+      {/* Mobile Sidebar — off-canvas drawer overlay (<768px) */}
       <AnimatePresence>
         {sidebarOpen && (
           <div className="fixed inset-0 z-[200] md:hidden">
@@ -60,6 +82,7 @@ export default function DashboardShell({ children }: { children?: React.ReactNod
         <TopHeader onOpenSidebar={openSidebar} />
         <TacticalAlertBridge />
         
+        {/* Independent scrollable main content area */}
         <div className="flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait">
             <motion.div

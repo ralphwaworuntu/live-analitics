@@ -69,7 +69,7 @@ export default function FloatingWindowsProvider({ children }: { children: React.
       {children}
       
       {/* Minimized Windows Dock */}
-      <div className="fixed bottom-6 left-[300px] z-50 flex flex-row flex-wrap gap-2 pointer-events-none">
+      <div className="fixed bottom-6 left-4 md:left-[88px] lg:left-[300px] z-50 flex flex-row flex-wrap gap-2 pointer-events-none">
         {windows.filter(w => w.minimized).map(window => (
           <button
             key={`min-${window.id}`}

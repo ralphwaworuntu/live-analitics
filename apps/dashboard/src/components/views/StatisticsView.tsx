@@ -271,28 +271,28 @@ export default function StatisticsView() {
   };
 
   return (
-    <div ref={dashboardRef} className="flex flex-col h-full w-full bg-[#07111F] overflow-y-auto p-10 gap-10 custom-scrollbar text-white relative">
+    <div ref={dashboardRef} className="flex flex-col h-full w-full bg-[#07111F] overflow-y-auto p-4 sm:p-6 lg:p-10 gap-6 lg:gap-10 custom-scrollbar text-white relative">
       
       {/* HEADER TACTICAL */}
-      <div className="flex items-center justify-between no-export shrink-0 pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between no-export shrink-0 pb-6 lg:pb-10 gap-4 max-h-[30vh]">
          <div className="flex flex-col">
-            <div className="flex items-center gap-4">
-               <div className="h-14 w-14 rounded-2xl bg-[#D4AF37] flex items-center justify-center shadow-lg shadow-yellow-500/10 border border-yellow-500/20">
+            <div className="flex items-center gap-3 lg:gap-4">
+               <div className="h-10 w-10 lg:h-14 lg:w-14 rounded-2xl bg-[#D4AF37] flex items-center justify-center shadow-lg shadow-yellow-500/10 border border-yellow-500/20 shrink-0">
                   <Activity size={28} className="text-[#07111F]" />
                </div>
                <div className="text-left">
-                  <h1 className="text-3xl font-black uppercase tracking-tighter italic leading-none text-white">Sentinel Anev Insights</h1>
-                  <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none mt-2">Strategic Intelligence Forensics • BIRO OPS POLDA NTT</p>
+                  <h1 className="text-2xl md:text-4xl lg:text-6xl font-black uppercase tracking-tighter italic leading-none text-white">Sentinel Anev Insights</h1>
+                  <p className="text-[10px] lg:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none mt-1 lg:mt-2">Strategic Intelligence Forensics • BIRO OPS POLDA NTT</p>
                </div>
             </div>
          </div>
-         <div className="flex items-center gap-3">
-            <button onClick={() => exportDashboard("png")} title="Save PNG" className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all border border-white/5"><Download size={20} /></button>
+         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <button onClick={() => exportDashboard("png")} title="Save PNG" className="h-10 w-10 lg:h-12 lg:w-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all border border-white/5"><Download size={20} /></button>
             <button 
                 onClick={() => exportDashboard("report")} 
-                className="bg-[#D4AF37] text-[#07111F] h-12 px-8 rounded-2xl text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-3 shadow-lg shadow-yellow-500/20 border border-yellow-500/20"
+                className="bg-[#D4AF37] text-[#07111F] h-10 lg:h-12 px-4 lg:px-8 rounded-2xl text-[10px] lg:text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2 lg:gap-3 shadow-lg shadow-yellow-500/20 border border-yellow-500/20 whitespace-nowrap"
             >
-               <FileDown size={20} /> Unduh Laporan Shift (Anev)
+               <FileDown size={18} /> <span className="hidden sm:inline">Unduh Laporan Shift (Anev)</span><span className="sm:hidden">Export</span>
             </button>
          </div>
       </div>
@@ -311,7 +311,7 @@ export default function StatisticsView() {
       </div>
 
       {/* KPI GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 shrink-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8 shrink-0">
         <KPICard title="Total Incidents" value="1,492" unit="Case" trend="down" trendValue="12%" icon={Activity} />
         <KPICard title="Tactical Response" value="04m" unit="Avg" trend="up" trendValue="1.2m" icon={Clock} />
         <KPICard title="Logistics Readiness" value="96.2" unit="%" trend="up" trendValue="2.1%" icon={Zap} />
@@ -319,10 +319,10 @@ export default function StatisticsView() {
       </div>
 
       {/* MAIN ANALYTICS GRID */}
-      <div className="grid grid-cols-12 gap-10">
+      <div className="grid grid-cols-12 gap-4 lg:gap-10">
         
         {/* Crime Clock */}
-        <Card className="col-span-12 h-[320px] overflow-hidden bg-transparent border-white/5">
+        <Card className="col-span-12 h-[240px] lg:h-[320px] overflow-hidden bg-transparent border-white/5">
            <CardHeader className="py-6 px-10 text-left">
               <CardTitle className="text-sm font-black uppercase tracking-widest text-[#D4AF37] flex items-center gap-3"><Clock size={16} /> Operational Crime Load Analysis</CardTitle>
            </CardHeader>
@@ -395,7 +395,7 @@ export default function StatisticsView() {
         </Card>
 
         {/* STRATEGIC INSIGHT PANEL (BENTO) */}
-        <div className="col-span-12 grid grid-cols-12 gap-8 mt-4 no-export">
+        <div className="col-span-12 grid grid-cols-12 gap-4 lg:gap-8 mt-4 no-export">
            <Card className="col-span-12 lg:col-span-4 bg-white/5 border-white/5">
               <CardHeader className="pb-2 text-left">
                  <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-3"><Users size={16} /> Personnel Fatigue</CardTitle>
@@ -449,7 +449,7 @@ export default function StatisticsView() {
               </CardContent>
            </Card>
 
-           <div className="col-span-12 bg-[#D4AF37]/5 border border-yellow-500/10 rounded-[32px] p-10 flex flex-col gap-6 relative overflow-hidden text-left">
+           <div className="col-span-12 bg-[#D4AF37]/5 border border-yellow-500/10 rounded-[24px] lg:rounded-[32px] p-4 sm:p-6 lg:p-10 flex flex-col gap-4 lg:gap-6 relative overflow-hidden text-left">
               <p className="text-sm font-bold text-slate-400 uppercase leading-relaxed italic border-l-4 border-[#D4AF37] pl-8">
                  &quot;Analisis korelasi menemukan bahwa kenaikan angka <span className="text-white italic underline decoration-[#D4AF37]">Pencurian Malam Hari</span> di Wilayah Sektor 4 Kupang sangat berkorelasi dengan jadwal <span className="text-red-500 italic underline decoration-red-500/20">Pemadaman Listrik Terencana</span>. Antisipasi dilakukan via penebalan patroli.&quot;
               </p>
@@ -472,7 +472,7 @@ export default function StatisticsView() {
         }
       `}</style>
       
-      <div className="shrink-0 flex items-center justify-between pt-10 border-t border-white/5 no-export opacity-50 px-10 pb-6 text-left">
+      <div className="shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between pt-6 lg:pt-10 border-t border-white/5 no-export opacity-50 px-4 lg:px-10 pb-4 lg:pb-6 text-left gap-2">
          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Polda NTT Sentinel • Enterprise Insights Engine v6.1</span>
          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Confidential Operational Intelligence</span>
       </div>

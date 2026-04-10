@@ -73,7 +73,7 @@ export default function DashboardView() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              className="absolute inset-0 w-full h-full p-6 overflow-y-auto custom-scrollbar bg-[#07111F]"
+              className="absolute inset-0 w-full h-full p-3 sm:p-4 lg:p-6 overflow-y-auto custom-scrollbar bg-[#07111F]"
             >
               <div className="max-w-6xl mx-auto space-y-6">
                 <div className="flex items-center justify-between mb-8 px-2">
@@ -107,7 +107,7 @@ export default function DashboardView() {
                     </p>
                   </motion.div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
                     {filteredPolres.map(p => (
                       <PolresCard
                         key={p.id}

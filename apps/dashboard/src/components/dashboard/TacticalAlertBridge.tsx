@@ -90,7 +90,7 @@ export default function TacticalAlertBridge() {
   const renderedAlerts = useMemo(() => alerts.slice(-4).reverse(), [alerts]);
 
   return (
-    <div className="pointer-events-none fixed bottom-5 right-5 z-[220] flex w-[min(92vw,420px)] flex-col gap-3">
+    <div className="pointer-events-none fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-[220] flex w-[min(92vw,420px)] max-w-full flex-col gap-2 sm:gap-3">
       <AnimatePresence initial={false}>
         {renderedAlerts.map((alert) => (
           <motion.div

@@ -27,7 +27,7 @@ interface TopHeaderProps {
  */
 export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
   const { incomingPublicReport, clearPublicReport, executeAction, toggleSettings, toggleNotifications, clearOperationalData } = useAppStore();
-  const unreadCount = useAppStore(state => state.notifications?.filter((n: any) => !n.read).length || 0);
+  const unreadCount = useAppStore(state => state.notifications?.filter((n: { read: boolean }) => !n.read).length || 0);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const router = useRouter();
 
@@ -47,7 +47,7 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
           {onOpenSidebar && (
             <button 
               onClick={onOpenSidebar}
-              className="md:hidden p-2 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer shrink-0"
+              className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer shrink-0"
             >
               <Menu size={22} />
             </button>
