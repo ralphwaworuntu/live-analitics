@@ -7,6 +7,7 @@ import { useLiveTracking } from "@/hooks/useLiveTracking";
 import LiveUnitMarker from "@/components/map/LiveUnitMarker";
 import GeofenceLayer from "@/components/map/GeofenceLayer";
 import DispatchLineOverlay from "@/components/map/DispatchLineOverlay";
+import SentimentCloudLayer from "@/components/map/SentimentCloudLayer";
 import { cn } from "@/lib/utils";
 import {
   Layers,
@@ -269,6 +270,33 @@ function OperationalStatusBar({ trackCount }: { trackCount: number }) {
 // MAIN VIEW
 // =================================================================
 
+const EXTERNAL_MOCKS = [
+  {
+    id: "ext-1",
+    name: "Ambulance RS Bhayangkara",
+    nrp: "EXT",
+    role: "medical",
+    batteryLevel: 100,
+    signalStatus: "LTE" as const,
+    speed: 0,
+    heading: 45,
+    dutyStartedAt: "2025-01-01T00:00:00.000Z",
+    waypoints: [{ lat: -10.165, lng: 123.595, timestamp: 0 }]
+  },
+  {
+    id: "ext-2",
+    name: "Damkar Kota",
+    nrp: "EXT",
+    role: "fire",
+    batteryLevel: 100,
+    signalStatus: "LTE" as const,
+    speed: 0,
+    heading: 90,
+    dutyStartedAt: "2025-01-01T00:00:00.000Z",
+    waypoints: [{ lat: -10.150, lng: 123.580, timestamp: 0 }]
+  }
+];
+
 export default function OperationsView() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "";
   const selectedPersonnelId = useAppStore((s) => s.selectedPersonnelId);
@@ -295,9 +323,9 @@ export default function OperationsView() {
   }, []);
 
   const computedNearest = useMemo(() => {
-    if (!dispatchTarget) return [];
+    if (!dispatchTarget || !dispatchActive) return [];
     return nearestUnits(dispatchTarget.lat, dispatchTarget.lng, 3);
-  }, [dispatchTarget, nearestUnits]);
+  }, [dispatchTarget, nearestUnits, dispatchActive]);
 
   const handleSelectUnit = useCallback(
     (id: string) => {
@@ -310,7 +338,7 @@ export default function OperationsView() {
     },
     [tracks, setSelectedPersonnelId, setMapCenter]
   );
-
+  
   if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_KEY") {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center bg-[#07111F] text-slate-500 gap-4">
@@ -340,6 +368,19 @@ export default function OperationsView() {
           <MapCenterController />
           <TrafficLayer />
           <GeofenceLayer />
+          <SentimentCloudLayer />
+
+          {/* External Agencies Mock */}
+          {EXTERNAL_MOCKS.map(ext => (
+            <LiveUnitMarker 
+               key={ext.id}
+               // eslint-disable-next-line @typescript-eslint/no-explicit-any
+               track={ext as any}
+               isSelected={false}
+               onSelect={() => {}}
+               isExternal={true}
+            />
+          ))}
 
           {/* Live Unit Markers */}
           {tracks.map((track) => (

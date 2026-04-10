@@ -714,14 +714,22 @@ const AssetTable = ({ searchQuery }: { searchQuery: string }) => {
     }),
     columnHelperAsset.accessor("id", {
       header: "ID Ranmor",
-      cell: props => (
-        <div className="flex flex-col">
-          <span className="font-mono text-slate-100 font-black tracking-widest text-sm bg-white/5 px-2 py-1 rounded w-fit">{props.getValue()}</span>
-          {props.row.original.integrityFlag && (
-            <span className="text-[8px] text-red-500 font-black uppercase mt-1 animate-pulse">! Fuel Anomaly</span>
-          )}
-        </div>
-      )
+      cell: props => {
+        const isOverdue = props.row.original.odometer >= 5000;
+        return (
+          <div className="flex flex-col">
+            <span className="font-mono text-slate-100 font-black tracking-widest text-sm bg-white/5 px-2 py-1 rounded w-fit">{props.getValue()}</span>
+            <div className="flex flex-col gap-1 mt-1">
+              {props.row.original.integrityFlag && (
+                <span className="text-[8px] text-red-500 font-black uppercase animate-pulse">! Fuel Anomaly</span>
+              )}
+              {isOverdue && (
+                <span className="text-[8px] text-orange-500 font-black uppercase animate-pulse">⚙ Maint. Overdue (&gt;5000KM)</span>
+              )}
+            </div>
+          </div>
+        );
+      }
     }),
     columnHelperAsset.accessor("type", {
       header: "Jenis",

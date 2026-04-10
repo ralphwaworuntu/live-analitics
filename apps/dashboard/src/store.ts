@@ -639,6 +639,14 @@ export const useAppStore = create<AppState>()(
         auditLogs: state.auditLogs,
         notifications: state.notifications,
         activeShift: state.activeShift,
+        mapTypeId: state.mapTypeId,
+        trafficLayerEnabled: state.trafficLayerEnabled,
+        filterStatus: state.filterStatus,
+        filterPriority: state.filterPriority,
+        timeRangeHours: state.timeRangeHours,
+        sandboxMode: state.sandboxMode,
+        osintEnabled: state.osintEnabled,
+        heatmapEnabled: state.heatmapEnabled,
       }),
     }
   )

@@ -25,8 +25,9 @@ function formatDutyTime(isoString?: string): string {
 
 interface LiveUnitMarkerProps {
   track: PersonnelTrack;
-  isSelected: boolean;
+  isSelected?: boolean;
   onSelect: (id: string) => void;
+  isExternal?: boolean;
 }
 
 /**
@@ -34,13 +35,16 @@ interface LiveUnitMarkerProps {
  */
 const LiveUnitMarker = React.memo(function LiveUnitMarker({
   track,
-  isSelected,
+  isSelected = false,
   onSelect,
+  isExternal = false,
 }: LiveUnitMarkerProps) {
   const [hovered, setHovered] = useState(false);
 
+  // If no waypoints exist for this track, do not render
+  if (!track.waypoints || track.waypoints.length === 0) return null;
+
   const lastWp = track.waypoints[track.waypoints.length - 1];
-  if (!lastWp) return null;
 
   const isSOS = track.isSOS;
   const isLowBattery = track.batteryLevel < 20;
@@ -48,11 +52,13 @@ const LiveUnitMarker = React.memo(function LiveUnitMarker({
   const isOnline = track.connectionType !== "none" && track.signalStatus !== "No Signal";
 
   // Color scheme
-  const baseColor = isSOS
-    ? "#EF4444" // Crimson Red
-    : isSelected
-      ? "#D4AF37" // Gold
-      : "#3B82F6"; // Neon Blue
+  const baseColor = isExternal 
+    ? "#94A3B8" // Slate Gray
+    : isSOS
+      ? "#EF4444" // Crimson Red
+      : isSelected
+        ? "#D4AF37" // Gold
+        : "#3B82F6"; // Neon Blue
 
   return (
     <AdvancedMarker

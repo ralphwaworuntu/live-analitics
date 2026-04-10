@@ -124,15 +124,33 @@ export default function LiveReportTicker() {
                       <Eye className="w-2.5 h-2.5" /> AI Analyzed
                     </span>
                   )}
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDispatchModal(true, report);
-                    }}
-                    className="ml-auto inline-flex items-center gap-1.5 rounded bg-[#D4AF37] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-black hover:bg-white transition-colors"
-                  >
-                    <ShieldAlert size={10} /> Smart Dispatch
-                  </button>
+                  <div className="flex flex-col gap-1.5 ml-auto">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Mock Webhook Bridge
+                        const payload = JSON.stringify({
+                          agency: ["Basarnas", "Damkar", "RS Bhayangkara"],
+                          coordinates: { lat: report.lat, lng: report.lng },
+                          urgency: report.isSOS ? "CRITICAL" : "HIGH",
+                          message: report.textReport
+                        }, null, 2);
+                        alert(`JSON Payload Sent to External Agencies:\n\n${payload}`);
+                      }}
+                      className="inline-flex items-center justify-center gap-1.5 rounded bg-blue-600 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-white hover:bg-blue-500 transition-colors cursor-pointer"
+                    >
+                      <Radio size={10} /> Bridge Data
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDispatchModal(true, report);
+                      }}
+                      className="inline-flex items-center justify-center gap-1.5 rounded bg-[#D4AF37] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-black hover:bg-white transition-colors cursor-pointer"
+                    >
+                      <ShieldAlert size={10} /> Smart Dispatch
+                    </button>
+                  </div>
                 </div>
               </motion.button>
             ))}

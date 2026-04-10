@@ -4,6 +4,8 @@ import { useMemo, useEffect, useRef } from "react";
 import { useAppStore } from "@/store";
 import type { PersonnelTrack } from "@/lib/types";
 
+import { useEmergencySound } from "@/hooks/useEmergencySound";
+
 /**
  * Haversine formula — distance between two lat/lng points in kilometers.
  */
@@ -36,6 +38,7 @@ export function useLiveTracking() {
   const polres = useAppStore((s) => s.polres);
   const addGeofenceAlert = useAppStore((s) => s.addGeofenceAlert);
   const breachCooldown = useRef<Map<string, number>>(new Map());
+  const { playVoiceWarning } = useEmergencySound();
 
   // --- Nearest Units ---
   const nearestUnits = useMemo(() => {
@@ -82,10 +85,11 @@ export function useLiveTracking() {
             message: `GEOFENCE BREACH: Unit ${track.name} exited ${assignedPolres.name} sector (${distFromBase.toFixed(1)}km from base).`,
             timestamp: new Date().toISOString(),
           });
+          playVoiceWarning(`Peringatan Geofence. Unit ${track.name} keluar dari sektor ${assignedPolres.name}.`);
         }
       }
     });
-  }, [personnelTracks, polres, addGeofenceAlert]);
+  }, [personnelTracks, polres, addGeofenceAlert, playVoiceWarning]);
 
   // --- Get Track by ID ---
   const getTrackById = useMemo(() => {

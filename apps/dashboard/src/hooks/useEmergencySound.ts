@@ -48,17 +48,36 @@ export function useEmergencySound() {
     playSweep(1200, 760, 0.24, "square");
   }, [playSweep]);
 
+  const playLowHum = useCallback(() => {
+    playSweep(200, 150, 0.4, "sine");
+  }, [playSweep]);
+
+  const playSOSBeep = useCallback(() => {
+    playSweep(2000, 2500, 0.3, "square");
+    setTimeout(() => playSweep(2000, 2500, 0.3, "square"), 400);
+    setTimeout(() => playSweep(2000, 2500, 0.3, "square"), 800);
+  }, [playSweep]);
+
+  const playVoiceWarning = useCallback((message: string) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(message);
+      utterance.lang = "id-ID";
+      utterance.rate = 1.1;
+      utterance.pitch = 0.9; // deeper, tactical voice
+      window.speechSynthesis.speak(utterance);
+    }
+  }, []);
+
   useEffect(() => {
     if (isEmergency && !hasPlayedRef.current) {
-      playSweep(880, 440, 0.5, "sine");
-
+      playSOSBeep();
       hasPlayedRef.current = true;
     }
 
     if (!isEmergency) {
       hasPlayedRef.current = false;
     }
-  }, [isEmergency, playSweep]);
+  }, [isEmergency, playSOSBeep]);
 
-  return { playTacticalBeep };
+  return { playTacticalBeep, playLowHum, playSOSBeep, playVoiceWarning };
 }

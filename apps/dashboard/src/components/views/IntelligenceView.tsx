@@ -63,18 +63,33 @@ function TuranggaAI() {
       createdAt: new Date().toISOString()
     });
 
-    const currentInput = inputVal;
+    const currentInput = inputVal.toLowerCase();
     setInputVal("");
+
+    let reply = `Berdasarkan analisis Turangga-AI terkait "${inputVal}", tidak ditemukan anomali kritis. Parameter operasional berada pada ambang normal.`;
+    let references = ["Core Data", "Anev Logs"];
+
+    if (currentInput.includes("labuan bajo")) {
+      reply = "Situasi di Labuan Bajo saat ini kondusif dengan penjagaan difokuskan pada event internasional. Terdapat 12 unit patroli aktif dan 1 posko utama. Tidak ada eskalasi SOS dalam 24 jam terakhir. Cuaca dilaporkan cerah, sehingga aktivitas maritim berjalan normal.";
+      references = ["Polres Mabar Livestream", "BMKG Integrations", "Patroli R2/R4 Data"];
+    } else if (currentInput.includes("ringkasan") || currentInput.includes("situasi")) {
+      reply = "Ringkasan Situasi Nusa Tenggara Timur: Status Siaga 2. Terdeteksi peningkatan curah hujan di wilayah Sumba dan TTS. Terjadi 3 insiden Laka Lantas di area Kupang. Tingkat ketersediaan pasukan (Readiness) berada pada 92%. Rekomendasi: Tingkatkan patroli preventif pada jam rawan (22:00 - 04:00) di sektor timur.";
+      references = ["Live Operations", "Statistics K2", "OSINT Pulse"];
+    } else if (currentInput.includes("aset") || currentInput.includes("bahan bakar")) {
+      reply = "Memindai data Core Data... Ditemukan 2 unit kendaraan (R4) yang menunjukkan anomali konsumsi bahan bakar lebih dari 20% dibandingkan jarak tempuh GPS. Odometer juga menunjukkan 4 unit memerlukan servis berkala. Silakan cek tab 'Core Data' untuk daftar terperinci.";
+      references = ["GPS Odometer", "Fuel Logs"];
+    }
 
     // Simulate AI response
     setTimeout(() => {
       addAIMessage({
         id: `ai-${Date.now()}`,
         role: "assistant",
-        content: `Berdasarkan analisis Turangga-AI terkait "${currentInput}", kami mendeteksi tidak ada anomali siginifikan saat ini. Namun disarankan memperketat patroli preventif.`,
+        content: reply,
+        references,
         createdAt: new Date().toISOString(),
       });
-    }, 1000);
+    }, 1500);
   };
 
   return (

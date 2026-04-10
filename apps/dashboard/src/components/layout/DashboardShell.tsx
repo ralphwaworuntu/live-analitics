@@ -12,6 +12,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import TopHeader from "@/components/layout/TopHeader";
 import IntelligencePanel from "@/components/ai/IntelligencePanel";
 import TacticalAlertBridge from "@/components/dashboard/TacticalAlertBridge";
+import TacticalComms from "@/components/dashboard/TacticalComms";
 
 function useBreakpoint(query: string) {
   const [matches, setMatches] = useState(() => {
