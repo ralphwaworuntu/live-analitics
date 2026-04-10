@@ -54,11 +54,11 @@ export default function PatrolIntelView() {
   };
 
   return (
-    <div ref={reportRef} className="h-full flex flex-col bg-[#07111F] text-slate-100 p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6 overflow-hidden">
+    <div ref={reportRef} className="h-full flex flex-col bg-[#07111F] text-slate-100 p-2 sm:p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4 lg:space-y-6 overflow-hidden">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight italic">Sentinel Tactical Console</h1>
+            <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight italic">Sentinel Tactical Console</h1>
             <p className="text-xs sm:text-sm text-slate-400 hidden sm:block">Micro-Monitoring & SOS Emergency Dispatch</p>
           </div>
           
@@ -217,7 +217,7 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
   const tracks = useAppStore(state => state.personnelTracks);
 
   return (
-    <div className="h-full grid grid-cols-1 xl:grid-cols-4 gap-4 md:gap-6 animate-in slide-in-from-right-4 min-h-[400px] md:min-h-[600px] pb-10">
+    <div className="h-full grid grid-cols-1 xl:grid-cols-4 gap-3 md:gap-4 lg:gap-6 animate-in slide-in-from-right-4 min-h-[400px] md:min-h-[600px] pb-10">
       <div className="xl:col-span-1 space-y-4 flex flex-col h-full">
          <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-black text-[#D4AF37] uppercase tracking-widest px-1">Unit Asset Telemetry</h2>
@@ -248,7 +248,7 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
                    : "bg-red-500";
 
                return (
-                  <div key={unit.id} className={cn("bg-[#0B1B32]/95 border border-white/10 rounded-xl p-4 hover:border-red-500/50 transition-all cursor-pointer group relative overflow-hidden", isSignalLost && "grayscale-[0.65] opacity-80")}>
+                  <div key={unit.id} className={cn("bg-[#0B1B32]/95 border border-white/10 rounded-xl p-3 md:p-4 hover:border-red-500/50 transition-all cursor-pointer group relative overflow-hidden", isSignalLost && "grayscale-[0.65] opacity-80")}>
                      {isAnomaly && (
                         <div className="absolute top-0 right-0 p-1 bg-red-600 text-white font-black text-[8px] uppercase px-2 shadow-lg">Anomali BBM</div>
                      )}
@@ -349,7 +349,7 @@ function LivePatrolSection({ selectedPolsekId }: { selectedPolsekId: string | nu
                   <Activity size={12} className="text-[#D4AF37]" /> Tactical Telemetry Index
                </div>
                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black font-mono text-white tracking-widest">98.2</span>
+                  <span className="text-xl md:text-2xl lg:text-3xl font-black font-mono text-white tracking-widest">98.2</span>
                   <span className="text-emerald-400 font-bold text-xs font-mono tracking-tighter">↑ 1.4% COMPLIANCE</span>
                </div>
                <div className="mt-2 text-[9px] text-slate-500 uppercase font-bold tracking-tighter">Monitoring Hierarchy: 14 Polsek | 38 Pos Pol | 110 Units</div>

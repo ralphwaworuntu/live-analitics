@@ -13,6 +13,7 @@ import TopHeader from "@/components/layout/TopHeader";
 import IntelligencePanel from "@/components/ai/IntelligencePanel";
 import TacticalAlertBridge from "@/components/dashboard/TacticalAlertBridge";
 import TacticalComms from "@/components/dashboard/TacticalComms";
+import { useAppStore } from "@/store";
 
 function useBreakpoint(query: string) {
   const [matches, setMatches] = useState(() => {
@@ -31,29 +32,35 @@ function useBreakpoint(query: string) {
 
 export default function DashboardShell({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  
+  const { isSidebarCollapsed, toggleSidebar } = useAppStore();
 
   // Breakpoints
   const isAboveLg = useBreakpoint("(min-width: 1024px)");  // lg
   const isAboveMd = useBreakpoint("(min-width: 768px)");   // md
 
-  // Sidebar is collapsed when between md-lg or when window is between lg and xl
-  const sidebarCollapsed = isAboveMd && !isAboveLg;
+  // Auto-collapse on tablet screens (768px - 1024px)
+  useEffect(() => {
+    if (isAboveMd && !isAboveLg) {
+      toggleSidebar(true);
+    }
+  }, [isAboveMd, isAboveLg, toggleSidebar]);
 
-  const openSidebar = useCallback(() => setSidebarOpen(true), []);
-  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const openSidebar = useCallback(() => setMobileSidebarOpen(true), []);
+  const closeSidebar = useCallback(() => setMobileSidebarOpen(false), []);
 
   return (
     <div className="h-screen w-full bg-[#07111F] text-[#EAF2FF] overflow-hidden flex">
 
       {/* Desktop Sidebar — permanent, hidden on mobile (<768px) */}
       <div className="hidden md:block">
-        <Sidebar collapsed={sidebarCollapsed} />
+        <Sidebar collapsed={isSidebarCollapsed} />
       </div>
 
       {/* Mobile Sidebar — off-canvas drawer overlay (<768px) */}
       <AnimatePresence>
-        {sidebarOpen && (
+        {mobileSidebarOpen && (
           <div className="fixed inset-0 z-[200] md:hidden">
             {/* Backdrop */}
             <motion.div
@@ -82,6 +89,7 @@ export default function DashboardShell({ children }: { children?: React.ReactNod
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#07111F] min-w-0">
         <TopHeader onOpenSidebar={openSidebar} />
         <TacticalAlertBridge />
+        <TacticalComms />
         
         {/* Independent scrollable main content area */}
         <div className="flex-1 overflow-hidden relative">

@@ -8,6 +8,7 @@ import LiveUnitMarker from "@/components/map/LiveUnitMarker";
 import GeofenceLayer from "@/components/map/GeofenceLayer";
 import DispatchLineOverlay from "@/components/map/DispatchLineOverlay";
 import SentimentCloudLayer from "@/components/map/SentimentCloudLayer";
+import PredictiveHotspotLayer from "@/components/map/PredictiveHotspotLayer";
 import { cn } from "@/lib/utils";
 import {
   Layers,
@@ -369,6 +370,7 @@ export default function OperationsView() {
           <TrafficLayer />
           <GeofenceLayer />
           <SentimentCloudLayer />
+          <PredictiveHotspotLayer />
 
           {/* External Agencies Mock */}
           {EXTERNAL_MOCKS.map(ext => (

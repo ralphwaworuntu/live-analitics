@@ -15,12 +15,6 @@ import {
   Users,
   MessageSquare,
   Car,
-  Wind,
-  ZapOff,
-  AlertTriangle,
-  Send,
-  BellRing,
-  MoreVertical,
   ChevronRight
 } from "lucide-react";
 import { 
@@ -221,7 +215,7 @@ const KPICard = ({ title, value, unit, trend, icon: Icon, trendValue, pciScore }
       </CardHeader>
       <CardContent className="text-left">
         <div className="flex items-baseline gap-2">
-          <div className="text-3xl font-black font-mono tracking-tighter text-white">{value}</div>
+          <div className="text-xl md:text-2xl lg:text-3xl font-black font-mono tracking-tighter text-white">{value}</div>
           <p className="text-[10px] font-black text-slate-500 uppercase font-mono">{unit}</p>
         </div>
         <div className="flex items-center gap-1.5 mt-2 font-mono">
@@ -271,7 +265,7 @@ export default function StatisticsView() {
   };
 
   return (
-    <div ref={dashboardRef} className="flex flex-col h-full w-full bg-[#07111F] overflow-y-auto p-4 sm:p-6 lg:p-10 gap-6 lg:gap-10 custom-scrollbar text-white relative">
+    <div ref={dashboardRef} className="flex flex-col h-full w-full bg-[#07111F] overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-10 gap-4 md:gap-6 lg:gap-10 custom-scrollbar text-white relative">
       
       {/* HEADER TACTICAL */}
       <div className="flex flex-col md:flex-row md:items-center justify-between no-export shrink-0 pb-6 lg:pb-10 gap-4 max-h-[30vh]">
@@ -281,7 +275,7 @@ export default function StatisticsView() {
                   <Activity size={28} className="text-[#07111F]" />
                </div>
                <div className="text-left">
-                  <h1 className="text-2xl md:text-4xl lg:text-6xl font-black uppercase tracking-tighter italic leading-none text-white">Sentinel Anev Insights</h1>
+                  <h1 className="text-xl md:text-3xl lg:text-5xl font-black uppercase tracking-tighter italic leading-none text-white">Sentinel Anev Insights</h1>
                   <p className="text-[10px] lg:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none mt-1 lg:mt-2">Strategic Intelligence Forensics • BIRO OPS POLDA NTT</p>
                </div>
             </div>
@@ -303,7 +297,7 @@ export default function StatisticsView() {
             <div className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />
             <h3 className="text-xs font-black uppercase tracking-[0.4em] text-red-500 italic">Threat Intelligent Detection Active</h3>
          </div>
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {criticalAlerts.map((alert) => (
                <AlertCard key={alert.id} alert={alert} />
             ))}
@@ -311,7 +305,7 @@ export default function StatisticsView() {
       </div>
 
       {/* KPI GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8 shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-8 shrink-0">
         <KPICard title="Total Incidents" value="1,492" unit="Case" trend="down" trendValue="12%" icon={Activity} />
         <KPICard title="Tactical Response" value="04m" unit="Avg" trend="up" trendValue="1.2m" icon={Clock} />
         <KPICard title="Logistics Readiness" value="96.2" unit="%" trend="up" trendValue="2.1%" icon={Zap} />
@@ -346,7 +340,7 @@ export default function StatisticsView() {
            </CardHeader>
            <CardContent className="h-[360px] relative">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none flex flex-col items-center text-center">
-                 <div className="text-[72px] font-black font-mono leading-none text-white tracking-tighter">94.2%</div>
+                 <div className="text-4xl md:text-6xl lg:text-[72px] font-black font-mono leading-none text-white tracking-tighter">94.2%</div>
                  <div className="text-[10px] font-black text-[#D4AF37] uppercase tracking-[0.4em] mt-2 bg-[#D4AF37]/10 px-4 py-1 rounded-full border border-yellow-500/20">AI Precision Verified</div>
               </div>
               <ResponsiveContainer width="100%" height="100%">
@@ -415,23 +409,67 @@ export default function StatisticsView() {
               </CardContent>
            </Card>
 
-           <Card className="col-span-12 lg:col-span-4 bg-white/5 border-white/5">
-              <CardHeader className="text-left">
-                 <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-3"><MessageSquare size={16} /> Public Sentiment</CardTitle>
-              </CardHeader>
-              <CardContent className="p-8">
-                 <div className="flex flex-col gap-6">
-                    <div className="flex items-center justify-between">
-                       <span className="text-3xl font-black text-white italic">NEUTRAL</span>
-                       <span className="text-lg font-black font-mono text-yellow-500">+12%</span>
-                    </div>
-                    <div className="space-y-3">
-                       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-emerald-500" style={{width: '60%'}} /></div>
-                       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-red-500" style={{width: '15%'}} /></div>
-                    </div>
-                 </div>
-              </CardContent>
-           </Card>
+           <Card className="col-span-12 lg:col-span-4 bg-[#0B1B32]/60 border-white/10 shadow-xl overflow-hidden relative group">
+               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><MessageSquare size={60} /></div>
+               <CardHeader className="text-left">
+                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-[#D4AF37] flex items-center gap-3">
+                     <MessageSquare size={16} /> Social Pulse Tracker
+                  </CardTitle>
+               </CardHeader>
+               <CardContent className="p-6">
+                  <div className="flex flex-col gap-6">
+                     <div className="flex items-end justify-between">
+                        <div>
+                           <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Current State</div>
+                           <span className="text-3xl font-black text-white italic tracking-tighter">VOLATILE</span>
+                        </div>
+                        <div className="text-right">
+                           <div className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Negative surge</div>
+                           <span className="text-xl font-black font-mono text-red-500 tracking-tighter">+42.8%</span>
+                        </div>
+                     </div>
+
+                     <div className="space-y-4">
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-slate-400">
+                              <span>Positive Sentiment</span>
+                              <span>32%</span>
+                           </div>
+                           <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                              <div className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{width: '32%'}} />
+                           </div>
+                        </div>
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-slate-400">
+                              <span>Negative Sentiment</span>
+                              <span>68%</span>
+                           </div>
+                           <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                              <div className="h-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" style={{width: '68%'}} />
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="pt-4 border-t border-white/5">
+                        <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Critical Keyword Watchlist</div>
+                        <div className="flex flex-wrap gap-2">
+                           {[
+                              { tag: "begal", count: 124, trend: "up" },
+                              { tag: "bentrok", count: 42, trend: "down" },
+                              { tag: "demo", count: 15, trend: "stable" }
+                           ].map(k => (
+                              <div key={k.tag} className="px-2 py-1 bg-white/5 border border-white/10 rounded flex items-center gap-2 group/tag cursor-pointer hover:border-red-500/50 transition-all">
+                                 <span className="text-[10px] font-black text-slate-300">#{k.tag}</span>
+                                 <span className={cn("text-[9px] font-mono", k.trend === "up" ? "text-red-500" : "text-emerald-500")}>
+                                    {k.trend === "up" ? "↑" : k.trend === "down" ? "↓" : "•"} {k.count}
+                                 </span>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+               </CardContent>
+            </Card>
 
            <Card className="col-span-12 lg:col-span-4 bg-white/5 border-white/5">
               <CardHeader className="text-left">

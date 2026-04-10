@@ -799,6 +799,32 @@ const AssetTable = ({ searchQuery }: { searchQuery: string }) => {
       }
     }),
     columnHelperAsset.display({
+      id: "integrity",
+      header: "Logistics Integrity",
+      cell: props => (
+        <div className="flex items-center gap-2">
+          {props.row.original.integrityFlag ? (
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-red-500/10 border border-red-500/30 rounded-lg text-[9px] font-black text-red-500 animate-pulse">
+              <Zap size={10} /> FUEL ANOMALY
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-[9px] font-black text-emerald-500">
+              <Check size={10} /> VALID
+            </div>
+          )}
+        </div>
+      )
+    }),
+    columnHelperAsset.display({
+      id: "binding",
+      header: "NFC/QR Binding",
+      cell: props => (
+        <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-lg text-[9px] font-black text-blue-400 hover:bg-blue-500/20 transition-all scale-press">
+          <Zap size={10} /> BIND TO NRP
+        </button>
+      )
+    }),
+    columnHelperAsset.display({
       id: "actions",
       header: "Aksi",
       cell: props => (
@@ -868,7 +894,7 @@ export default function CoreDataView() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0B1B32]/30 backdrop-blur-sm overflow-hidden p-6 gap-6 relative">
+    <div className="flex flex-col h-full bg-[#0B1B32]/30 backdrop-blur-sm overflow-hidden p-3 md:p-6 lg:p-10 gap-4 md:gap-6 relative">
       {/* Floating Bulk Actions */}
       <AnimatePresence>
         {selectedIncidentIds.length > 0 && (
@@ -906,7 +932,7 @@ export default function CoreDataView() {
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-black uppercase tracking-tighter text-white">Core Data Audit Engine</h2>
+            <h2 className="text-xl md:text-3xl lg:text-5xl font-black uppercase tracking-tighter text-white">Core Data Audit Engine</h2>
             {compareMode && <Badge variant="gold" className="animate-pulse">Benchmarking Mode: ACTIVE</Badge>}
           </div>
           <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.3em]">Biro Ops Polda Nusa Tenggara Timur</p>

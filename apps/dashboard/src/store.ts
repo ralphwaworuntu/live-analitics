@@ -166,6 +166,8 @@ interface AppState {
   isNotificationsOpen: boolean;
   toggleSettings: (open?: boolean) => void;
   toggleNotifications: (open?: boolean) => void;
+  isSidebarCollapsed: boolean;
+  toggleSidebar: (collapsed?: boolean) => void;
   executeAction: (actionType: string, payload?: Record<string, unknown>) => void;
   clearOperationalData: () => void;
 }
@@ -579,6 +581,8 @@ export const useAppStore = create<AppState>()(
   isNotificationsOpen: false,
   toggleSettings: (open) => set((state) => ({ isSettingsOpen: open ?? !state.isSettingsOpen })),
   toggleNotifications: (open) => set((state) => ({ isNotificationsOpen: open ?? !state.isNotificationsOpen })),
+  isSidebarCollapsed: false,
+  toggleSidebar: (collapsed) => set((state) => ({ isSidebarCollapsed: collapsed ?? !state.isSidebarCollapsed })),
 
   executeAction: (actionType, payload) => {
     let title = "Action Executed";
@@ -647,6 +651,7 @@ export const useAppStore = create<AppState>()(
         sandboxMode: state.sandboxMode,
         osintEnabled: state.osintEnabled,
         heatmapEnabled: state.heatmapEnabled,
+        isSidebarCollapsed: state.isSidebarCollapsed,
       }),
     }
   )
