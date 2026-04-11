@@ -1,6 +1,7 @@
 // @ts-ignore
 import { io, Socket } from "socket.io-client";
 import { generateIntegrityHash } from "../utils/crypto";
+import { useAppStore } from "../store";
 
 declare var process: { env: { [key: string]: string | undefined } };
 
@@ -26,8 +27,14 @@ class SocketService {
 
   public async emitPosition(payload: any) {
     const ts = Date.now();
-    const hash = await generateIntegrityHash({ ...payload, ts });
-    const fullPayload = { ...payload, ts, hash };
+    const assetId = useAppStore.getState().assetId;
+    const fullData = { ...payload, ts, assetId };
+    
+    const hash = await generateIntegrityHash(fullData);
+    const fullPayload = { ...fullData, hash };
+
+    // Update global store with the new hash for the ticker
+    useAppStore.getState().setCurrentHash(hash);
 
     if (this.socket?.connected) {
       this.socket.emit("personnel_update", fullPayload);
