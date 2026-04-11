@@ -160,6 +160,8 @@ export default function MemberTacticalPortal() {
   const [isCrisis, setIsCrisis] = useState(false);
   const [sosActivatedAt, setSosActivatedAt] = useState<number | null>(null);
   const [elapsedTimeStr, setElapsedTimeStr] = useState("00:00");
+  const [gpsPermission, setGpsPermission] = useState<PermissionState | 'unknown'>('unknown');
+  const [isDutyActive, setIsDutyActive] = useState(false);
 
   const [secHash, setSecHash] = useState<string>("CALCULATING...");
   const [hashFreshAt, setHashFreshAt] = useState<number>(0);
@@ -280,7 +282,23 @@ export default function MemberTacticalPortal() {
     }
   }, [isOnline, offlineHashQueue, addAuditLog, me?.id, addNotification]);
 
-  const hashIsVerified = (Date.now() - hashFreshAt) < 15000;
+  const [hashIsVerified, setHashIsVerified] = useState(false);
+
+  useEffect(() => {
+    const intv = setInterval(() => {
+      setHashIsVerified((Date.now() - hashFreshAt) < 15000);
+    }, 1000);
+    return () => clearInterval(intv);
+  }, [hashFreshAt]);
+
+  useEffect(() => {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then(result => {
+        setGpsPermission(result.state);
+        result.onchange = () => setGpsPermission(result.state);
+      }).catch(() => setGpsPermission('prompt'));
+    }
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -343,6 +361,13 @@ export default function MemberTacticalPortal() {
       
       <div className="w-full max-w-[480px] min-h-full bg-[#0A0A0A] border-x border-[#1A1A1A] flex flex-col relative text-[#E0E0E0] overflow-hidden">
         
+        {/* Banner GPS */}
+        {gpsPermission !== 'granted' && (
+          <div className="bg-[#FFB800] text-black py-2 px-4 text-center text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 relative z-50">
+            <TriangleAlert size={14} /> ⚠️ GPS OFFLINE: Click the Lock Icon in URL bar to Allow Location
+          </div>
+        )}
+
         {/* HUD Strip */}
         <div className="flex flex-col bg-[#050505] border-b border-[#1A1A1A] z-30">
           <div className="flex items-center justify-between px-4 py-3">
@@ -400,7 +425,7 @@ export default function MemberTacticalPortal() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="absolute top-[80px] right-2 w-64 bg-[#111111] border border-[#333333] shadow-2xl z-40 rounded-xl overflow-hidden"
+              className="absolute top-[80px] right-2 w-64 bg-[#111111] border border-[#333333] shadow-2xl z-[9999] rounded-xl overflow-hidden"
             >
               <div className="p-3 border-b border-[#333333] bg-[#0A0A0A] flex justify-between items-center">
                 <span className="text-[10px] font-black tracking-widest text-[#555555] uppercase">Notifications</span>
@@ -508,92 +533,120 @@ export default function MemberTacticalPortal() {
             )}
           </AnimatePresence>
 
-          {/* Tactical 4-Buttons Grid */}
-          <div className="grid grid-cols-2 gap-2 mb-4 shrink-0">
-            <button onClick={() => handleQuickReport("LAKA LANTAS")} className="flex flex-col items-center justify-center gap-1.5 p-2 bg-[#111] border border-[#1A1A1A] rounded-xl hover:border-[#FFB800] text-[#E0E0E0] hover:text-[#FFB800] active:scale-95 transition-all min-h-[56px] touch-manipulation">
-              <TriangleAlert size={16} /> <span className="text-[9px] font-black uppercase tracking-widest">Lapor Laka</span>
-            </button>
-            <button onClick={() => handleQuickReport("KRIMINAL")} className="flex flex-col items-center justify-center gap-1.5 p-2 bg-[#111] border border-[#1A1A1A] rounded-xl hover:border-[#FFB800] text-[#E0E0E0] hover:text-[#FFB800] active:scale-95 transition-all min-h-[56px] touch-manipulation">
-              <Skull size={16} /> <span className="text-[9px] font-black uppercase tracking-widest">Kriminal</span>
-            </button>
-            <button onClick={() => handleQuickReport("STATIONARY_CHECK")} className="flex flex-col items-center justify-center gap-1.5 p-2 bg-[#111] border border-[#1A1A1A] rounded-xl hover:border-[#00F0FF] text-[#E0E0E0] hover:text-[#00F0FF] active:scale-95 transition-all min-h-[56px] touch-manipulation">
-              <Clock size={16} /> <span className="text-[9px] font-black uppercase tracking-widest">Cek Stop</span>
-            </button>
-            <button onClick={() => handleQuickReport("REQUEST_BACKUP")} className="flex flex-col items-center justify-center gap-1.5 p-2 bg-[#1a0f0f] border border-[#FF003C]/30 rounded-xl hover:border-[#FF003C] text-[#FF003C] active:scale-95 transition-all min-h-[56px] touch-manipulation">
-              <Radio size={16} className="animate-pulse" /> <span className="text-[9px] font-black uppercase tracking-widest">Req Backup</span>
-            </button>
-          </div>
+          {!isDutyActive ? (
+            <div className="flex flex-col items-center justify-center flex-1 z-20 px-6 mt-6 pb-12">
+               <div className="w-16 h-16 rounded-full bg-[#1A1A1A] border border-[#333333] flex items-center justify-center mb-6">
+                 <ShieldCheck size={32} className={gpsPermission === 'granted' && hashFreshAt > 0 ? "text-[#00F0FF]" : "text-[#555555]"} />
+               </div>
+               <h2 className="text-sm font-black uppercase tracking-widest text-[#E0E0E0] mb-2 text-center">Protocol Integrity</h2>
+               <p className="text-[10px] text-center text-slate-500 mb-8 uppercase tracking-widest">Verify constraints before entering active duty.</p>
+               
+               <div className="space-y-3 w-full mb-8">
+                 <div className="flex items-center justify-between bg-[#111111] p-3 rounded-lg border border-[#1A1A1A]">
+                   <span className="text-[10px] font-black uppercase tracking-widest text-[#555555]">GPS SENSOR</span>
+                   {gpsPermission === 'granted' ? <span className="text-[10px] font-black text-[#00FF88]">ONLINE</span> : <span className="text-[10px] font-black text-[#FF003C]">OFFLINE</span>}
+                 </div>
+                 <div className="flex items-center justify-between bg-[#111111] p-3 rounded-lg border border-[#1A1A1A]">
+                   <span className="text-[10px] font-black uppercase tracking-widest text-[#555555]">SEC-HASH <span className="font-mono">$H_0$</span></span>
+                   {hashFreshAt > 0 ? <span className="text-[10px] font-black text-[#00FF88]">INITIALIZED</span> : <span className="text-[10px] font-black text-[#FFB800] animate-pulse">CALCULATING</span>}
+                 </div>
+               </div>
+               <button 
+                 onClick={() => setIsDutyActive(true)}
+                 disabled={gpsPermission !== 'granted' || hashFreshAt === 0}
+                 className="w-full py-4 rounded-xl font-black uppercase tracking-[0.2em] transition-all touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/50 hover:bg-[#00F0FF]/30 active:scale-95 min-h-[56px]"
+               >
+                 START DUTY
+               </button>
+            </div>
+          ) : (
+            <>
+              {/* Tactical 4-Buttons Grid */}
+              <div className="grid grid-cols-2 gap-2 mb-4 shrink-0">
+                <button onClick={() => handleQuickReport("LAKA LANTAS")} className="flex flex-col items-center justify-center gap-1.5 p-2 bg-[#111] border border-[#1A1A1A] rounded-xl hover:border-[#FFB800] text-[#E0E0E0] hover:text-[#FFB800] active:scale-95 transition-all min-h-[56px] touch-manipulation">
+                  <TriangleAlert size={16} /> <span className="text-[9px] font-black uppercase tracking-widest">Lapor Laka</span>
+                </button>
+                <button onClick={() => handleQuickReport("KRIMINAL")} className="flex flex-col items-center justify-center gap-1.5 p-2 bg-[#111] border border-[#1A1A1A] rounded-xl hover:border-[#FFB800] text-[#E0E0E0] hover:text-[#FFB800] active:scale-95 transition-all min-h-[56px] touch-manipulation">
+                  <Skull size={16} /> <span className="text-[9px] font-black uppercase tracking-widest">Kriminal</span>
+                </button>
+                <button onClick={() => handleQuickReport("STATIONARY_CHECK")} className="flex flex-col items-center justify-center gap-1.5 p-2 bg-[#111] border border-[#1A1A1A] rounded-xl hover:border-[#00F0FF] text-[#E0E0E0] hover:text-[#00F0FF] active:scale-95 transition-all min-h-[56px] touch-manipulation">
+                  <Clock size={16} /> <span className="text-[9px] font-black uppercase tracking-widest">Cek Stop</span>
+                </button>
+                <button onClick={() => handleQuickReport("REQUEST_BACKUP")} className="flex flex-col items-center justify-center gap-1.5 p-2 bg-[#1a0f0f] border border-[#FF003C]/30 rounded-xl hover:border-[#FF003C] text-[#FF003C] active:scale-95 transition-all min-h-[56px] touch-manipulation">
+                  <Radio size={16} className="animate-pulse" /> <span className="text-[9px] font-black uppercase tracking-widest">Req Backup</span>
+                </button>
+              </div>
 
-          {/* Expandable Mission Card & Check-in */}
-          <div className="flex-1 overflow-y-auto pb-4 shrink-0">
-            <h2 className="text-[10px] font-black uppercase text-[#555555] mb-2 tracking-[0.25em] flex items-center gap-2">
-              <ClipboardList size={14} className="text-[#FFB800]" /> DIREKTIF TUGAS
-            </h2>
-            <div className="bg-[#111111] border border-[#1A1A1A] rounded-2xl overflow-hidden mb-2">
-              <div className="p-3 border-b border-[#1A1A1A]">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[#555555] text-[9px] font-black uppercase tracking-widest">MISSION BRIDGE ID</span>
-                  <span className="text-[#00F0FF] font-mono text-[9px]">DOC-77AK-T</span>
+              {/* Expandable Mission Card & Check-in */}
+              <div className="flex-1 overflow-y-auto pb-4 shrink-0">
+                <h2 className="text-[10px] font-black uppercase text-[#555555] mb-2 tracking-[0.25em] flex items-center gap-2">
+                  <ClipboardList size={14} className="text-[#FFB800]" /> DIREKTIF TUGAS
+                </h2>
+                <div className="bg-[#111111] border border-[#1A1A1A] rounded-2xl overflow-hidden mb-2">
+                  <div className="p-3 border-b border-[#1A1A1A]">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[#555555] text-[9px] font-black uppercase tracking-widest">MISSION BRIDGE ID</span>
+                      <span className="text-[#00F0FF] font-mono text-[9px]">DOC-77AK-T</span>
+                    </div>
+                    {isCheckingIn ? (
+                       <div className="min-h-[56px] border border-[#00F0FF]/30 bg-[#00F0FF]/10 border-dashed rounded text-center flex items-center justify-center text-[#00F0FF] text-[9px] font-black animate-pulse uppercase tracking-widest">
+                         Scanning QR Code...
+                       </div>
+                    ) : (
+                      <button onClick={handleCheckIn} className="w-full min-h-[56px] bg-[#1A1A1A] rounded flex items-center justify-center gap-2 hover:bg-[#222222] transition-colors text-[#E0E0E0] active:scale-95 touch-manipulation">
+                        <QrCode size={16} className="text-[#00F0FF]" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Scan Check-in Ren Ops</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {isCheckingIn ? (
-                   <div className="min-h-[56px] border border-[#00F0FF]/30 bg-[#00F0FF]/10 border-dashed rounded text-center flex items-center justify-center text-[#00F0FF] text-[9px] font-black animate-pulse uppercase tracking-widest">
-                     Scanning QR Code...
-                   </div>
-                ) : (
-                  <button onClick={handleCheckIn} className="w-full min-h-[56px] bg-[#1A1A1A] rounded flex items-center justify-center gap-2 hover:bg-[#222222] transition-colors text-[#E0E0E0] active:scale-95 touch-manipulation">
-                    <QrCode size={16} className="text-[#00F0FF]" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Scan Check-in Ren Ops</span>
+                
+                <AnimatePresence mode="popLayout">
+                  {activeMission && (
+                    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-[#111111] border border-[#FFB800]/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(255,184,0,0.05)] shrink-0 touch-manipulation">
+                      <div onClick={() => setMissionExpanded(!missionExpanded)} className="p-3 min-h-[56px] cursor-pointer flex items-center justify-between active:bg-[#1A1A1A] transition-colors">
+                        <div className="flex flex-col max-w-[200px]">
+                          <span className="text-[#FFB800] text-[8px] uppercase font-black tracking-widest mb-1">{activeMission.status}</span>
+                          <h3 className="font-bold text-[#E0E0E0] text-xs truncate">{activeMission.title}</h3>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-[#1A1A1A] flex items-center justify-center transition-colors hover:bg-[#333333]">
+                          <ChevronDown size={14} className={`transition-transform ${missionExpanded ? 'rotate-180' : ''}`} />
+                        </div>
+                      </div>
+                      <AnimatePresence>
+                        {missionExpanded && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="px-3 pb-3 border-t border-[#1A1A1A] pt-2">
+                            <p className="text-[11px] text-[#888888] leading-relaxed mb-3">{activeMission.description}</p>
+                            <button onClick={() => updateMissionStatus(activeMission.id, activeMission.status === "en-route" ? "on-site" : "completed")} className="w-full min-h-[56px] rounded-lg font-black uppercase tracking-widest text-[10px] bg-emerald-600/20 border border-emerald-500/50 hover:bg-emerald-600/30 text-emerald-400 transition-colors flex items-center justify-center gap-2 active:scale-[0.98] touch-manipulation">
+                              <CheckCircle2 size={14} /> {activeMission.status === "en-route" ? "Arrived On-Site" : "Complete Mission"}
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+            <div className={`mt-auto pb-6 pt-2 flex flex-col justify-center items-center shrink-0 border-t border-[#1A1A1A] bg-[#0A0A0A] z-[9999] ${isCrisis ? 'opacity-0 pointer-events-none' : 'opacity-100 transition-opacity'}`}>
+              <div className="flex items-center gap-6">
+                <div className="text-[9px] font-black uppercase tracking-widest text-[#555555] text-right leading-relaxed">
+                  Tekan tahan <br/>3 detik untuk <br/>protokol darurat
+                </div>
+                <div className="relative touch-manipulation">
+                  <svg className="absolute -inset-4 w-[112px] h-[112px] pointer-events-none -rotate-90">
+                    <circle cx="56" cy="56" r="52" stroke="#1A1A1A" strokeWidth="4" fill="none" />
+                    <circle cx="56" cy="56" r="52" stroke="#FF003C" strokeWidth="6" fill="none" strokeDasharray="326.72" strokeDashoffset={326.72 - (326.72 * holdProgress) / 100} className="transition-all duration-100" strokeLinecap="round" />
+                  </svg>
+                  <button onMouseDown={() => setIsHolding(true)} onMouseUp={() => setIsHolding(false)} onMouseLeave={() => setIsHolding(false)} onTouchStart={() => setIsHolding(true)} onTouchEnd={() => setIsHolding(false)} className="w-[80px] h-[80px] rounded-full bg-[#111111] border-[4px] border-[#FF003C]/30 flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,0,60,0.2)] hover:bg-[#FF003C]/10 transition-all active:scale-95 z-10 relative cursor-pointer min-h-[80px]">
+                    <ShieldAlert size={30} className="text-[#FF003C] mb-1" />
+                    <span className="text-[#FF003C] font-black tracking-widest text-[9px]">SOS</span>
                   </button>
-                )}
+                </div>
               </div>
             </div>
-            
-            <AnimatePresence mode="popLayout">
-              {activeMission && (
-                <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-[#111111] border border-[#FFB800]/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(255,184,0,0.05)] shrink-0 touch-manipulation">
-                  <div onClick={() => setMissionExpanded(!missionExpanded)} className="p-3 min-h-[56px] cursor-pointer flex items-center justify-between active:bg-[#1A1A1A] transition-colors">
-                    <div className="flex flex-col max-w-[200px]">
-                      <span className="text-[#FFB800] text-[8px] uppercase font-black tracking-widest mb-1">{activeMission.status}</span>
-                      <h3 className="font-bold text-[#E0E0E0] text-xs truncate">{activeMission.title}</h3>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-[#1A1A1A] flex items-center justify-center transition-colors hover:bg-[#333333]">
-                      <ChevronDown size={14} className={`transition-transform ${missionExpanded ? 'rotate-180' : ''}`} />
-                    </div>
-                  </div>
-                  <AnimatePresence>
-                    {missionExpanded && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="px-3 pb-3 border-t border-[#1A1A1A] pt-2">
-                        <p className="text-[11px] text-[#888888] leading-relaxed mb-3">{activeMission.description}</p>
-                        <button onClick={() => updateMissionStatus(activeMission.id, activeMission.status === "en-route" ? "on-site" : "completed")} className="w-full min-h-[56px] rounded-lg font-black uppercase tracking-widest text-[10px] bg-emerald-600/20 border border-emerald-500/50 hover:bg-emerald-600/30 text-emerald-400 transition-colors flex items-center justify-center gap-2 active:scale-[0.98] touch-manipulation">
-                          <CheckCircle2 size={14} /> {activeMission.status === "en-route" ? "Arrived On-Site" : "Complete Mission"}
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-        </div>
-
-        {/* SOS Panic Logic Bottom Section */}
-        <div className={`mt-auto pb-6 pt-2 flex flex-col justify-center items-center shrink-0 border-t border-[#1A1A1A] bg-[#0A0A0A] z-[9999] ${isCrisis ? 'opacity-0 pointer-events-none' : 'opacity-100 transition-opacity'}`}>
-          <div className="flex items-center gap-6">
-            <div className="text-[9px] font-black uppercase tracking-widest text-[#555555] text-right leading-relaxed">
-              Tekan tahan <br/>3 detik untuk <br/>protokol darurat
-            </div>
-            <div className="relative touch-manipulation">
-              <svg className="absolute -inset-4 w-[112px] h-[112px] pointer-events-none -rotate-90">
-                <circle cx="56" cy="56" r="52" stroke="#1A1A1A" strokeWidth="4" fill="none" />
-                <circle cx="56" cy="56" r="52" stroke="#FF003C" strokeWidth="6" fill="none" strokeDasharray="326.72" strokeDashoffset={326.72 - (326.72 * holdProgress) / 100} className="transition-all duration-100" strokeLinecap="round" />
-              </svg>
-              <button onMouseDown={() => setIsHolding(true)} onMouseUp={() => setIsHolding(false)} onMouseLeave={() => setIsHolding(false)} onTouchStart={() => setIsHolding(true)} onTouchEnd={() => setIsHolding(false)} className="w-[80px] h-[80px] rounded-full bg-[#111111] border-[4px] border-[#FF003C]/30 flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,0,60,0.2)] hover:bg-[#FF003C]/10 transition-all active:scale-95 z-10 relative cursor-pointer min-h-[80px]">
-                <ShieldAlert size={30} className="text-[#FF003C] mb-1" />
-                <span className="text-[#FF003C] font-black tracking-widest text-[9px]">SOS</span>
-              </button>
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
       </div>

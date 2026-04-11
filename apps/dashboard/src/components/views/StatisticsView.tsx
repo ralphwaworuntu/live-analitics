@@ -322,13 +322,13 @@ export default function StatisticsView() {
            <CardHeader className="py-6 px-10 text-left">
               <CardTitle className="text-sm font-black uppercase tracking-widest text-[#D4AF37] flex items-center gap-3"><Clock size={16} /> Operational Crime Load Analysis</CardTitle>
            </CardHeader>
-           <CardContent className="h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
+           <CardContent className="h-[340px] min-h-[300px] w-full">
+              <ResponsiveContainer width="100%" height={300} debounce={50}>
                  <AreaChart data={[{t: "00h", v: 45}, {t: "04h", v: 22}, {t: "08h", v: 88}, {t: "12h", v: 65}, {t: "16h", v: 120}, {t: "20h", v: 95}, {t: "23h", v: 50}]}>
                     <defs><linearGradient id="clockGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3B82F6" stopOpacity={0.6}/><stop offset="95%" stopColor="#EF4444" stopOpacity={0.05}/></linearGradient></defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                    <XAxis dataKey="t" stroke="#475569" fontSize={11} fontWeight="black" axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{backgroundColor: "#0B1B32", border: "1px solid #ffffff10", borderRadius: "16px"}} />
+                    <XAxis dataKey="t" stroke="#475569" fontSize={11} fontWeight="black" fontFamily="var(--font-mono)" axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{backgroundColor: "#0B1B32", border: "1px solid #ffffff10", borderRadius: "16px", fontFamily: "var(--font-mono)"}} />
                     <Area type="monotone" dataKey="v" stroke="#3B82F6" strokeWidth={4} fill="url(#clockGrad)" animationDuration={2000} />
                  </AreaChart>
               </ResponsiveContainer>
@@ -340,22 +340,22 @@ export default function StatisticsView() {
            <CardHeader className="text-left">
               <CardTitle className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-3 text-blue-500"><BrainCircuit size={18} /> Turangga AI Accuracy Index</CardTitle>
            </CardHeader>
-           <CardContent className="h-[360px] relative">
+           <CardContent className="h-[400px] min-h-[300px] relative w-full">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none flex flex-col items-center text-center">
                  <div className="text-4xl md:text-6xl lg:text-[72px] font-black font-mono leading-none text-white tracking-tighter">94.2%</div>
                  <div className="text-[10px] font-black text-[#D4AF37] uppercase tracking-[0.4em] mt-2 bg-[#D4AF37]/10 px-4 py-1 rounded-full border border-yellow-500/20">AI Precision Verified</div>
               </div>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={300} debounce={50}>
                  <ComposedChart data={aiAccuracyData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                    <XAxis dataKey="day" stroke="#475569" fontSize={11} fontWeight="black" axisLine={false} tickLine={false} />
-                    <YAxis stroke="#475569" fontSize={11} fontWeight="black" axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{backgroundColor: "#0B1B32", border: "1px solid #ffffff10", borderRadius: "16px"}} />
+                    <XAxis dataKey="day" stroke="#475569" fontSize={11} fontWeight="black" fontFamily="var(--font-mono)" axisLine={false} tickLine={false} />
+                    <YAxis stroke="#475569" fontSize={11} fontWeight="black" fontFamily="var(--font-mono)" axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{backgroundColor: "#0B1B32", border: "1px solid #ffffff10", borderRadius: "16px", fontFamily: "var(--font-mono)"}} />
                     <Area type="monotone" dataKey="low" stroke="none" fill="#3B82F6" fillOpacity={0.05} />
                     <Area type="monotone" dataKey="high" stroke="none" fill="#3B82F6" fillOpacity={0.05} />
                     <Line type="monotone" dataKey="predicted" stroke="#3B82F6" strokeWidth={3} strokeDasharray="5 5" dot={false} />
                     <Line type="monotone" dataKey="actual" stroke="#FFD700" strokeWidth={4} dot={{r: 4, fill: "#FFD700"}} />
-                    <Legend verticalAlign="top" align="right" />
+                    <Legend verticalAlign="top" align="right" wrapperStyle={{fontFamily: "var(--font-mono)"}} />
                  </ComposedChart>
               </ResponsiveContainer>
            </CardContent>
@@ -396,11 +396,11 @@ export default function StatisticsView() {
               <CardHeader className="pb-2 text-left">
                  <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-3"><Users size={16} /> Personnel Fatigue</CardTitle>
               </CardHeader>
-              <CardContent className="h-[220px]">
-                 <ResponsiveContainer width="100%" height="100%">
+              <CardContent className="h-[340px] min-h-[300px] w-full">
+                 <ResponsiveContainer width="100%" height={300} debounce={50}>
                     <BarChart data={fatigueData}>
-                      <XAxis dataKey="name" stroke="#475569" fontSize={9} fontWeight="black" axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{backgroundColor: "#0B1B32", border: "1px solid #ffffff10", borderRadius: "12px"}} />
+                      <XAxis dataKey="name" stroke="#475569" fontSize={9} fontWeight="black" fontFamily="var(--font-mono)" axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{backgroundColor: "#0B1B32", border: "1px solid #ffffff10", borderRadius: "12px", fontFamily: "var(--font-mono)"}} />
                       <Bar dataKey="hours" radius={[6, 6, 0, 0]}>
                         {fatigueData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.hours > 12 ? "#EF4444" : "#3B82F6"} />
@@ -477,11 +477,11 @@ export default function StatisticsView() {
               <CardHeader className="text-left">
                  <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-3"><Car size={16} /> Asset Readiness</CardTitle>
               </CardHeader>
-              <CardContent className="h-[220px] relative flex items-center justify-center">
+              <CardContent className="h-[340px] relative flex items-center justify-center min-h-[300px] w-full">
                  <div className="absolute text-center"><div className="text-4xl font-black text-white font-mono">84%</div></div>
-                 <ResponsiveContainer width="100%" height="100%">
+                 <ResponsiveContainer width="100%" height={300} debounce={50}>
                     <PieChart>
-                       <Pie data={assetReadiness} cx="50%" cy="50%" innerRadius={70} outerRadius={85} paddingAngle={8} dataKey="value" stroke="none">
+                       <Pie data={assetReadiness} cx="50%" cy="50%" innerRadius="70%" outerRadius="85%" paddingAngle={8} dataKey="value" stroke="none">
                           {assetReadiness.map((entry, index) => <Cell key={index} fill={entry.color} />)}
                        </Pie>
                     </PieChart>
