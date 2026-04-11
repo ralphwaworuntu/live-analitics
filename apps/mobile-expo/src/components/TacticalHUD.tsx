@@ -11,6 +11,7 @@ interface TacticalHUDProps {
   status: 'ACTIVE' | 'STANDBY' | 'POWER_SAVE';
   battery: number;
   speed: number;
+  riskScore: number;
 }
 
 const COLORS = {
@@ -19,8 +20,12 @@ const COLORS = {
   POWER_SAVE: '#FF4D6D', // Red
 };
 
-export const TacticalHUD = ({ status, battery, speed }: TacticalHUDProps) => {
-  const color = COLORS[status] || COLORS.ACTIVE;
+export const TacticalHUD = ({ status, battery, speed, riskScore }: TacticalHUDProps) => {
+  // Task 3: Dynamic HUD Mapping
+  let color = COLORS[status] || COLORS.ACTIVE;
+  
+  if (riskScore > 75) color = COLORS.POWER_SAVE; // Danger
+  else if (riskScore > 40) color = COLORS.STANDBY; // Cautious
 
   return (
     <View style={styles.container}>

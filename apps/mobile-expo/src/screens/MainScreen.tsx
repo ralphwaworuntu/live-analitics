@@ -6,6 +6,9 @@ import { TacticalHUD } from '../components/TacticalHUD';
 import { AssetScanner } from '../components/AssetScanner';
 import { SOSButton } from '../components/SOSButton';
 import { SECHashTicker } from '../components/SECHashTicker';
+import { NotificationBanner } from '../components/NotificationBanner';
+import { EvidenceVault } from '../components/EvidenceVault';
+import { BriefingPanel } from '../components/BriefingPanel';
 import { useTracking } from '../hooks/useTracking';
 import { useAppStore } from '../store';
 // @ts-ignore
@@ -15,6 +18,7 @@ export default function MainScreen() {
   const { speed, batteryLevel, isStandby } = useTracking();
   const assetId = useAppStore((s: any) => s.assetId);
   const isSOSActive = useAppStore((s: any) => s.isSOSActive);
+  const riskScore = useAppStore((s: any) => s.riskScore);
 
   const getStatus = () => {
     if (batteryLevel < 0.15) return 'POWER_SAVE';
@@ -25,18 +29,24 @@ export default function MainScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
+      <NotificationBanner />
       
       <TacticalHUD 
         status={getStatus()} 
         battery={batteryLevel} 
         speed={speed} 
+        riskScore={riskScore}
       />
 
       <AssetScanner />
+      
+      <BriefingPanel />
 
       <View style={styles.center}>
         <SOSButton />
       </View>
+
+      <EvidenceVault />
 
       <View style={styles.footer}>
         <TouchableOpacity 

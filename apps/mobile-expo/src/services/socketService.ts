@@ -23,6 +23,15 @@ class SocketService {
       console.log("[SOCKET] Connected to Command Center");
       this.syncQueue();
     });
+
+    this.socket.on("INTEL_ALERT", (alert: any) => {
+      console.log("[INTEL] Received AI Alert:", alert);
+      useAppStore.getState().addAlert(alert);
+    });
+
+    this.socket.on("risk_update", (data: { score: number }) => {
+      useAppStore.getState().setRiskScore(data.score);
+    });
   }
 
   public async emitPosition(payload: any) {
