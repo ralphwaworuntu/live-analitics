@@ -9,6 +9,7 @@ interface MobileState {
   riskScore: number; // 0-100
   activeAlerts: any[];
   briefing: string | null;
+  peers: Record<string, any>;
   toggleSOS: () => void;
   setMe: (user: { id: string; name: string; nrp: string }) => void;
   setAssetId: (id: string) => void;
@@ -17,6 +18,7 @@ interface MobileState {
   addAlert: (alert: any) => void;
   removeAlert: (id: string) => void;
   setBriefing: (text: string) => void;
+  updatePeer: (id: string, data: any) => void;
 }
 
 export const useAppStore = create<MobileState>((set: any) => ({
@@ -27,6 +29,7 @@ export const useAppStore = create<MobileState>((set: any) => ({
   riskScore: 0,
   activeAlerts: [],
   briefing: "Silahkan lakukan patroli di area Pasar Oeba. Monitor kerumunan massa.",
+  peers: {},
   toggleSOS: () => set((state: MobileState) => ({ isSOSActive: !state.isSOSActive })),
   setMe: (user: { id: string; name: string; nrp: string }) => set({ me: user }),
   setAssetId: (id: string) => set({ assetId: id }),
@@ -35,4 +38,10 @@ export const useAppStore = create<MobileState>((set: any) => ({
   addAlert: (alert: any) => set((state: any) => ({ activeAlerts: [alert, ...state.activeAlerts].slice(0, 3) })),
   removeAlert: (id: string) => set((state: any) => ({ activeAlerts: state.activeAlerts.filter((a: any) => a.id !== id) })),
   setBriefing: (text: string) => set({ briefing: text }),
+  updatePeer: (id: string, data: any) => set((state: any) => ({
+    peers: {
+      ...state.peers,
+      [id]: { ...state.peers[id], ...data, lastSeen: Date.now() }
+    }
+  })),
 }));

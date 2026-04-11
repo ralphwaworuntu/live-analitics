@@ -9,6 +9,7 @@ import { SECHashTicker } from '../components/SECHashTicker';
 import { NotificationBanner } from '../components/NotificationBanner';
 import { EvidenceVault } from '../components/EvidenceVault';
 import { BriefingPanel } from '../components/BriefingPanel';
+import { TacticalMap } from '../components/TacticalMap';
 import { useTracking } from '../hooks/useTracking';
 import { useAppStore } from '../store';
 // @ts-ignore

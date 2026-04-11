@@ -32,6 +32,19 @@ class SocketService {
     this.socket.on("risk_update", (data: { score: number }) => {
       useAppStore.getState().setRiskScore(data.score);
     });
+
+    this.socket.on("PEER_UPDATE", (peer: any) => {
+      useAppStore.getState().updatePeer(peer.id, peer);
+    });
+
+    this.socket.on("PEER_SOS", (peer: any) => {
+      useAppStore.getState().updatePeer(peer.id, { ...peer, isSOS: true });
+      useAppStore.getState().addAlert({
+        id: `sos-${peer.id}-${Date.now()}`,
+        title: `BACKUP REQUIRED: ${peer.callsign}`,
+        description: `Officer triggered SOS at ${peer.latitude}, ${peer.longitude}`,
+      });
+    });
   }
 
   public async emitPosition(payload: any) {

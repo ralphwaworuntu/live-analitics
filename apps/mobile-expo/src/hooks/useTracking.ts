@@ -18,6 +18,8 @@ export const useTracking = () => {
   const [speed, setSpeed] = useState(0);
   const [batteryLevel, setBatteryLevel] = useState(1);
   const [isStandby, setIsStandby] = useState(false);
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  
   const lastActiveTimeRef = useRef(Date.now());
   const lastLocationRef = useRef<Location.LocationObject | null>(null);
   const watchIdRef = useRef<Location.LocationSubscription | null>(null);
@@ -45,8 +47,9 @@ export const useTracking = () => {
           accuracy: Location.Accuracy.High,
           distanceInterval: 1, // Track every meter for movement detection
         },
-        async (location: Location.LocationObject) => {
-          const currentSpeed = (location.coords.speed ?? 0) * 3.6; // m/s to km/h
+        async (loc: Location.LocationObject) => {
+          setLocation(loc);
+          const currentSpeed = (loc.coords.speed ?? 0) * 3.6; // m/s to km/h
           setSpeed(currentSpeed);
 
           // Task 3: Wake-on-Motion (> 10m detection)
@@ -54,8 +57,8 @@ export const useTracking = () => {
             const distance = getDistance(
               lastLocationRef.current.coords.latitude,
               lastLocationRef.current.coords.longitude,
-              location.coords.latitude,
-              location.coords.longitude
+              loc.coords.latitude,
+              loc.coords.longitude
             );
 
             if (distance > MOVEMENT_THRESHOLD_METERS) {
@@ -74,11 +77,11 @@ export const useTracking = () => {
             }
           }
 
-          lastLocationRef.current = location;
+          lastLocationRef.current = loc;
 
           // Determine current polling necessity (This hook runs on every bridge event, 
           // but we only emit based on the calculated dynamic interval elsewhere or throttle here)
-          handleConditionalEmit(location, currentSpeed, batteryLevel, isStandby);
+          handleConditionalEmit(loc, currentSpeed, batteryLevel, isStandby);
         }
       );
     };
@@ -91,7 +94,7 @@ export const useTracking = () => {
     };
   }, [me?.id, batteryLevel, isStandby]);
 
-  const handleConditionalEmit = async (location: Location.LocationObject, speed: number, battery: number, standby: boolean) => {
+  const handleConditionalEmit = async (loc: Location.LocationObject, speed: number, battery: number, standby: boolean) => {
     // Determine interval
     let interval = ACTIVE_INTERVAL;
     if (battery < 0.15) interval = POWER_SAVE_INTERVAL;
@@ -100,10 +103,10 @@ export const useTracking = () => {
 
     // We use a throttling mechanism here for the socket emission
     // (Actual background logic is governed by backgroundTrackingService)
-    socketService.emitPositionWithThrottling(location, interval);
+    socketService.emitPositionWithThrottling(loc, interval);
   };
 
-  return { speed, batteryLevel, isStandby };
+  return { location, speed, batteryLevel, isStandby };
 };
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
