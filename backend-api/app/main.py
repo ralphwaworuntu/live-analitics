@@ -5,6 +5,7 @@ SENTINEL API — FastAPI Backend for Polda NTT Command Center
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import socketio
+import time
 from app.config import settings
 
 from contextlib import asynccontextmanager
@@ -72,6 +73,31 @@ async def health_check():
             "ollama": "pending",
             "milvus": "pending",
         },
+    }
+
+import psutil
+@app.get("/api/health/tactical")
+async def tactical_health():
+    """Task 4: Tactical Health Monitor API"""
+    cpu_usage = psutil.cpu_percent()
+    memory = psutil.virtual_memory()
+    # Mocking WS connections for this illustration
+    ws_connections = 120 # In reality, get from sio.manager
+    
+    status = "GREEN"
+    if cpu_usage > 85 or memory.percent > 90:
+        status = "RED"
+    elif cpu_usage > 60:
+        status = "AMBER"
+        
+    return {
+        "status": status,
+        "metrics": {
+            "cpu_percent": cpu_usage,
+            "memory_percent": memory.percent,
+            "active_sockets": ws_connections
+        },
+        "timestamp": time.time()
     }
 
 
