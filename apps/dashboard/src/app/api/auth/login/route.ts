@@ -14,16 +14,34 @@ export async function POST(request: Request) {
     // ==========================================
     // DEMO MOCK USER (Bypass Backend / Docker Down)
     // ==========================================
+    let mockRole = "";
+    let mockName = "";
+    let mockPolresId = 0;
+
     if (nrp === "1234" && password === "admin") {
+      mockRole = "SUPER_ADMIN";
+      mockName = "Irjen Pol. Daniel T.M. Silitonga";
+      mockPolresId = 1;
+    } else if (nrp === "9012" && password === "operator") {
+      mockRole = "OPERATOR";
+      mockName = "AKP Rina Wulandari";
+      mockPolresId = 1;
+    } else if (nrp === "5678" && password === "member") {
+      mockRole = "MEMBER";
+      mockName = "Bripka Andi Prasetyo";
+      mockPolresId = 1; // Assuming default to Polda/Polri HQ or specific polres
+    }
+
+    if (mockRole) {
       const secret = new TextEncoder().encode(process.env.JWT_SECRET || "change-this-to-a-secure-random-string");
-      const mockToken = await new SignJWT({ sub: "1234", role: "superadmin", polres_id: 1 })
+      const mockToken = await new SignJWT({ sub: nrp, role: mockRole, name: mockName, polres_id: mockPolresId })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
         .setExpirationTime("24h")
         .sign(secret);
       
       const response = NextResponse.json(
-        { success: true, message: "Mock Login Otorisasi Diterima (Mode Uji Coba UI)" },
+        { success: true, message: `Mock Login Otorisasi Diterima (${mockRole})` },
         { status: 200 }
       );
       

@@ -1,5 +1,14 @@
 export type SeverityLevel = "kondusif" | "waspada" | "kontinjensi" | "kritis";
 
+export type UserRole = "SUPER_ADMIN" | "OPERATOR" | "MEMBER";
+
+export interface AuthUser {
+  nrp: string;
+  name: string;
+  role: UserRole;
+  polresId?: number;
+}
+
 export interface PolsekItem {
   id: string;
   polresId: string;

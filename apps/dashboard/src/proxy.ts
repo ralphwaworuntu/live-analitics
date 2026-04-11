@@ -51,11 +51,32 @@ export async function proxy(request: NextRequest) {
   // Token exists — Validate
   try {
     const secret = new TextEncoder().encode(JWT_SECRET);
-    await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, secret);
     
+    // Extract role
+    let role = "OPERATOR"; // Default safe role
+    if (typeof payload.role === "string") {
+      const upperRole = payload.role.toUpperCase();
+      if (upperRole === "SUPERADMIN" || upperRole === "SUPER_ADMIN") role = "SUPER_ADMIN";
+      else if (upperRole === "MEMBER") role = "MEMBER";
+    }
+
     // Valid token but on login page -> Redirect to dashboard
     if (isLoginPage) {
       return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    // Sentinel RBAC Route Guard
+    if (role === "MEMBER") {
+      const view = request.nextUrl.searchParams.get("view");
+      const isRestrictedPath = request.nextUrl.pathname.match(/^\/(admin|audit|settings)/);
+      const isRestrictedView = view && ["operasi", "intelijen", "sistem", "statistics", "core-data"].includes(view);
+      
+      if (isRestrictedPath || isRestrictedView) {
+        // Here we could also log to audit, but since it's middleware we'd need an external call.
+        // For now, redirect strictly.
+        return NextResponse.redirect(new URL("/", request.url));
+      }
     }
     const response = NextResponse.next();
     response.headers.set("X-Frame-Options", "DENY");

@@ -17,6 +17,7 @@ import { useAppStore } from "@/store";
 import { motion, AnimatePresence } from "framer-motion";
 import NotificationSheet from "./NotificationSheet";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/useAuth";
 
 interface TopHeaderProps {
   onOpenSidebar?: () => void;
@@ -26,15 +27,14 @@ interface TopHeaderProps {
  * TopHeader Component for Sentinel-AI Dashboard
  */
 export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
-  const { incomingPublicReport, clearPublicReport, executeAction, toggleSettings, toggleNotifications, clearOperationalData } = useAppStore();
+  const { incomingPublicReport, clearPublicReport, executeAction, toggleSettings, toggleNotifications } = useAppStore();
   const unreadCount = useAppStore(state => state.notifications?.filter((n: { read: boolean }) => !n.read).length || 0);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const router = useRouter();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
     setIsProfileOpen(false);
-    clearOperationalData();
-    router.push("/login");
+    logout();
   };
 
   return (
@@ -91,23 +91,27 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
         {/* SISI KANAN */}
         <div className="flex items-center gap-2 sm:gap-4 md:gap-6 shrink-0 animate-in fade-in slide-in-from-right duration-500">
           
-          {/* Button "+ Baru" */}
-          <button 
-            onClick={() => executeAction("NEW_DATA")}
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-lg border border-white/5 transition-all cursor-pointer min-h-[44px]"
-          >
-            <Plus size={14} />
-            <span className="hidden md:inline">BARU</span>
-          </button>
+          {/* Button "+ Baru" - Hidden for MEMBER */}
+          {user?.role !== "MEMBER" && (
+            <button 
+              onClick={() => executeAction("NEW_DATA")}
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-lg border border-white/5 transition-all cursor-pointer min-h-[44px]"
+            >
+              <Plus size={14} />
+              <span className="hidden md:inline">BARU</span>
+            </button>
+          )}
 
           {/* Action Icons */}
           <div className="flex items-center gap-1 sm:gap-3">
-            <button 
-              onClick={() => toggleSettings()}
-              className="hidden sm:flex text-slate-500 hover:text-white transition-all transform hover:scale-110 active:scale-95 cursor-pointer min-h-[44px] min-w-[44px] items-center justify-center"
-            >
-              <Settings size={20} />
-            </button>
+            {user?.role !== "MEMBER" && (
+              <button 
+                onClick={() => toggleSettings()}
+                className="hidden sm:flex text-slate-500 hover:text-white transition-all transform hover:scale-110 active:scale-95 cursor-pointer min-h-[44px] min-w-[44px] items-center justify-center"
+              >
+                <Settings size={20} />
+              </button>
+            )}
             
             <button 
               onClick={() => toggleNotifications()}
@@ -132,11 +136,17 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
               className="flex items-center gap-2 sm:gap-3 group transition-all cursor-pointer min-h-[44px]"
             >
               <div className="w-8 h-8 rounded-full bg-slate-700 border border-white/10 flex items-center justify-center overflow-hidden transition-all group-hover:border-yellow-500/50 shrink-0">
-                <span className="text-[10px] font-black text-white italic">DTMS</span>
+                <span className="text-[10px] font-black text-white italic">
+                  {user?.name?.split(' ').map(n => n[0]).slice(0,2).join('') || "U"}
+                </span>
               </div>
               <div className="hidden lg:flex flex-col items-start translate-y-[1px]">
-                <span className="text-xs font-bold text-slate-200 group-hover:text-white transition-colors">Irjen Pol. Daniel T.M. Silitonga</span>
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Kapolda NTT</span>
+                <span className="text-xs font-bold text-slate-200 group-hover:text-white transition-colors">
+                  {user?.name || "Initializing..."}
+                </span>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">
+                  {user?.role?.replace("_", " ") || "AUTHENTICATING"}
+                </span>
               </div>
               <ChevronDown size={14} className="hidden sm:block text-slate-500 group-hover:text-slate-200 group-hover:translate-y-0.5 transition-all" />
             </button>
@@ -156,8 +166,8 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
                     className="absolute right-0 mt-2 w-56 bg-[#0B1B32] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
                   >
                     <div className="p-4 border-b border-white/10 bg-white/[0.02] flex flex-col">
-                      <span className="font-bold text-white text-sm">Irjen Pol. Daniel T.M. Silitonga</span>
-                      <span className="text-[10px] text-slate-400 font-mono mt-1">ID: COMMANDER-01</span>
+                      <span className="font-bold text-white text-sm">{user?.name}</span>
+                      <span className="text-[10px] text-slate-400 font-mono mt-1">ID: {user?.nrp}</span>
                     </div>
                     <div className="p-2 flex flex-col gap-1">
                       <button className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
