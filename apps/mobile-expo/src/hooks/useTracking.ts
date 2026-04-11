@@ -13,6 +13,7 @@ const STANDBY_INTERVAL = 60000;   // 1m
 const POWER_SAVE_INTERVAL = 120000; // 2m
 const STANDBY_THRESHOLD_MS = 120000; // 2 minutes immobile
 const MOVEMENT_THRESHOLD_METERS = 10;
+const MIN_EMIT_DISTANCE_METERS = 2; // Task 2: Telemetry Sampling Optimization
 
 export const useTracking = () => {
   const [speed, setSpeed] = useState(0);
@@ -77,10 +78,23 @@ export const useTracking = () => {
             }
           }
 
+          // Task 2: Distance-Based Filter
+          if (lastLocationRef.current) {
+            const moveDelta = getDistance(
+              lastLocationRef.current.coords.latitude,
+              lastLocationRef.current.coords.longitude,
+              loc.coords.latitude,
+              loc.coords.longitude
+            );
+            if (moveDelta < MIN_EMIT_DISTANCE_METERS) {
+              console.log("[TELEMETRY] Skipping emit: Static position (<2m)");
+              return;
+            }
+          }
+
           lastLocationRef.current = loc;
 
-          // Determine current polling necessity (This hook runs on every bridge event, 
-          // but we only emit based on the calculated dynamic interval elsewhere or throttle here)
+          // Determine current polling necessity
           handleConditionalEmit(loc, currentSpeed, batteryLevel, isStandby);
         }
       );

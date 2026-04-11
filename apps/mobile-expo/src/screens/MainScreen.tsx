@@ -13,6 +13,7 @@ import { TacticalMap } from '../components/TacticalMap';
 import { ShiftReviewScreen } from './ShiftReviewScreen';
 import { useTracking } from '../hooks/useTracking';
 import { useAppStore } from '../store';
+import { verifyIdentity } from '../utils/security';
 // @ts-ignore
 import { Play, Square } from 'lucide-react-native';
 
@@ -62,6 +63,10 @@ export default function MainScreen() {
           <TouchableOpacity 
             style={[styles.startDuty, styles.finishBtn]}
             onPress={async () => {
+              // Task 1: Biometric Lockdown for Finish Mission
+              const isVerified = await verifyIdentity("Finalize Mission Patrol");
+              if (!isVerified) return;
+
               const res = await finishMission();
               setSummary(res);
             }}

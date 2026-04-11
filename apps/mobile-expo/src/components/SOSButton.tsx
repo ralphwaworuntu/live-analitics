@@ -7,6 +7,7 @@ import { MotiView, MotiText } from 'moti';
 // @ts-ignore
 import { AlertCircle } from 'lucide-react-native';
 import { useAppStore } from '../store';
+import { verifyIdentity } from '../utils/security';
 
 export const SOSButton = () => {
   const [progress, setProgress] = useState(0);
@@ -36,7 +37,14 @@ export const SOSButton = () => {
     if (!isSOSActive) setProgress(0);
   };
 
-  const triggerSOS = () => {
+  const triggerSOS = async () => {
+    // Task 1: Biometric Lockdown for SOS
+    const isVerified = await verifyIdentity("Activate SOS Crisis Mode");
+    if (!isVerified) {
+       setProgress(0);
+       return;
+    }
+
     Vibration.vibrate([100, 200, 100, 200]);
     toggleSOS();
   };

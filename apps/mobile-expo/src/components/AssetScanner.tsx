@@ -6,6 +6,8 @@ import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 // @ts-ignore
 import { QrCode, X } from 'lucide-react-native';
+// @ts-ignore
+import * as Haptics from 'expo-haptics';
 import { useAppStore } from '../store';
 
 export const AssetScanner = () => {
@@ -17,6 +19,8 @@ export const AssetScanner = () => {
   if (!permission) return null;
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
+    // Task 4: Haptic Confirmation for Asset Binding
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setAssetId(data);
     setModalVisible(false);
   };

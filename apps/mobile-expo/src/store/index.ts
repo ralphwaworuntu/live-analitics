@@ -54,7 +54,9 @@ export const useAppStore = create<MobileState>((set: any) => ({
     assetId: null,
     riskScore: 0,
     activeAlerts: [],
+    peers: {}, // Task 3: Deep Purge of peers
     isSOSActive: false,
-    currentHash: 'SEC-0000-0000'
+    currentHash: 'SEC-0000-0000',
+    briefing: null
   }),
 }));
