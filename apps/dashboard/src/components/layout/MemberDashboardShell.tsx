@@ -3,15 +3,10 @@
 import React, { Suspense } from "react";
 import DashboardErrorBoundary from "@/components/shared/ErrorBoundary";
 import TopHeader from "./TopHeader";
-import TacticalAlertBridge from "@/components/dashboard/TacticalAlertBridge";
-import TacticalComms from "@/components/dashboard/TacticalComms";
-
 export default function MemberDashboardShell({ children }: { children?: React.ReactNode }) {
   return (
     <div className="h-screen w-full bg-[#000000] text-[#EAF2FF] overflow-hidden flex flex-col">
       <TopHeader />
-      <TacticalAlertBridge />
-      <TacticalComms />
       
       <main className="flex-1 w-full relative overflow-hidden bg-[var(--color-bg)]">
         <DashboardErrorBoundary fallbackTitle="Member Portal Processor">
