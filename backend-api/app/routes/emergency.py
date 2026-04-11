@@ -62,21 +62,26 @@ async def on_live_tracking(sid, data):
     for name, poly in POLRES_BOUNDARIES.items():
         if poly.contains(p): is_oob, active_sector = False, name; break
     
-    await sio.emit('map_update', {
+    # Task 3: Decoupled Telemetry Emission via Redis
+    from app.services.redis_service import redis_manager
+    await redis_manager.publish_telemetry({
         'unitId': sid, 'lat': lat, 'lng': lng, 'speed': data.get('speed', 0),
         'battery': data.get('battery'), 'signal': data.get('signal'),
         'sector': active_sector, 'is_oob': is_oob, 'timestamp': data.get('timestamp')
-    }, room='global_command')
+    })
 
 @sio.on('trigger_sos')
 async def on_trigger_sos(sid, data):
     logger.warning(f"🚨 SOS SOS SOS by {sid}")
     sos_lat, sos_lng = data.get('lat'), data.get('lng')
-    await sio.emit('emergency_broadcast', {
+    
+    from app.services.redis_service import redis_manager
+    await redis_manager.publish_telemetry({
+        'type': 'emergency_broadcast',
         'message': data.get('message', 'SOS DARURAT'),
         'location': f"{sos_lat}, {sos_lng}",
         'severity': 'kritis', 'timestamp': datetime.now().isoformat()
-    }, room='global_command')
+    })
     
     if sos_lat and sos_lng:
         for user_sid, payload in last_known_payloads.items():

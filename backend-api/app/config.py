@@ -19,6 +19,9 @@ class Settings:
         "postgresql+asyncpg://sentinel:sentinel_secret@db:5432/sentinel_db",
     )
 
+    # Redis
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://redis:6379/0")
+
     # Ollama (Llama 3 8B)
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3:8b")

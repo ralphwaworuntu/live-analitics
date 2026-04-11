@@ -8,12 +8,19 @@ import socketio
 import time
 from app.config import settings
 
-from contextlib import asynccontextmanager
 from app.database import engine
 from app.models import Base
+from app.routes.emergency import sio
+from app.services.redis_service import redis_manager
+import asyncio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 1. Connect Redis
+    await redis_manager.connect()
+    # 2. Start Global Pub/Sub Listener
+    asyncio.create_task(redis_manager.subscribe_and_emit(sio))
+    
     # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -46,7 +53,6 @@ app.add_middleware(IPWhitelistMiddleware)
 
 # Import routes
 from app.routes import auth, chat, map, vision
-from app.routes.emergency import sio
 
 # Hook routers
 app.include_router(auth.router)

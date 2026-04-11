@@ -100,6 +100,20 @@ services:
     #   - "19530:19530"
 
   # ============================================
+  # 5. Redis for BFT Pub/Sub (Scale Ready)
+  # ============================================
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    networks:
+      - sentinel-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
   # 5. FastAPI Backend (SENTINEL API)
   # ============================================
   api:
@@ -114,8 +128,11 @@ services:
         condition: service_started
       milvus:
         condition: service_started
+      redis:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql+asyncpg://sentinel:${DB_PASSWORD:-sentinel_secret}@db:5432/sentinel_db
+      REDIS_URL: redis://redis:6379/0
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3:8b}
       JWT_SECRET: ${JWT_SECRET:-change-in-production}
