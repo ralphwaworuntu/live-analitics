@@ -23,6 +23,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import SmartDispatchModal from "@/components/map/SmartDispatchModal";
+import { HeatmapLayer } from "./HeatmapLayer";
 import { mockMobileReports } from "@/lib/mockMobileReports";
 
 // SOS Pulse Animation CSS
@@ -234,7 +235,7 @@ export default function GoogleMap() {
             <PolicePostsLayer posts={posts} />
             <ActiveMissionsLayer />
             <FieldReportsLayer reports={reports} undercoverVisible={undercoverVisible} />
-            <TacticalHeatmapLayer />
+            <HeatmapLayer map={useMap()} />
             <CctvMarkersLayer points={cctvPoints} enabled={cctvMarkersEnabled} />
             <ShadowHotspotsLayer hotspots={shadowHotspots} enabled={predictiveMode} timeShift={historyTimestamp} />
             <AIPatrolRouteLayer route={activePatrolRoute} />
@@ -400,37 +401,6 @@ function ActiveMissionsLayer() {
                 </div>
             )}
           </div>
-        </AdvancedMarker>
-      ))}
-    </>
-  );
-}
-
-function TacticalHeatmapLayer() {
-  const auditLogs = useAppStore(state => state.auditLogs);
-  const heatmapEnabled = useAppStore(state => state.heatmapEnabled);
-  
-  if (!heatmapEnabled) return null;
-
-  // Mock geographic distribution for audit logs
-  const heatmapData = auditLogs.slice(0, 50).map((log, i) => ({
-    lat: -10.15 + (Math.random() * 0.1 - 0.05),
-    lng: 123.60 + (Math.random() * 0.1 - 0.05),
-    intensity: Math.random()
-  }));
-
-  return (
-    <>
-      {heatmapData.map((point, i) => (
-        <AdvancedMarker key={i} position={{ lat: point.lat, lng: point.lng }}>
-          <div 
-            className="rounded-full blur-xl pointer-events-none"
-            style={{
-              width: `${point.intensity * 100}px`,
-              height: `${point.intensity * 100}px`,
-              backgroundColor: `rgba(212, 175, 55, ${point.intensity * 0.3})`
-            }}
-          />
         </AdvancedMarker>
       ))}
     </>

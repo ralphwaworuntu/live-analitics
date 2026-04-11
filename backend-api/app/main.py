@@ -52,13 +52,14 @@ app.add_middleware(
 app.add_middleware(IPWhitelistMiddleware)
 
 # Import routes
-from app.routes import auth, chat, map, vision
+from app.routes import auth, chat, map, vision, intel
 
 # Hook routers
 app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(map.router)
 app.include_router(vision.router)
+app.include_router(intel.router)
 
 # Hook Socket.IO
 socket_app = socketio.ASGIApp(sio, other_asgi_app=app, socketio_path='/ws/socket.io')
