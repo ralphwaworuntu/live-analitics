@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 import type { PersonnelTelemetry } from "@/lib/types";
 import { useAppStore } from "@/store";
+import { socketService } from "@/lib/socketService";
 
 interface BatteryManager extends EventTarget {
   charging: boolean;
@@ -97,14 +98,26 @@ export function useTelemetry(unitId: string | null) {
             ? Math.round(position.coords.speed * 3.6)
             : telemetryRef.current.speed ?? 0;
 
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
           syncTelemetry({ speed });
 
+          // Update store
           useAppStore.getState().updatePersonnelPosition(
             unitId,
-            position.coords.latitude,
-            position.coords.longitude,
+            lat,
+            lng,
             telemetryRef.current,
           );
+
+          // Emit to socket (handling offline queuing automatically in service)
+          void socketService.emitPosition({
+            id: unitId,
+            lat,
+            lng,
+            telemetry: telemetryRef.current,
+          });
         },
         () => undefined,
         {

@@ -318,11 +318,11 @@ export default function StatisticsView() {
       <div className="grid grid-cols-12 gap-4 lg:gap-10">
         
         {/* Crime Clock */}
-        <Card className="col-span-12 h-[240px] lg:h-[320px] overflow-hidden bg-transparent border-white/5">
+        <Card className="col-span-12 h-[400px] overflow-hidden bg-transparent border-white/5">
            <CardHeader className="py-6 px-10 text-left">
               <CardTitle className="text-sm font-black uppercase tracking-widest text-[#D4AF37] flex items-center gap-3"><Clock size={16} /> Operational Crime Load Analysis</CardTitle>
            </CardHeader>
-           <CardContent className="h-[340px] min-h-[300px] w-full">
+           <CardContent className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height={300} debounce={50}>
                  <AreaChart data={[{t: "00h", v: 45}, {t: "04h", v: 22}, {t: "08h", v: 88}, {t: "12h", v: 65}, {t: "16h", v: 120}, {t: "20h", v: 95}, {t: "23h", v: 50}]}>
                     <defs><linearGradient id="clockGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3B82F6" stopOpacity={0.6}/><stop offset="95%" stopColor="#EF4444" stopOpacity={0.05}/></linearGradient></defs>
@@ -340,7 +340,7 @@ export default function StatisticsView() {
            <CardHeader className="text-left">
               <CardTitle className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-3 text-blue-500"><BrainCircuit size={18} /> Turangga AI Accuracy Index</CardTitle>
            </CardHeader>
-           <CardContent className="h-[400px] min-h-[300px] relative w-full">
+           <CardContent className="h-[300px] relative w-full">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none flex flex-col items-center text-center">
                  <div className="text-4xl md:text-6xl lg:text-[72px] font-black font-mono leading-none text-white tracking-tighter">94.2%</div>
                  <div className="text-[10px] font-black text-[#D4AF37] uppercase tracking-[0.4em] mt-2 bg-[#D4AF37]/10 px-4 py-1 rounded-full border border-yellow-500/20">AI Precision Verified</div>
@@ -396,7 +396,7 @@ export default function StatisticsView() {
               <CardHeader className="pb-2 text-left">
                  <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-3"><Users size={16} /> Personnel Fatigue</CardTitle>
               </CardHeader>
-              <CardContent className="h-[340px] min-h-[300px] w-full">
+              <CardContent className="h-[300px] w-full">
                  <ResponsiveContainer width="100%" height={300} debounce={50}>
                     <BarChart data={fatigueData}>
                       <XAxis dataKey="name" stroke="#475569" fontSize={9} fontWeight="black" fontFamily="var(--font-mono)" axisLine={false} tickLine={false} />
@@ -477,7 +477,7 @@ export default function StatisticsView() {
               <CardHeader className="text-left">
                  <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-3"><Car size={16} /> Asset Readiness</CardTitle>
               </CardHeader>
-              <CardContent className="h-[340px] relative flex items-center justify-center min-h-[300px] w-full">
+              <CardContent className="h-[300px] relative flex items-center justify-center w-full">
                  <div className="absolute text-center"><div className="text-4xl font-black text-white font-mono">84%</div></div>
                  <ResponsiveContainer width="100%" height={300} debounce={50}>
                     <PieChart>

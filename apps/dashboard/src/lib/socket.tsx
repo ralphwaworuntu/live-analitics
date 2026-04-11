@@ -1,27 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { io, Socket } from "socket.io-client";
 import { useAppStore } from "@/store";
-
-let socket: Socket | null = null;
-
-export const initSocket = (token?: string) => {
-  const socketEnabled = process.env.NEXT_PUBLIC_ENABLE_SOCKET === "true";
-  if (!socketEnabled) return null;
-  if (socket) return socket;
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-  socket = io(apiUrl, {
-    path: "/ws/socket.io",
-    auth: { token: token || "" },
-    transports: ["websocket"],
-    autoConnect: true,
-    reconnection: true,
-  });
-
-  return socket;
-};
+import { socketService } from "./socketService";
 
 export function SocketProvider({ children, token }: { children: React.ReactNode; token?: string }) {
   const triggerEmergency = useAppStore((state) => state.triggerEmergency);
@@ -32,7 +13,7 @@ export function SocketProvider({ children, token }: { children: React.ReactNode;
   const prevOnline = useRef(isOnline);
 
   useEffect(() => {
-    // SYNC LOGIC for Offline Resilience
+    // SYNC LOGIC for Offline Resilience (Store-based)
     if (isOnline && !prevOnline.current) {
        syncOfflineData();
     }
@@ -40,7 +21,7 @@ export function SocketProvider({ children, token }: { children: React.ReactNode;
   }, [isOnline, syncOfflineData]);
 
   useEffect(() => {
-    const currentSocket = initSocket(token);
+    const currentSocket = socketService.init(token);
     let timer: NodeJS.Timeout | null = null;
 
     if (!currentSocket) {
@@ -58,9 +39,6 @@ export function SocketProvider({ children, token }: { children: React.ReactNode;
       return () => { if (timer) clearInterval(timer); };
     }
 
-    currentSocket.on("connect", () => console.log("SENTINEL WS CONNECTED"));
-    currentSocket.on("disconnect", () => console.log("SENTINEL WS DISCONNECTED"));
-
     const onEmergency = (data: { message: string; [key: string]: any }) => {
       triggerEmergency({ ...data } as any);
       pushNotification({ title: "Broadcast", description: data.message, level: "critical" });
@@ -74,8 +52,6 @@ export function SocketProvider({ children, token }: { children: React.ReactNode;
 
     return () => {
       if (timer) clearInterval(timer);
-      currentSocket.off("connect");
-      currentSocket.off("disconnect");
       currentSocket.off("emergency_broadcast");
       currentSocket.off("personnel_update");
     };

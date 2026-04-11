@@ -353,7 +353,7 @@ export default function MemberTacticalPortal() {
   if (me?.isFakeGPS) return <FakeGpsBlocker />;
 
   return (
-    <div className={`w-full h-full flex justify-center bg-[#000000] overflow-hidden select-none touch-manipulation ${isCrisis ? 'animate-crisisPulse' : ''}`}>
+    <div className={`w-full h-full flex justify-center bg-[#000000] overflow-hidden relative select-none touch-manipulation ${isCrisis ? 'animate-crisisPulse' : ''}`}>
       <style>{`
         @keyframes crisisFlash { 0%, 100% { box-shadow: inset 0 0 0px #FF003C; } 50% { box-shadow: inset 0 0 40px #FF003C; } }
         .animate-crisisPulse { animation: crisisFlash 0.5s infinite; }
@@ -425,7 +425,7 @@ export default function MemberTacticalPortal() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="absolute top-[80px] right-2 w-64 bg-[#111111] border border-[#333333] shadow-2xl z-[9999] rounded-xl overflow-hidden"
+              className="absolute top-[80px] right-2 w-64 bg-[#111111] border border-[#333333] shadow-2xl z-[9990] rounded-xl overflow-hidden"
             >
               <div className="p-3 border-b border-[#333333] bg-[#0A0A0A] flex justify-between items-center">
                 <span className="text-[10px] font-black tracking-widest text-[#555555] uppercase">Notifications</span>
