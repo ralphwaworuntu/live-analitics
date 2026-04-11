@@ -17,3 +17,5 @@ psutil==5.9.8
 locust==2.24.1
 redis==5.0.1
 aioredis==2.0.1
+pyproj==3.6.1
+shapely==2.0.4

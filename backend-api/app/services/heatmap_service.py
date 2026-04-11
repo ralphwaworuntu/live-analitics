@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from app.database import database
 from app.services.redis_service import redis_manager
+from app.services.geofence_service import geofence_service
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,9 @@ class HeatmapService:
                     "lng": float(row['lng']),
                     "weight": float(weight)
                 })
+            
+            # Update Geofence Service with new risk zones
+            await geofence_service.update_risk_zones(heatmap_data)
             
             # Task 3: Cache in Redis
             if redis_manager.redis:

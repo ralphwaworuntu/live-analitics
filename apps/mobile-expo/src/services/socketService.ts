@@ -27,6 +27,9 @@ class SocketService {
     this.socket.on("INTEL_ALERT", (alert: any) => {
       console.log("[INTEL] Received AI Alert:", alert);
       useAppStore.getState().addAlert(alert);
+      if (alert.level === 'CRITICAL') {
+        useAppStore.getState().setRiskScore(80);
+      }
     });
 
     this.socket.on("risk_update", (data: { score: number }) => {

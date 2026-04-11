@@ -62,6 +62,10 @@ async def on_live_tracking(sid, data):
     for name, poly in POLRES_BOUNDARIES.items():
         if poly.contains(p): is_oob, active_sector = False, name; break
     
+    # Task 2: Spatial Intersection Check for Risk Zones
+    from app.services.geofence_service import geofence_service
+    await geofence_service.check_unit_safety(sid, lat, lng)
+    
     # Task 3: Decoupled Telemetry Emission via Redis
     from app.services.redis_service import redis_manager
     await redis_manager.publish_telemetry({
