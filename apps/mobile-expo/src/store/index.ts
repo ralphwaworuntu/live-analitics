@@ -19,6 +19,9 @@ interface MobileState {
   removeAlert: (id: string) => void;
   setBriefing: (text: string) => void;
   updatePeer: (id: string, data: any) => void;
+  missionStatus: 'IDLE' | 'ACTIVE' | 'FINISHED';
+  setMissionStatus: (status: 'IDLE' | 'ACTIVE' | 'FINISHED') => void;
+  resetMission: () => void;
 }
 
 export const useAppStore = create<MobileState>((set: any) => ({
@@ -30,6 +33,7 @@ export const useAppStore = create<MobileState>((set: any) => ({
   activeAlerts: [],
   briefing: "Silahkan lakukan patroli di area Pasar Oeba. Monitor kerumunan massa.",
   peers: {},
+  missionStatus: 'IDLE',
   toggleSOS: () => set((state: MobileState) => ({ isSOSActive: !state.isSOSActive })),
   setMe: (user: { id: string; name: string; nrp: string }) => set({ me: user }),
   setAssetId: (id: string) => set({ assetId: id }),
@@ -44,4 +48,13 @@ export const useAppStore = create<MobileState>((set: any) => ({
       [id]: { ...state.peers[id], ...data, lastSeen: Date.now() }
     }
   })),
+  setMissionStatus: (status: 'IDLE' | 'ACTIVE' | 'FINISHED') => set({ missionStatus: status }),
+  resetMission: () => set({
+    missionStatus: 'IDLE',
+    assetId: null,
+    riskScore: 0,
+    activeAlerts: [],
+    isSOSActive: false,
+    currentHash: 'SEC-0000-0000'
+  }),
 }));

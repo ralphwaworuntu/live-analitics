@@ -10,16 +10,24 @@ import { NotificationBanner } from '../components/NotificationBanner';
 import { EvidenceVault } from '../components/EvidenceVault';
 import { BriefingPanel } from '../components/BriefingPanel';
 import { TacticalMap } from '../components/TacticalMap';
+import { ShiftReviewScreen } from './ShiftReviewScreen';
 import { useTracking } from '../hooks/useTracking';
 import { useAppStore } from '../store';
 // @ts-ignore
-import { Play } from 'lucide-react-native';
+import { Play, Square } from 'lucide-react-native';
 
 export default function MainScreen() {
-  const { speed, batteryLevel, isStandby } = useTracking();
+  const { speed, batteryLevel, isStandby, finishMission } = useTracking();
   const assetId = useAppStore((s: any) => s.assetId);
   const isSOSActive = useAppStore((s: any) => s.isSOSActive);
   const riskScore = useAppStore((s: any) => s.riskScore);
+  const missionStatus = useAppStore((s: any) => s.missionStatus);
+  const setMissionStatus = useAppStore((s: any) => s.setMissionStatus);
+  const [summary, setSummary] = React.useState<any>(null);
+
+  if (missionStatus === 'FINISHED' && summary) {
+    return <ShiftReviewScreen summary={summary} />;
+  }
 
   const getStatus = () => {
     if (batteryLevel < 0.15) return 'POWER_SAVE';
@@ -50,14 +58,30 @@ export default function MainScreen() {
       <EvidenceVault />
 
       <View style={styles.footer}>
-        <TouchableOpacity 
-          disabled={!assetId}
-          style={[styles.startDuty, !assetId && styles.locked]}
-          onPress={() => console.log("Duty Started")}
-        >
-          <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
-          <Text style={styles.startText}>START MISSION DUTY</Text>
-        </TouchableOpacity>
+        {missionStatus === 'ACTIVE' ? (
+          <TouchableOpacity 
+            style={[styles.startDuty, styles.finishBtn]}
+            onPress={async () => {
+              const res = await finishMission();
+              setSummary(res);
+            }}
+          >
+            <Square size={20} color="#FFFFFF" fill="#FFFFFF" />
+            <Text style={styles.startText}>FINISH MISSION PATROL</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            disabled={!assetId}
+            style={[styles.startDuty, !assetId && styles.locked]}
+            onPress={() => {
+              console.log("Duty Started");
+              setMissionStatus('ACTIVE');
+            }}
+          >
+            <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
+            <Text style={styles.startText}>START MISSION DUTY</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <SECHashTicker />
@@ -96,6 +120,9 @@ const styles = StyleSheet.create({
   locked: {
     backgroundColor: '#0E2442',
     opacity: 0.5,
+  },
+  finishBtn: {
+    backgroundColor: '#FF4D6D',
   },
   startText: {
     color: '#FFFFFF',

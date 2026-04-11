@@ -106,7 +106,31 @@ export const useTracking = () => {
     socketService.emitPositionWithThrottling(loc, interval);
   };
 
-  return { location, speed, batteryLevel, isStandby };
+  const finishMission = async () => {
+    // Task 1: Mission Finalization Logic
+    const startTime = lastLocationRef.current ? lastActiveTimeRef.current : Date.now();
+    const summary = {
+      startTime: new Date(startTime).toISOString(),
+      endTime: new Date().toISOString(),
+      assetId: useAppStore.getState().assetId,
+      finalHash: useAppStore.getState().currentHash,
+      nrp: useAppStore.getState().me?.nrp,
+    };
+
+    console.log("[MISSION] Finalizing SEC-HASH sync...");
+    // Trigger a final sync
+    if (lastLocationRef.current) {
+      await socketService.emitPosition(lastLocationRef.current);
+    }
+
+    // Stop location watch
+    watchIdRef.current?.remove();
+    useAppStore.getState().setMissionStatus('FINISHED');
+    
+    return summary;
+  };
+
+  return { location, speed, batteryLevel, isStandby, finishMission };
 };
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
