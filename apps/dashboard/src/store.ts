@@ -488,14 +488,46 @@ export const useAppStore = create<AppState>()(
     }
   },
 
-  syncOfflineData: () => {
-    const { offlineQueue, isOnline, addAuditLog } = get();
+  syncOfflineData: async () => { const { offlineQueue, isOnline, addAuditLog } = get();
     if (!isOnline || offlineQueue.length === 0) return;
     
     console.log(`[SENTINEL-SYNC] Syncing ${offlineQueue.length} buffered points...`);
     
-    // Batch process
+    
+    const queueCopy = [...offlineQueue];
+    
     set({ offlineQueue: [] });
+    
+    
+    // Actually send to backend
+    
+    try {
+    
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    
+      const res = await fetch(`${API_URL}/api/sync/offline`, {
+    
+        method: "POST",
+    
+        headers: { "Content-Type": "application/json" },
+    
+        body: JSON.stringify({ packets: queueCopy }),
+    
+      });
+    
+      if (!res.ok) throw new Error("Sync failed");
+    
+      console.log(`[SENTINEL-SYNC] Backend acknowledged ${queueCopy.length} points`);
+    
+    } catch (err) {
+    
+      // Re-queue on failure
+    
+      set(state => ({ offlineQueue: [...queueCopy, ...state.offlineQueue] }));
+    
+      console.warn(`[SENTINEL-SYNC] Re-queued ${queueCopy.length} points due to error`);
+    
+    }
     
     addAuditLog({
       actor: "Sentinel-AI Sync Engine",
@@ -709,3 +741,6 @@ export const useAppStore = create<AppState>()(
 export function getSelectedPolres(state: AppState): PolresItem | null {
   return state.polres.find((item) => item.id === state.selectedPolresId) ?? null;
 }
+
+
+

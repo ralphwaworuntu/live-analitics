@@ -149,7 +149,7 @@ function TuranggaAI() {
         </div>
       </div>
 
-      <div className="hidden xl:flex w-72 bg-[#0B1B32] border-l border-white/10 flex-col shrink-0">
+      <div className="hidden xl:flex w-full max-w-[288px] bg-[#0B1B32] border-l border-white/10 flex-col shrink-0">
         <div className="p-4 border-b border-white/10 shrink-0">
           <h3 className="font-semibold text-white flex items-center gap-2">
             <MessageSquare size={18} className="text-[#D4AF37]"/>
@@ -241,3 +241,4 @@ function PulseOSINT() {
     </div>
   );
 }
+

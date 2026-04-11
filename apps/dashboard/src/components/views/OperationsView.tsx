@@ -169,7 +169,7 @@ function GeofenceAlertsSidebar() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="mt-2 bg-[#0B1B32]/95 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl max-h-[300px] overflow-y-auto w-[320px]"
+            className="mt-2 bg-[#0B1B32]/95 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl max-h-[300px] overflow-y-auto w-full max-w-sm"
           >
             <div className="p-3 border-b border-white/5 flex items-center justify-between">
               <span className="text-[9px] font-black uppercase tracking-widest text-red-400">Recent Breaches</span>
@@ -418,3 +418,4 @@ export default function OperationsView() {
     </div>
   );
 }
+

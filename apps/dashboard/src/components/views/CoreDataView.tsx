@@ -959,7 +959,7 @@ export default function CoreDataView() {
             <input 
               type="text" 
               placeholder="Search by NRP, Tag, or Sector..." 
-              className="bg-transparent border-none outline-none text-white text-sm w-72 placeholder:text-slate-600"
+              className="bg-transparent border-none outline-none text-white text-sm w-full max-w-xs placeholder:text-slate-600"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -1339,3 +1339,5 @@ const MediaGalleryModal = ({ evidence, onClose }: { evidence: Evidence[], onClos
     </div>
   );
 };
+
+

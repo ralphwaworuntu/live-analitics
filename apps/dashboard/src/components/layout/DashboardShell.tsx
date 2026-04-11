@@ -51,13 +51,16 @@ export default function DashboardShell({ children }: { children?: React.ReactNod
 
   const openSidebar = useCallback(() => setMobileSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setMobileSidebarOpen(false), []);
+  const sidebarFallback = <div className="h-full w-[68px] shrink-0 border-r border-white/5 bg-[#0B1B32]" />;
 
   return (
     <div className="h-screen w-full bg-[#07111F] text-[#EAF2FF] overflow-hidden flex">
 
       {/* Desktop Sidebar — permanent, hidden on mobile (<768px) */}
       <div className="hidden md:block">
-        <Sidebar collapsed={isSidebarCollapsed} />
+        <Suspense fallback={sidebarFallback}>
+          <Sidebar collapsed={isSidebarCollapsed} />
+        </Suspense>
       </div>
 
       {/* Mobile Sidebar — off-canvas drawer overlay (<768px) */}
@@ -81,7 +84,9 @@ export default function DashboardShell({ children }: { children?: React.ReactNod
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
               className="absolute left-0 top-0 h-full w-[280px] shadow-2xl"
             >
-              <Sidebar onClose={closeSidebar} />
+              <Suspense fallback={<div className="h-full w-full border-r border-white/5 bg-[#0B1B32]" />}>
+                <Sidebar onClose={closeSidebar} />
+              </Suspense>
             </motion.div>
           </div>
         )}

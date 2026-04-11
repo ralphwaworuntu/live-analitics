@@ -38,8 +38,8 @@
   --sidebar-collapsed: 80px;
   --topbar-height: 72px;
 
-  --font-sans: "Inter", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Consolas", ui-monospace, monospace;
+  --font-sans: var(--font-inter), "Inter", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", "Consolas", ui-monospace, monospace;
 
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -220,7 +220,7 @@ button {
   animation: pulse-danger 2s infinite;
 }
 
-.metric {
+.metric { font-family: var(--font-mono);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -396,4 +396,7 @@ button {
 .animate-sos-pulse {
   animation: sos-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+
+
 
