@@ -49,16 +49,12 @@ class SocketService {
         this.isConnected = false;
       });
 
-      // Listen for commands from dashboard
       this.socket.on('COMMAND', (command: any) => {
         console.log('[SOCKET] Received command:', command);
-        // Handle commands like: { type: 'STANDBY' | 'ACTIVE' | 'SOS_ACKNOWLEDGE' }
       });
 
-      // Receive intel alerts from AI system
       this.socket.on('INTEL_ALERT', (alert: any) => {
         console.log('[INTEL] Received AI Alert:', alert);
-        // Handle intel alerts
       });
 
     } catch (error) {
@@ -66,17 +62,11 @@ class SocketService {
     }
   }
 
-  /**
-   * Emit position update to server
-   * Server will broadcast to all connected dashboards
-   */
   public async emitPosition(update: PositionUpdate): Promise<void> {
     try {
-      // Get personnel info from app store
-      const assetId = 'UNIT-001'; // Would come from app store
-      const nrp = '91180501'; // Would come from authenticated user
+      const assetId = 'UNIT-001';
+      const nrp = '91180501';
       
-      // Build telemetry payload matching dashboard interface
       const payload: TelemetryPayload = {
         id: assetId,
         nrp: nrp,
@@ -93,7 +83,6 @@ class SocketService {
         timestamp: update.timestamp
       };
       
-      // Generate integrity hash
       payload.hash = await generateIntegrityHash({
         id: payload.id,
         lat: payload.lat,
@@ -101,12 +90,10 @@ class SocketService {
         timestamp: payload.timestamp
       });
 
-      // Send via WebSocket if connected
       if (this.socket?.connected) {
         this.socket.emit('PERSONNEL_TELEMETRY', payload);
         console.log('[SOCKET] Emitted telemetry:', { lat: update.lat.toFixed(4), speed: update.speed.toFixed(1) });
       } else {
-        // Queue for later when connection is restored
         this.addToQueue(payload);
         console.warn('[SOCKET] Not connected, queued position');
       }
@@ -116,9 +103,6 @@ class SocketService {
     }
   }
 
-  /**
-   * Emit SOS alert
-   */
   public async emitSOS(position: { lat: number; lng: number }, message?: string): Promise<void> {
     const payload = {
       type: 'SOS',
@@ -136,9 +120,6 @@ class SocketService {
     }
   }
 
-  /**
-   * Emit MISSION_START event to notify dashboard
-   */
   public emitMissionStart(data: {
     unitId: string;
     nrp: string;
@@ -159,41 +140,52 @@ class SocketService {
     }
   }
 
-  /**
-   * Get current network connection type
-   */
+  public emitMissionEnd(data: {
+    unitId: string;
+    nrp: string;
+    name: string;
+    startTime: string;
+    endTime: string;
+    durationMs: number;
+    totalDistanceKm: number;
+    averageSpeedKmh: number;
+    batteryLevelStart: number;
+    batteryLevelEnd: number;
+    startLat: number;
+    startLng: number;
+    endLat: number;
+    endLng: number;
+  }): void {
+    const payload = {
+      event: 'MISSION_END',
+      ...data,
+      source: 'mobile-app'
+    };
+
+    if (this.socket?.connected) {
+      this.socket.emit('MISSION_END', payload);
+      console.log('[SOCKET] MISSION_END emitted');
+    }
+  }
+
   private getConnectionType(): '4g' | '5g' | '3g' | 'LTE' | 'H+' | 'none' {
-    // In real implementation, would use expo-network
-    // For now, default to 4g
     return this.isConnected ? '4g' : 'none';
   }
 
-  /**
-   * Get signal status
-   */
   private getSignalStatus(): 'LTE' | '5G' | '3G' | 'H+' | 'No Signal' {
     return this.isConnected ? 'LTE' : 'No Signal';
   }
 
-  /**
-   * Add position to offline queue
-   */
   private addToQueue(payload: any): void {
     try {
-      // In React Native, would use @react-native-async-storage/async-storage
-      // For now, use global queue (would be AsyncStorage in production)
       const queue = (global as any).sentinelQueue = (global as any).sentinelQueue || [];
       queue.push(payload);
-      // Keep last 500 points
       if (queue.length > 500) queue.shift();
     } catch (e) {
       console.warn('[QUEUE] Failed to add:', e);
     }
   }
 
-  /**
-   * Sync queued positions to server
-   */
   private async syncQueue(): Promise<void> {
     if (!this.socket?.connected) return;
     
@@ -211,10 +203,6 @@ class SocketService {
     }
   }
 
-  /**
-   * Manually send telemetry via HTTP POST
-   * Used as fallback when WebSocket is unavailable
-   */
   public async sendViaHttp(update: PositionUpdate): Promise<boolean> {
     try {
       const response = await fetch(`${API_URL}/api/telemetry/position`, {
