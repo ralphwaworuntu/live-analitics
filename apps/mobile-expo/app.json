@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "SENTINEL Mobile",
+    "slug": "sentinel-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "bundleIdentifier": "id.co.nobel.sentinel.mobile",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a2e"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "id.co.nobel.sentinel.mobile",
+      "infoPlist": {
+        "UIBackgroundModes": ["location", "fetch"],
+        "NSLocationWhenInUseUsageDescription": "SENTINEL membutuhkan akses lokasi untuk melacak patroli anda.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "SENTINEL membutuhkan akses lokasi latar untuk terus melacak patroli saat aplikasi di background.",
+        "NSLocationAlwaysUsageDescription": "SENTINEL membutuhkan akses lokasi latar untuk terus melacak patroli saat aplikasi di background."
+      }
+    },
+    "android": {
+      "package": "id.co.nobel.sentinel.mobile",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "SENTINEL membutuhkan akses lokasi untuk melacak patroli anda.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      "expo-task-manager"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "sentinel-mobile-project"
+      }
+    }
+  }
+}
