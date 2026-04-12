@@ -41,12 +41,7 @@ export default function MainScreen() {
       <StatusBar barStyle="light-content" />
       <NotificationBanner />
       
-      <TacticalHUD 
-        status={getStatus()} 
-        battery={batteryLevel} 
-        speed={speed} 
-        riskScore={riskScore}
-      />
+      <TacticalHUD />
 
       <AssetScanner />
       

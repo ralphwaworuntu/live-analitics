@@ -1,31 +1,63 @@
 // @ts-ignore
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 // @ts-ignore
 import { View, Text, StyleSheet } from 'react-native';
 // @ts-ignore
 import { MotiView } from 'moti';
 // @ts-ignore
-import { Shield, Battery, Radio } from 'lucide-react-native';
-
-interface TacticalHUDProps {
-  status: 'ACTIVE' | 'STANDBY' | 'POWER_SAVE';
-  battery: number;
-  speed: number;
-  riskScore: number;
-}
+import * as Haptics from 'expo-haptics';
+// @ts-ignore
+import { Shield, Battery, Radio, Wifi, WifiOff, Zap } from 'lucide-react-native';
+import { useAppStore } from '../store';
+import { useTracking } from '../hooks/useTracking';
 
 const COLORS = {
-  ACTIVE: '#00F0FF', // Neon Cyan
-  STANDBY: '#D4AF37', // Gold
+  ACTIVE: '#00F0FF',    // Neon Cyan
+  STANDBY: '#D4AF37',   // Gold
   POWER_SAVE: '#FF4D6D', // Red
+  ONLINE: '#18C29C',     // Emerald Green
+  OFFLINE: '#64748B',    // Slate Gray
 };
 
-export const TacticalHUD = ({ status, battery, speed, riskScore }: TacticalHUDProps) => {
-  // Task 3: Dynamic HUD Mapping
-  let color = COLORS[status] || COLORS.ACTIVE;
+export const TacticalHUD = () => {
+  const me = useAppStore((s) => s.me);
+  const assetId = useAppStore((s) => s.assetId);
+  const riskScore = useAppStore((s) => s.riskScore);
   
-  if (riskScore > 75) color = COLORS.POWER_SAVE; // Danger
-  else if (riskScore > 40) color = COLORS.STANDBY; // Cautious
+  const { 
+    isTracking, 
+    isStandby, 
+    batteryLevel, 
+    speed, 
+    isOnline 
+  } = useTracking();
+
+  // Determine status based on tracking state
+  const getStatus = (): 'ACTIVE' | 'STANDBY' | 'POWER_SAVE' => {
+    if (batteryLevel < 15) return 'POWER_SAVE';
+    if (isStandby) return 'STANDBY';
+    if (isTracking) return 'ACTIVE';
+    return 'STANDBY';
+  };
+
+  const status = getStatus();
+
+  // Haptic feedback when transitioning from Standby to Active
+  const prevStatusRef = useRef(status);
+  useEffect(() => {
+    if (prevStatusRef.current === 'STANDBY' && status === 'ACTIVE') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    prevStatusRef.current = status;
+  }, [status]);
+
+  // Dynamic color based on status and risk
+  let color = COLORS[status] || COLORS.ACTIVE;
+  if (riskScore > 75) color = COLORS.POWER_SAVE;
+  else if (riskScore > 40) color = COLORS.STANDBY;
+
+  // Connection status color
+  const connectionColor = isOnline ? COLORS.ONLINE : COLORS.OFFLINE;
 
   return (
     <View style={styles.container}>
@@ -39,23 +71,47 @@ export const TacticalHUD = ({ status, battery, speed, riskScore }: TacticalHUDPr
         }}
         style={[styles.glowBox, { shadowColor: color, borderColor: color }]}
       >
+        {/* Asset ID & Connection Status Row */}
+        <View style={styles.topBar}>
+          <View style={styles.assetIdContainer}>
+            <Zap size={12} color={color} />
+            <Text style={[styles.assetId, { color }]}>{assetId || 'NO-UNIT'}</Text>
+          </View>
+          <View style={[styles.connectionBadge, { borderColor: connectionColor }]}>
+            {isOnline ? (
+              <Wifi size={12} color={connectionColor} />
+            ) : (
+              <WifiOff size={12} color={connectionColor} />
+            )}
+            <Text style={[styles.connectionText, { color: connectionColor }]}>
+              {isOnline ? 'ONLINE' : 'OFFLINE'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Header with Status & Metrics */}
         <View style={styles.header}>
           <Text style={[styles.statusLabel, { color }]}>{status} MODE</Text>
           <View style={styles.metrics}>
             <View style={styles.metricItem}>
-              <Battery size={16} color="#A9B9D6" />
-              <Text style={styles.metricText}>{Math.round(battery * 100)}%</Text>
+              <Battery size={16} color={batteryLevel < 20 ? '#FF4D6D' : '#A9B9D6'} />
+              <Text style={[styles.metricText, batteryLevel < 20 && styles.warningText]}>
+                {Math.round(batteryLevel)}%
+              </Text>
             </View>
             <View style={styles.metricItem}>
               <Radio size={16} color="#A9B9D6" />
-              <Text style={styles.metricText}>{speed}km/h</Text>
+              <Text style={styles.metricText}>{Math.round(speed)}km/h</Text>
             </View>
           </View>
         </View>
         
+        {/* Identity Row - Real Name & NRP */}
         <View style={styles.identity}>
           <Shield size={20} color={color} />
-          <Text style={styles.unitName}>UNIT: POL-R4-NTT</Text>
+          <Text style={styles.unitName}>
+            {me?.name || 'Unknown'} | {me?.nrp || 'N/A'}
+          </Text>
         </View>
       </MotiView>
     </View>
@@ -77,6 +133,40 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  assetIdContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  assetId: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
+  connectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  connectionText: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -85,7 +175,7 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     fontSize: 18,
-    fontFamily: 'JetBrainsMono-Bold',
+    fontWeight: '800',
     letterSpacing: 1,
   },
   metrics: {
@@ -102,6 +192,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  warningText: {
+    color: '#FF4D6D',
+  },
   identity: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -111,8 +204,9 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   unitName: {
-    color: '#A9B9D6',
-    fontSize: 12,
-    letterSpacing: 2,
+    color: '#EAF2FF',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 1,
   },
 });
