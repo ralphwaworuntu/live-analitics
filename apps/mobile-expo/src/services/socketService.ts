@@ -53,16 +53,41 @@ class SocketService {
   public async emitPosition(payload: any) {
     const ts = Date.now();
     const assetId = useAppStore.getState().assetId;
-    const fullData = { ...payload, ts, assetId };
+    const nrp = useAppStore.getState().nrp || '91180501';
+    const name = useAppStore.getState().userName || 'Petugas Patroli';
     
-    const hash = await generateIntegrityHash(fullData);
-    const fullPayload = { ...fullData, hash };
+    // Build payload matching dashboard PersonnelTelemetry interface
+    const telemetryData = {
+      id: assetId,
+      nrp: nrp,
+      name: name,
+      lat: payload.lat,
+      lng: payload.lng,
+      speed: payload.speed ?? 0,
+      batteryLevel: payload.batteryLevel ?? 100,
+      isCharging: payload.isCharging ?? false,
+      connectionType: payload.connectionType || (this.socket?.connected ? '4g' : 'none'),
+      signalStatus: this.socket?.connected ? 'LTE' : 'No Signal',
+      isOnline: this.socket?.connected ?? false,
+      timestamp: payload.timestamp || new Date().toISOString(),
+    };
+    
+    const hash = await generateIntegrityHash({
+      id: telemetryData.id,
+      lat: telemetryData.lat,
+      lng: telemetryData.lng,
+      timestamp: telemetryData.timestamp
+    });
+    
+    const fullPayload = { ...telemetryData, hash };
 
     // Update global store with the new hash for the ticker
     useAppStore.getState().setCurrentHash(hash);
 
     if (this.socket?.connected) {
-      this.socket.emit("personnel_update", fullPayload);
+      // Emit to server which broadcasts to dashboard
+      this.socket.emit("PERSONNEL_TELEMETRY", fullPayload);
+      console.log('[SOCKET] Emitted:', { lat: payload.lat?.toFixed(4), speed: payload.speed?.toFixed(1), battery: payload.batteryLevel });
     } else {
       this.addToQueue(fullPayload);
     }

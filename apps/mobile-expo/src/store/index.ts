@@ -5,6 +5,8 @@ interface MobileState {
   isSOSActive: boolean;
   me: { id: string; name: string; nrp: string } | null;
   assetId: string | null;
+  nrp: string;
+  userName: string;
   currentHash: string;
   riskScore: number; // 0-100
   activeAlerts: any[];
@@ -27,7 +29,9 @@ interface MobileState {
 export const useAppStore = create<MobileState>((set: any) => ({
   isSOSActive: false,
   me: { id: 'm-01', name: 'Bripda Andi', nrp: '88050912' }, 
-  assetId: null,
+  assetId: 'UNIT-001',
+  nrp: '88050912',
+  userName: 'Bripda Andi',
   currentHash: 'SEC-0000-0000',
   riskScore: 0,
   activeAlerts: [],
@@ -35,7 +39,12 @@ export const useAppStore = create<MobileState>((set: any) => ({
   peers: {},
   missionStatus: 'IDLE',
   toggleSOS: () => set((state: MobileState) => ({ isSOSActive: !state.isSOSActive })),
-  setMe: (user: { id: string; name: string; nrp: string }) => set({ me: user }),
+  setMe: (user: { id: string; name: string; nrp: string }) => set({ 
+    me: user, 
+    nrp: user.nrp, 
+    userName: user.name,
+    assetId: `UNIT-${user.nrp.slice(-3)}`
+  }),
   setAssetId: (id: string) => set({ assetId: id }),
   setCurrentHash: (hash: string) => set({ currentHash: hash }),
   setRiskScore: (score: number) => set({ riskScore: score }),
@@ -52,9 +61,11 @@ export const useAppStore = create<MobileState>((set: any) => ({
   resetMission: () => set({
     missionStatus: 'IDLE',
     assetId: null,
+    nrp: '',
+    userName: '',
     riskScore: 0,
     activeAlerts: [],
-    peers: {}, // Task 3: Deep Purge of peers
+    peers: {},
     isSOSActive: false,
     currentHash: 'SEC-0000-0000',
     briefing: null
