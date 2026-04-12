@@ -1,778 +1,255 @@
 "use client";
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-
-import { buildMockKpis, mockActivities, mockPolresData } from "@/lib/mock-data";
-import { mapConnectionToSignal } from "@/lib/telemetryService";
-import { generateIntegrityHash } from "@/lib/crypto";
-import { sanitizePayload } from "@/lib/security";
-import { runProactiveChecks } from "@/lib/tactical-ai";
+import { persist } from "zustand/middleware";
 import type {
-  ActivityItem,
-  AIChatMessage,
-  AppNotification,
-  EmergencyState,
-  KPIItem,
-  PolresItem,
   PersonnelTrack,
-  TacticalMission,
-  PredictionPoint,
-  PolresAssetStrength,
-  AuditLogEntry,
-  OSINTSignal,
-  SandboxImpact,
-  SearchResult,
-  PatrolWaypoint,
   PersonnelTelemetry,
-  PolsekItem,
+  TelemetrySnapshot,
+  TelemetryAlerts,
+  DispatchMission,
+  GeofenceAlert,
+  Notification,
+  PolisiItem,
   PolicePost,
-  FieldReport,
+  EmergencyState,
   CctvPoint,
   ShadowHotspot,
-  HeatPoint,
-  UnitType,
+  FieldReport,
 } from "@/lib/types";
-import { mockPersonnelTracks } from "@/lib/mockPatrolData";
 
-type ShiftType = "pagi" | "malam";
+interface PersonnelPosition {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  timestamp?: string;
+}
 
 interface AppState {
-  polres: PolresItem[];
-  polsek: PolsekItem[];
-  policePosts: PolicePost[];
-  activities: ActivityItem[];
-  selectedPolresId: string | null;
-  selectedPolsekId: string | null;
-  timeRangeHours: number;
-  liveMode: boolean;
-  heatmapEnabled: boolean;
-  kpis: KPIItem[];
-  aiMessages: AIChatMessage[];
-  notifications: AppNotification[];
-  emergency: EmergencyState;
-  hasLoadedInitialData: boolean;
-  
-  setPolresData: (items: PolresItem[]) => void;
-  setPolsekData: (items: PolsekItem[]) => void;
-  setPolicePosts: (items: PolicePost[]) => void;
-  
-  setSelectedPolres: (id: string | null) => void;
-  setSelectedPolsek: (id: string | null) => void;
-  
-  setTimeRangeHours: (hours: number) => void;
-  setLiveMode: (value: boolean) => void;
-  setHeatmapEnabled: (value: boolean) => void;
-  addAIMessage: (message: AIChatMessage) => void;
-  pushNotification: (notification: Omit<AppNotification, "id" | "read" | "createdAt">) => void;
-  markNotificationRead: (id: string) => void;
-  
-  triggerEmergency: (payload: Partial<EmergencyState> & { message: string; location: string }) => void;
-  handleSOS: (unitId: string) => void;
-  clearEmergency: () => void;
-  filterStatus: "all" | "SOS" | "Online" | "Offline";
-  filterPriority: "all" | "Low" | "Medium" | "High" | "Critical";
-  setFilterStatus: (status: "all" | "SOS" | "Online" | "Offline") => void;
-  setFilterPriority: (priority: "all" | "Low" | "Medium" | "High" | "Critical") => void;
-  
-  // History & Patrol
-  historyTimestamp: number;
-  selectedPersonnelId: string | null;
+  // Personnel tracking
   personnelTracks: PersonnelTrack[];
-  setHistoryTimestamp: (timestamp: number) => void;
-  setSelectedPersonnelId: (id: string | null) => void;
+  selectedPersonnelId: string | null;
+  selectedPersonnelPosition: PersonnelPosition | null;
+
+  // Map state
+  polres: PolisiItem[];
+  selectedPolresId: string | null;
+  policePosts: PolicePost[];
+  mapCenter: { lat: number; lng: number; zoom?: number } | null;
+
+  // Alerts
+  geofenceAlerts: GeofenceAlert[];
+
+  // Emergency
+  emergency: EmergencyState;
+
+  // Dispatch
+  dispatchModal: { open: boolean; report?: FieldReport };
+  dispatchMission: DispatchMission | null;
+
+  // Notifications
+  notifications: Notification[];
+
+  // CCTV & Predictive
+  cctvPoints: CctvPoint[];
+  cctvMarkersEnabled: boolean;
+  predictiveMode: boolean;
+  shadowHotspots: ShadowHotspot[];
+
+  // Active missions & routes
+  activeMissions: Array<{
+    id: string;
+    title: string;
+    targetLat: number;
+    targetLng: number;
+    priority: "Low" | "Medium" | "High" | "Critical";
+  }>;
+  activePatrolRoute: { lat: number; lng: number }[] | null;
+
+  // Playback
+  historyTimestamp: number | null;
+  playbackActive: boolean;
+  playbackSpeed: number;
+
+  // Actions
   setPersonnelTracks: (tracks: PersonnelTrack[]) => void;
-  
-  // REAL-TIME & HARDENING
-  activeShift: ShiftType;
-  setActiveShift: (shift: ShiftType) => void;
-  offlineQueue: PatrolWaypoint[];
-  isOnline: boolean;
-  setOnlineStatus: (status: boolean) => void;
-  syncOfflineData: () => void;
+  setSelectedPersonnelId: (id: string | null) => void;
+  setSelectedPersonnelPosition: (position: PersonnelPosition | null) => void;
   updatePersonnelPosition: (id: string, lat: number, lng: number, telemetry?: PersonnelTelemetry) => void;
   updatePersonnelTelemetry: (id: string, data: PersonnelTelemetry) => void;
 
-  // C2 & Dispatch
-  activeMissions: TacticalMission[];
-  dispatchMission: (mission: Omit<TacticalMission, "id" | "createdAt">) => void;
-  updateMissionStatus: (id: string, status: "en-route" | "on-site" | "completed") => void;
-  
-  // Predictions
-  predictiveMode: boolean;
-  setPredictiveMode: (enabled: boolean) => void;
-  predictionPoints: PredictionPoint[];
-  shadowHotspots: ShadowHotspot[];
-  
-  // Tactical Dispatch
-  activePatrolRoute: { lat: number; lng: number }[] | null;
-  setPatrolRoute: (route: { lat: number; lng: number }[] | null) => void;
-  
-  dispatchModalOpen: boolean;
-  selectedIncident: FieldReport | null; // Incident for dispatch
-  setDispatchModal: (open: boolean, incident?: FieldReport | null) => void;
-  
-  // Logistics & Assets
-  polresAssets: PolresAssetStrength[];
-  auditLogs: AuditLogEntry[];
-  addAuditLog: (entry: Omit<AuditLogEntry, "id" | "timestamp">) => Promise<void>;
-  
-  // OSINT
-  osintEnabled: boolean;
-  setOsintEnabled: (enabled: boolean) => void;
-  osintSignals: OSINTSignal[];
-  
-  // Tactical Sandbox
-  sandboxMode: boolean;
-  setSandboxMode: (enabled: boolean) => void;
-  sandboxImpact: SandboxImpact | null;
-  calculateSandboxImpact: (polresId: string, personnelShifted: number) => void;
-
-  // Global Search
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  searchResults: SearchResult[];
-
-  // Map Tracking & Focus
-  mapCenter: { lat: number; lng: number; zoom?: number } | null;
+  setPolres: (list: PolisiItem[]) => void;
+  setSelectedPolresId: (id: string | null) => void;
+  setPolicePosts: (posts: PolicePost[]) => void;
   setMapCenter: (center: { lat: number; lng: number; zoom?: number } | null) => void;
-  heatPoints: HeatPoint[];
-  setHeatPoints: (points: HeatPoint[]) => void;
 
-  // Multi-Agency & Citizen Integration
-  bmkgOverlayEnabled: boolean;
-  cctvMarkersEnabled: boolean;
-  setBmkgOverlay: (enabled: boolean) => void;
+  addGeofenceAlert: (alert: GeofenceAlert) => void;
+  clearGeofenceAlerts: () => void;
+
+  setEmergency: (emergency: EmergencyState) => void;
+  clearEmergency: () => void;
+
+  setDispatchModal: (open: boolean, report?: FieldReport) => void;
+  setDispatchMission: (mission: DispatchMission | null) => void;
+
+  pushNotification: (notification: Omit<Notification, "id" | "timestamp">) => void;
+  clearNotifications: () => void;
+
+  setCctvPoints: (points: CctvPoint[]) => void;
   setCctvMarkers: (enabled: boolean) => void;
-  cctvPoints: CctvPoint[];
-  incomingPublicReport: FieldReport | null;
-  triggerPublicReport: (report: FieldReport) => void;
-  clearPublicReport: () => void;
+  setPredictiveMode: (enabled: boolean) => void;
+  setShadowHotspots: (hotspots: ShadowHotspot[]) => void;
 
-  // PLAYBACK ENGINE
-  playbackActive: boolean;
-  playbackSpeed: number;
+  setActiveMissions: (missions: AppState["activeMissions"]) => void;
+  setActivePatrolRoute: (route: { lat: number; lng: number }[] | null) => void;
+
+  setHistoryTimestamp: (timestamp: number | null) => void;
   setPlaybackActive: (active: boolean) => void;
   setPlaybackSpeed: (speed: number) => void;
-
-  // GEOFENCE
-  geofenceAlerts: { unitId: string; message: string; timestamp: string }[];
-  addGeofenceAlert: (alert: { unitId: string; message: string; timestamp: string }) => void;
-
-  // MAP LAYERS (Operations View)
-  mapTypeId: "roadmap" | "satellite" | "hybrid";
-  setMapTypeId: (id: "roadmap" | "satellite" | "hybrid") => void;
-  trafficLayerEnabled: boolean;
-  setTrafficLayer: (enabled: boolean) => void;
-  // GLOBAL ACTIONS & UI STATE
-  isSettingsOpen: boolean;
-  isNotificationsOpen: boolean;
-  toggleSettings: (open?: boolean) => void;
-  toggleNotifications: (open?: boolean) => void;
-  isSidebarCollapsed: boolean;
-  toggleSidebar: (collapsed?: boolean) => void;
-  executeAction: (actionType: string, payload?: Record<string, unknown>) => void;
-  clearOperationalData: () => void;
 }
 
-const defaultEmergency: EmergencyState = {
-  active: false,
-  message: null,
-  location: null,
-  severity: "kritis",
-  timestamp: null,
-  lat: null,
-  lng: null,
-};
-
-function buildTelemetryUpdates(track: PersonnelTrack, data: PersonnelTelemetry): Partial<PersonnelTrack> {
-  const updates: Partial<PersonnelTrack> = {};
-
-  if (data.batteryLevel !== undefined && data.batteryLevel >= 0) {
-    updates.batteryLevel = Math.round(Math.max(0, Math.min(100, data.batteryLevel)));
-  }
-
-  if (data.isCharging !== undefined) {
-    updates.isCharging = data.isCharging;
-  }
-
-  if (data.speed !== undefined && data.speed !== null) {
-    const normalizedSpeed = Math.max(0, Math.round(data.speed));
-    updates.speed = normalizedSpeed;
-    updates.topSpeed = Math.max(track.topSpeed, normalizedSpeed);
-  }
-
-  if (data.connectionType !== undefined) {
-    updates.connectionType = data.connectionType;
-    updates.signalStatus = mapConnectionToSignal(data.connectionType);
-  }
-
-  return updates;
-}
+export const getSelectedPolres = (state: AppState) =>
+  state.polres.find((p) => p.id === state.selectedPolresId) ?? null;
 
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-  polres: mockPolresData,
-  polsek: [],
-  policePosts: [
-    { id: 'post-1', polresId: 'p-001', name: "Pos Polisi Pelabuhan", lat: -10.158, lng: 123.606, type: "Pos Polisi" },
-    { id: 'post-2', polresId: 'p-001', name: "Pos Polisi Terminal", lat: -10.165, lng: 123.61, type: "Pos Polisi" },
-    { id: 'post-3', polresId: 'p-002', name: "Pos Pam Motaain", lat: -9.15, lng: 124.9, type: "Pos Pam" },
-  ],
-  activities: mockActivities,
-  selectedPolresId: null,
-  selectedPolsekId: null,
-  timeRangeHours: 24,
-  liveMode: true,
-  heatmapEnabled: true,
-  kpis: buildMockKpis(null),
-  aiMessages: [
-    {
-      id: "welcome-ai",
-      role: "assistant",
-      content: "Sentinel-AI Tactical Active. Memantau Hierarchy Polsek & Audit Aset secara real-time.",
-      createdAt: new Date().toISOString(),
-    },
-  ],
-  notifications: [],
-  emergency: defaultEmergency,
-  hasLoadedInitialData: false,
-  
-  historyTimestamp: 0,
-  selectedPersonnelId: null,
-  personnelTracks: mockPersonnelTracks.map((t, idx) => ({
-     ...t,
-     unitType: t.unitType as UnitType,
-     fuelStatus: 75 - (idx * 5),
-     odometer: 1240 + (idx * 150),
-     fuelInputShift: 15,
-     health: { engine: 92, tires: 88, lastServiceKm: 1200 },
-     batteryLevel: idx === 2 ? 7 : (85 - (idx * 12)),
-     isCharging: idx === 0,
-     speed: idx === 0 ? 95 : (18 + (idx * 8)),
-     connectionType: idx === 1 ? "none" : (idx % 2 === 0 ? "4g" : "5g"),
-     signalStatus: idx === 1 ? "No Signal" : (idx % 2 === 0 ? "LTE" : "5G"),
-     topSpeed: 45 + (idx * 10),
-     harshBrakingCount: idx === 1 ? 3 : 0,
-     isFakeGPS: idx === 2,
-     isGhost: idx === 1,
-  })).concat([{
-     id: "p-ttu-001",
-     nrp: "91070877",
-     name: "Bp. Terawan",
-     polresId: "ttu",
-     unitType: "R4" as UnitType,
-     waypoints: Array.from({ length: 48 }).map((_, i) => ({
-       lat: -9.447 + (Math.sin(i / 3) * 0.02),
-       lng: 124.481 + (Math.cos(i / 3) * 0.02),
-       timestamp: new Date(new Date().setHours(0, 0, 0, 0) + i * 30 * 60000).toISOString(),
-     })),
-     fuelStatus: 45,
-     odometer: 890,
-     fuelInputShift: 10,
-     health: { engine: 88, tires: 82, lastServiceKm: 800 },
-     batteryLevel: 7,
-     isCharging: false,
-     speed: 0,
-     connectionType: "4g",
-     signalStatus: "LTE",
-     topSpeed: 55,
-     harshBrakingCount: 0,
-     isFakeGPS: false,
-     isGhost: false,
-  }]) as PersonnelTrack[],
+      // Initial state
+      personnelTracks: [],
+      selectedPersonnelId: null,
+      selectedPersonnelPosition: null,
 
-  // HARDENING
-  activeShift: "pagi",
-  offlineQueue: [],
-  isOnline: true,
+      polres: [],
+      selectedPolresId: null,
+      policePosts: [],
+      mapCenter: null,
 
-  // C2 & Dispatch
-  activeMissions: [],
-  predictiveMode: true,
-  predictionPoints: [
-    { id: 'pred-1', lat: -10.170, lng: 123.600, weight: 8, label: "Potensi Kejahatan Jalanan", confidence: 88, reasoning: "Tren mingguan menunjukkan tingginya aktivitas di jam malam." },
-    { id: 'pred-2', lat: -10.150, lng: 123.630, weight: 6, label: "Kemacetan Tinggi", confidence: 72, reasoning: "Analisis historis menunjukkan bottleneck di titik ini pada jam masuk kerja." },
-    { id: 'pred-3', lat: -8.500, lng: 119.880, weight: 9, label: "Risiko Laka Lantas", confidence: 91, reasoning: "Curah hujan tinggi dan volume kendaraan wisata meningkat di Labuan Bajo." },
-  ],
-  shadowHotspots: [
-    { 
-      id: 'shadow-1', 
-      center: { lat: -10.165, lng: 123.605 }, 
-      riskShift: "Curanmor", 
-      confidence: 94, 
-      intensity: 0.7,
-      points: [
-        { lat: -10.160, lng: 123.600 },
-        { lat: -10.160, lng: 123.610 },
-        { lat: -10.170, lng: 123.610 },
-        { lat: -10.170, lng: 123.600 }
-      ] 
-    },
-    { 
-      id: 'shadow-2', 
-      center: { lat: -10.145, lng: 123.625 }, 
-      riskShift: "High Occupancy", 
-      confidence: 82, 
-      intensity: 0.5,
-      points: [
-        { lat: -10.140, lng: 123.620 },
-        { lat: -10.140, lng: 123.630 },
-        { lat: -10.150, lng: 123.630 },
-        { lat: -10.150, lng: 123.620 }
-      ] 
-    },
-  ],
-  activePatrolRoute: null,
-  dispatchModalOpen: false,
-  selectedIncident: null,
+      geofenceAlerts: [],
 
-  polresAssets: [],
-  auditLogs: [],
-  osintEnabled: false,
-  osintSignals: [],
-  sandboxMode: false,
-  sandboxImpact: null,
-  searchQuery: "",
-  searchResults: [],
+      emergency: { active: false },
 
-  // ACTIONS
-  setActiveShift: (shift) => set({ activeShift: shift }),
-  setOnlineStatus: (status) => set({ isOnline: status }),
-  
-  setPolresData: (items) => set({ polres: items, hasLoadedInitialData: true }),
-  setPolsekData: (items) => set({ polsek: items }),
-  setPolicePosts: (items) => set({ policePosts: items }),
+      dispatchModal: { open: false },
+      dispatchMission: null,
 
-  setSelectedPolres: (id) => set((state) => {
-    const nextSelection = state.polres.find((item) => item.id === id) ?? null;
-    return {
-      selectedPolresId: id,
-      selectedPolsekId: null,
-      kpis: buildMockKpis(nextSelection),
-    };
-  }),
-
-  setSelectedPolsek: (id) => set({ selectedPolsekId: id }),
-
-  triggerEmergency: (payload) => set(() => ({
-      emergency: {
-        active: true,
-        message: payload.message || "Emergency",
-        location: payload.location || "Unknown Location",
-        severity: payload.severity ?? "kritis",
-        timestamp: payload.timestamp ?? new Date().toISOString(),
-        lat: payload.lat ?? -10.15,
-        lng: payload.lng ?? 123.58,
-        unitId: payload.unitId
-      },
-  })),
-
-  handleSOS: (unitId) => set((state) => {
-     const unit = state.personnelTracks.find(t => t.id === unitId);
-     const lastPos = unit?.waypoints[unit.waypoints.length - 1];
-     
-     return {
-       emergency: {
-         active: true,
-         message: `UNIT MEMBUTUHKAN BANTUAN SEGERA`,
-         location: unit?.polresId || "Unknown",
-         severity: "kritis",
-         timestamp: new Date().toISOString(),
-         lat: lastPos?.lat ?? -10.15,
-         lng: lastPos?.lng ?? 123.58,
-         unitId
-       },
-       notifications: [{
-         id: `sos-${Date.now()}`,
-         title: "SOS ALERT",
-         description: `Unit ${unitId} (${unit?.name}) memicu SOS!`,
-         level: "critical",
-         createdAt: new Date().toISOString(),
-         read: false
-       }, ...state.notifications]
-     };
-  }),
-
-  clearEmergency: () => set({ emergency: defaultEmergency }),
-
-  updatePersonnelPosition: (id, lat, lng, telemetry) => set((state) => {
-    const timestamp = new Date().toISOString();
-    
-    // OFFLINE BUFFERING LOGIC
-    if (!state.isOnline) {
-      return {
-        offlineQueue: [...state.offlineQueue, { lat, lng, timestamp }]
-      };
-    }
-
-    return {
-      personnelTracks: state.personnelTracks.map(t => {
-        if (t.id !== id) return t;
-
-        // Auto-ghosting detection: if telemetry says "No Signal" or speed is null
-        const isOffline = telemetry?.connectionType === "none" || (telemetry?.speed === null && !state.isOnline);
-
-        // Compute heading
-        const prevWp = t.waypoints[t.waypoints.length - 1];
-        let heading = t.heading ?? 0;
-        if (prevWp) {
-          const dLng = lng - prevWp.lng;
-          const dLat = lat - prevWp.lat;
-          if (Math.abs(dLng) > 0.000001 || Math.abs(dLat) > 0.000001) {
-            heading = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360;
-          }
-        }
-
-        return {
-          ...t,
-          ...buildTelemetryUpdates(t, telemetry ?? {}),
-          waypoints: [...t.waypoints.slice(-100), { lat, lng, timestamp }],
-          odometer: t.odometer + 0.05,
-          heading,
-          lastSyncAt: timestamp,
-          lastActiveAt: timestamp,
-          isGhost: isOffline,
-          offlineSince: isOffline ? (t.offlineSince || timestamp) : undefined,
-          dutyStartedAt: t.dutyStartedAt || timestamp,
-        };
-      })
-    };
-  }),
-
-  updatePersonnelTelemetry: (id, data) => {
-    const state = get();
-    const track = state.personnelTracks.find(t => t.id === id);
-    if (!track) return;
-
-    const updates = buildTelemetryUpdates(track, data);
-
-    // Battery update
-    if (data.batteryLevel !== undefined && data.batteryLevel >= 0) {
-      // Smart alert: low battery < 15%
-      if (data.batteryLevel < 15 && track.batteryLevel >= 15) {
-        get().pushNotification({
-          title: "⚡ Baterai Kritis",
-          description: `Unit ${track.name} (${track.nrp}) — baterai ${data.batteryLevel}%. Perintahkan kembali ke pos untuk pengisian daya.`,
-          level: "warning",
-        });
-        get().addAuditLog({
-          actor: "Sentinel-AI Telemetry",
-          action: "LOW_BATTERY_ALERT",
-          target: `${track.name} (${track.id})`,
-          details: `Baterai unit turun ke ${data.batteryLevel}%. Status: ${data.isCharging ? 'Charging' : 'Discharging'}.`,
-        });
-      }
-    }
-
-    // Speed update
-    if (data.speed !== undefined && data.speed !== null && data.speed > 90 && track.speed <= 90) {
-      get().pushNotification({
-        title: "High Speed Pursuit",
-        description: `Unit ${track.name} (${track.nrp}) melaju ${Math.round(data.speed)} km/jam.`,
-        level: "critical",
-      });
-      get().addAuditLog({
-        actor: "Sentinel-AI Telemetry",
-        action: "HIGH_SPEED_PURSUIT",
-        target: `${track.name} (${track.id})`,
-        details: `Kecepatan unit mencapai ${Math.round(data.speed)} km/jam.`,
-      });
-    }
-
-    // Signal update
-    if (data.connectionType !== undefined) {
-      // Smart alert: signal lost
-      const nextSignalStatus = mapConnectionToSignal(data.connectionType);
-      if (nextSignalStatus === "No Signal" && track.signalStatus !== "No Signal") {
-        get().pushNotification({
-          title: "📡 Sinyal Hilang",
-          description: `Unit ${track.name} (${track.nrp}) kehilangan sinyal. Status diubah ke SIGNAL LOST.`,
-          level: "critical",
-        });
-        get().addAuditLog({
-          actor: "Sentinel-AI Telemetry",
-          action: `UNIT ${track.id} LOST CONNECTION`,
-          target: `${track.name} (${track.id})`,
-          details: `Koneksi terputus. Jaringan terakhir: ${track.connectionType || track.signalStatus}.`,
-        });
-      }
-    }
-
-    set({
-      personnelTracks: state.personnelTracks.map(t =>
-        t.id === id ? { ...t, ...updates } : t
-      ),
-    });
-
-    // TURANGGA 2.0 PROACTIVE MONITOR
-    const updatedTrack = get().personnelTracks.find(t => t.id === id);
-    if (updatedTrack) {
-       runProactiveChecks(updatedTrack, get().pushNotification, get().addAuditLog);
-    }
-  },
-
-  syncOfflineData: async () => { const { offlineQueue, isOnline, addAuditLog } = get();
-    if (!isOnline || offlineQueue.length === 0) return;
-    
-    console.log(`[SENTINEL-SYNC] Syncing ${offlineQueue.length} buffered points...`);
-    
-    
-    const queueCopy = [...offlineQueue];
-    
-    set({ offlineQueue: [] });
-    
-    
-    // Actually send to backend
-    
-    try {
-    
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    
-      const res = await fetch(`${API_URL}/api/sync/offline`, {
-    
-        method: "POST",
-    
-        headers: { "Content-Type": "application/json" },
-    
-        body: JSON.stringify({ packets: queueCopy }),
-    
-      });
-    
-      if (!res.ok) throw new Error("Sync failed");
-    
-      console.log(`[SENTINEL-SYNC] Backend acknowledged ${queueCopy.length} points`);
-    
-    } catch (err) {
-    
-      // Re-queue on failure
-    
-      set(state => ({ offlineQueue: [...queueCopy, ...state.offlineQueue] }));
-    
-      console.warn(`[SENTINEL-SYNC] Re-queued ${queueCopy.length} points due to error`);
-    
-    }
-    
-    addAuditLog({
-      actor: "Sentinel-AI Sync Engine",
-      action: "BATCH_UPLOAD_SUCCESS",
-      target: "Core Data",
-      details: `Successfully synchronized ${offlineQueue.length} records from local buffer. Timestamp Reconciliation applied.`
-    });
-  },
-  
-  setTimeRangeHours: (hours) => set({ timeRangeHours: hours }),
-  setLiveMode: (value) => set({ liveMode: value }),
-  setHeatmapEnabled: (value) => set({ heatmapEnabled: value }),
-  addAIMessage: (message) => set((state) => ({
-    aiMessages: [...state.aiMessages, sanitizePayload(message)]
-  })),
-  pushNotification: (notification) => set((state) => ({
-      notifications: [{ 
-        id: typeof crypto !== 'undefined' && crypto.randomUUID 
-            ? `notif-${crypto.randomUUID()}` 
-            : `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
-        read: false, 
-        createdAt: new Date().toISOString(), 
-        ...notification 
-      }, ...state.notifications],
-  })),
-  markNotificationRead: (id) => set((state) => ({
-      notifications: state.notifications.map((n) => n.id === id ? { ...n, read: true } : n),
-  })),
-
-  setHistoryTimestamp: (timestamp) => set({ historyTimestamp: timestamp }),
-  setSelectedPersonnelId: (id) => set({ selectedPersonnelId: id }),
-  setPersonnelTracks: (tracks) => set({ personnelTracks: tracks }),
-
-  dispatchMission: (mission) => set((state) => ({
-     activeMissions: [...state.activeMissions, { 
-       ...mission, 
-       id: typeof crypto !== 'undefined' && crypto.randomUUID 
-           ? `msn-${crypto.randomUUID()}` 
-           : `msn-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
-       createdAt: new Date().toISOString() 
-     }] 
-  })),
-
-  updateMissionStatus: (id, status) => set((state) => ({
-    activeMissions: state.activeMissions.map(m => m.id === id ? { ...m, status } : m)
-  })),
-
-  setPredictiveMode: (enabled) => set({ predictiveMode: enabled }),
-  setPatrolRoute: (route) => set({ activePatrolRoute: route }),
-  setDispatchModal: (open, incident) => set({ dispatchModalOpen: open, selectedIncident: incident || null }),
-  addAuditLog: async (entry) => {
-    const timestamp = new Date().toISOString();
-    const sanitizedEntry = sanitizePayload(entry);
-    const hash = await generateIntegrityHash({ ...sanitizedEntry, timestamp });
-    
-    set((state) => ({
-      auditLogs: [{ 
-        ...sanitizedEntry, 
-        id: typeof crypto !== 'undefined' && crypto.randomUUID 
-            ? `audit-${crypto.randomUUID()}` 
-            : `audit-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
-        timestamp,
-        hash
-      }, ...state.auditLogs]
-    }));
-  },
-  setOsintEnabled: (enabled) => set({ osintEnabled: enabled }),
-  setSandboxMode: (enabled) => set({ sandboxMode: enabled }),
-  calculateSandboxImpact: (polresId, shifted) => set({
-    sandboxImpact: { resourceShift: `${shifted} Peleton ke ${polresId}`, coverageChange: -15, responseTimeChange: 5, riskAssesment: "Medium" }
-  }),
-
-  setSearchQuery: (query) => set((state) => {
-    const results: SearchResult[] = [];
-    if (query.length > 1) {
-       state.polres.filter(p => p.name.toLowerCase().includes(query.toLowerCase())).forEach(p => {
-         results.push({ id: p.id, type: "location", title: p.name, subtitle: `${p.island} | Polres`, lat: p.lat, lng: p.lng });
-       });
-    }
-    return { searchQuery: query, searchResults: results };
-  }),
-
-  // Map Focus
-  mapCenter: null,
-  setMapCenter: (center) => set({ mapCenter: center }),
-  heatPoints: [],
-  setHeatPoints: (points) => set({ heatPoints: points }),
-
-  // Multi-Agency & Citizen
-  bmkgOverlayEnabled: false,
-  cctvMarkersEnabled: true,
-  setBmkgOverlay: (enabled) => set({ bmkgOverlayEnabled: enabled }),
-  setCctvMarkers: (enabled) => set({ cctvMarkersEnabled: enabled }),
-  cctvPoints: [
-    { id: 'cam-01', name: "Simpang El Tari", lat: -10.165, lng: 123.605, type: 'Dishub', status: 'Online' },
-    { id: 'cam-02', name: "Bundaran TI", lat: -10.158, lng: 123.606, type: 'Police', status: 'Online' },
-    { id: 'cam-03', name: "Lippo Mall Area", lat: -10.150, lng: 123.615, type: 'Dishub', status: 'Offline' },
-  ],
-  incomingPublicReport: null,
-  triggerPublicReport: (report) => {
-    set({ incomingPublicReport: report, mapCenter: { lat: report.lat, lng: report.lng, zoom: 17 } });
-    // Add to audit trail
-    get().addAuditLog({
-      actor: "Sentinel-AI System",
-      action: "Incoming Public Report",
-      target: report.id,
-      details: `Citizen report from ${report.locationName} received.`
-    });
-  },
-  clearPublicReport: () => set({ incomingPublicReport: null }),
-
-  playbackActive: false,
-  playbackSpeed: 1,
-  setPlaybackActive: (active) => set({ playbackActive: active }),
-  setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
-
-  geofenceAlerts: [],
-  addGeofenceAlert: (alert) => set((state) => ({ 
-    geofenceAlerts: [alert, ...state.geofenceAlerts].slice(0, 50) 
-  })),
-
-  mapTypeId: "roadmap",
-  setMapTypeId: (id) => set({ mapTypeId: id }),
-  trafficLayerEnabled: false,
-  setTrafficLayer: (enabled) => set({ trafficLayerEnabled: enabled }),
-
-  filterStatus: "all",
-  filterPriority: "all",
-  setFilterStatus: (status) => set({ filterStatus: status }),
-  setFilterPriority: (priority) => set({ filterPriority: priority }),
-  isSettingsOpen: false,
-  isNotificationsOpen: false,
-  toggleSettings: (open) => set((state) => ({ isSettingsOpen: open ?? !state.isSettingsOpen })),
-  toggleNotifications: (open) => set((state) => ({ isNotificationsOpen: open ?? !state.isNotificationsOpen })),
-  isSidebarCollapsed: false,
-  toggleSidebar: (collapsed) => set((state) => ({ isSidebarCollapsed: collapsed ?? !state.isSidebarCollapsed })),
-
-  executeAction: (actionType, payload) => {
-    let title = "Action Executed";
-    let description = `Aksi ${actionType} berhasil dijalankan.`;
-    let level: "info" | "success" | "warning" | "critical" = "info";
-
-    switch (actionType) {
-      case "DISPATCH_MISSION":
-        title = "Tactical Dispatch";
-        description = `Unit ${payload?.unitName || 'Unknown'} telah dikerahkan ke lokasi ${payload?.locationName || 'Target'}.`;
-        level = "success";
-        break;
-      case "EXPORT_ANEV":
-        title = "Export ANEV Success";
-        description = `Dokumen ANEV operasional periode ${new Date().toLocaleDateString()} telah diekspor.`;
-        level = "success";
-        break;
-      default:
-        break;
-    }
-
-    get().pushNotification({
-      title,
-      description,
-      level,
-    });
-
-    get().addAuditLog({
-      actor: "Irjen Pol. Daniel T.M. Silitonga",
-      action: actionType,
-      target: payload?.id ? String(payload.id) : "Global Dashboard",
-      details: description
-    });
-  },
-
-  clearOperationalData: () => {
-    set({
-      activeMissions: [],
       notifications: [],
-      aiMessages: [],
-      auditLogs: [],
-      emergency: defaultEmergency,
-    });
-    
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.removeItem("sentinel-tactical-storage");
-      } catch (err) {
-        console.warn("[Store] localStorage clear error:", err);
-      }
-    }
 
-    get().pushNotification({
-      title: "Security Clearing Success",
-      description: "Seluruh data operasional dan riwayat log telah dihapus dari terminal.",
-      level: "critical"
-    });
-  },
+      cctvPoints: [],
+      cctvMarkersEnabled: true,
+      predictiveMode: false,
+      shadowHotspots: [],
+
+      activeMissions: [],
+      activePatrolRoute: null,
+
+      historyTimestamp: null,
+      playbackActive: false,
+      playbackSpeed: 1,
+
+      // Personnel tracking actions
+      setPersonnelTracks: (tracks) => set({ personnelTracks: tracks }),
+
+      setSelectedPersonnelId: (id) => set({ selectedPersonnelId: id }),
+
+      setSelectedPersonnelPosition: (position) => set({ selectedPersonnelPosition: position }),
+
+      updatePersonnelPosition: (id, lat, lng, telemetry) =>
+        set((state) => ({
+          personnelTracks: state.personnelTracks.map((track) =>
+            track.id === id
+              ? {
+                  ...track,
+                  lat,
+                  lng,
+                  waypoints: [
+                    ...track.waypoints,
+                    { lat, lng, timestamp: new Date().toISOString(), speed: telemetry?.speed, accuracy: telemetry?.accuracy },
+                  ].slice(-100),
+                }
+              : track
+          ),
+          selectedPersonnelPosition:
+            state.selectedPersonnelId === id
+              ? { lat, lng, accuracy: telemetry?.accuracy ?? undefined, timestamp: new Date().toISOString() }
+              : state.selectedPersonnelPosition,
+        })),
+
+      updatePersonnelTelemetry: (id, data) =>
+        set((state) => ({
+          personnelTracks: state.personnelTracks.map((track) =>
+            track.id === id
+              ? {
+                  ...track,
+                  batteryLevel: data.batteryLevel ?? track.batteryLevel,
+                  isCharging: data.isCharging ?? track.isCharging,
+                  speed: data.speed ?? track.speed,
+                  connectionType: data.connectionType ?? track.connectionType,
+                  signalStatus: data.signalStatus ?? track.signalStatus,
+                  lat: data.lat ?? track.lat,
+                  lng: data.lng ?? track.lng,
+                  accuracy: data.accuracy ?? track.accuracy,
+                }
+              : track
+          ),
+        })),
+
+      // Map actions
+      setPolres: (list) => set({ polres: list }),
+      setSelectedPolresId: (id) => set({ selectedPolresId: id }),
+      setPolicePosts: (posts) => set({ policePosts: posts }),
+      setMapCenter: (center) => set({ mapCenter: center }),
+
+      // Geofence actions
+      addGeofenceAlert: (alert) =>
+        set((state) => ({
+          geofenceAlerts: [alert, ...state.geofenceAlerts].slice(0, 50),
+        })),
+      clearGeofenceAlerts: () => set({ geofenceAlerts: [] }),
+
+      // Emergency actions
+      setEmergency: (emergency) => set({ emergency }),
+      clearEmergency: () => set({ emergency: { active: false } }),
+
+      // Dispatch actions
+      setDispatchModal: (open, report) =>
+        set({ dispatchModal: { open, report } }),
+      setDispatchMission: (mission) => set({ dispatchMission: mission }),
+
+      // Notification actions
+      pushNotification: (notification) =>
+        set((state) => ({
+          notifications: [
+            {
+              ...notification,
+              id: `notif-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              timestamp: new Date().toISOString(),
+            },
+            ...state.notifications,
+          ].slice(0, 100),
+        })),
+      clearNotifications: () => set({ notifications: [] }),
+
+      // CCTV & Predictive actions
+      setCctvPoints: (points) => set({ cctvPoints: points }),
+      setCctvMarkers: (enabled) => set({ cctvMarkersEnabled: enabled }),
+      setPredictiveMode: (enabled) => set({ predictiveMode: enabled }),
+      setShadowHotspots: (hotspots) => set({ shadowHotspots: hotspots }),
+
+      // Mission actions
+      setActiveMissions: (missions) => set({ activeMissions: missions }),
+      setActivePatrolRoute: (route) => set({ activePatrolRoute: route }),
+
+      // Playback actions
+      setHistoryTimestamp: (timestamp) => set({ historyTimestamp: timestamp }),
+      setPlaybackActive: (active) => set({ playbackActive: active }),
+      setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
     }),
     {
-      name: "sentinel-tactical-storage",
-      storage: createJSONStorage(() => localStorage),
+      name: "sentinel-dashboard-storage",
       partialize: (state) => ({
-        activeMissions: state.activeMissions,
-        auditLogs: state.auditLogs,
-        notifications: state.notifications,
-        activeShift: state.activeShift,
-        mapTypeId: state.mapTypeId,
-        trafficLayerEnabled: state.trafficLayerEnabled,
-        filterStatus: state.filterStatus,
-        filterPriority: state.filterPriority,
-        timeRangeHours: state.timeRangeHours,
-        sandboxMode: state.sandboxMode,
-        osintEnabled: state.osintEnabled,
-        heatmapEnabled: state.heatmapEnabled,
-        isSidebarCollapsed: state.isSidebarCollapsed,
+        selectedPolresId: state.selectedPolresId,
+        cctvMarkersEnabled: state.cctvMarkersEnabled,
+        predictiveMode: state.predictiveMode,
       }),
     }
   )
 );
-
-export function getSelectedPolres(state: AppState): PolresItem | null {
-  return state.polres.find((item) => item.id === state.selectedPolresId) ?? null;
-}
-
-
-
