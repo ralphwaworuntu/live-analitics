@@ -27,13 +27,22 @@ export function SocketProvider({ children, token }: { children: React.ReactNode;
     if (!currentSocket) {
       // INTERNAL SIMULATION ENGINE (Hardening Phase)
       timer = setInterval(() => {
-        const { personnelTracks, updatePersonnelPosition } = useAppStore.getState();
+        const { personnelTracks, updatePersonnelPosition, updatePersonnelTelemetry } = useAppStore.getState();
         personnelTracks.forEach((track) => {
           const randomFactor = 0.0003; // Smooth drift
           const lastPos = track.waypoints[track.waypoints.length - 1];
           const newLat = lastPos.lat + (Math.random() - 0.5) * randomFactor;
           const newLng = lastPos.lng + (Math.random() - 0.5) * randomFactor;
           updatePersonnelPosition(track.id, newLat, newLng);
+          
+          // WAR ROOM SIMULATION: Inject telemetry for alerts
+          if (track.id === "p-001") {
+            updatePersonnelTelemetry(track.id, { speed: 95, connectionType: "5g" });
+          } else if (track.id === "p-ttu-001") {
+            updatePersonnelTelemetry(track.id, { batteryLevel: 7, isCharging: false, speed: 0, connectionType: "4g" });
+          } else if (track.id === "p-002") {
+            updatePersonnelTelemetry(track.id, { speed: null, connectionType: "none" });
+          }
         });
       }, 3000);
       return () => { if (timer) clearInterval(timer); };

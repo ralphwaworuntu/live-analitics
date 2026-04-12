@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Map, 
   Plus, 
@@ -27,6 +27,9 @@ interface TopHeaderProps {
  * TopHeader Component for Sentinel-AI Dashboard
  */
 export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+  
   const { incomingPublicReport, clearPublicReport, executeAction, toggleSettings, toggleNotifications } = useAppStore();
   const unreadCount = useAppStore(state => state.notifications?.filter((n: { read: boolean }) => !n.read).length || 0);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -142,10 +145,10 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
               </div>
               <div className="hidden lg:flex flex-col items-start translate-y-[1px]">
                 <span className="text-xs font-bold text-slate-200 group-hover:text-white transition-colors">
-                  {user?.name || "Initializing..."}
+                  {!isMounted ? "Loading..." : (user?.name || "Initializing...")}
                 </span>
                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">
-                  {user?.role?.replace("_", " ") || "AUTHENTICATING"}
+                  {!isMounted ? "..." : (user?.role?.replace("_", " ") || "AUTHENTICATING")}
                 </span>
               </div>
               <ChevronDown size={14} className="hidden sm:block text-slate-500 group-hover:text-slate-200 group-hover:translate-y-0.5 transition-all" />

@@ -43,7 +43,7 @@ function buildAlert(track: PersonnelTrack, type: AlertType): TacticalAlert | nul
 }
 
 export default function TacticalAlertBridge() {
-  const personnelTracks = useAppStore((state) => state.personnelTracks);
+  const personnelTracks = useAppStore((state) => state.personnelTracks ?? []);
   const setMapCenter = useAppStore((state) => state.setMapCenter);
   const setSelectedPersonnelId = useAppStore((state) => state.setSelectedPersonnelId);
   const activeAlertsRef = useRef<Map<string, TacticalAlert>>(new Map());
@@ -51,10 +51,12 @@ export default function TacticalAlertBridge() {
   const { playTacticalBeep } = useEmergencySound();
 
   useEffect(() => {
+    if (!personnelTracks?.length) return;
+    
     const nextAlerts = new Map<string, TacticalAlert>();
     let shouldPlayHighSpeedBeep = false;
 
-    personnelTracks.forEach((track) => {
+    personnelTracks?.forEach((track) => {
       const status = track.connectionType === "none" || track.signalStatus === "No Signal" ? "offline" : "online";
 
       const highSpeedAlert = track.speed > 80 ? buildAlert(track, "high-speed") : null;

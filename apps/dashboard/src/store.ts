@@ -248,15 +248,40 @@ export const useAppStore = create<AppState>()(
      odometer: 1240 + (idx * 150),
      fuelInputShift: 15,
      health: { engine: 92, tires: 88, lastServiceKm: 1200 },
-     batteryLevel: 85 - (idx * 12),
+     batteryLevel: idx === 2 ? 7 : (85 - (idx * 12)),
      isCharging: idx === 0,
-     speed: 18 + (idx * 8),
-     connectionType: idx % 2 === 0 ? "4g" : "5g",
-     signalStatus: idx % 2 === 0 ? "LTE" : "5G",
+     speed: idx === 0 ? 95 : (18 + (idx * 8)),
+     connectionType: idx === 1 ? "none" : (idx % 2 === 0 ? "4g" : "5g"),
+     signalStatus: idx === 1 ? "No Signal" : (idx % 2 === 0 ? "LTE" : "5G"),
      topSpeed: 45 + (idx * 10),
      harshBrakingCount: idx === 1 ? 3 : 0,
-     isFakeGPS: idx === 2
-  })) as PersonnelTrack[],
+     isFakeGPS: idx === 2,
+     isGhost: idx === 1,
+  })).concat([{
+     id: "p-ttu-001",
+     nrp: "91070877",
+     name: "Bp. Terawan",
+     polresId: "ttu",
+     unitType: "R4" as UnitType,
+     waypoints: Array.from({ length: 48 }).map((_, i) => ({
+       lat: -9.447 + (Math.sin(i / 3) * 0.02),
+       lng: 124.481 + (Math.cos(i / 3) * 0.02),
+       timestamp: new Date(new Date().setHours(0, 0, 0, 0) + i * 30 * 60000).toISOString(),
+     })),
+     fuelStatus: 45,
+     odometer: 890,
+     fuelInputShift: 10,
+     health: { engine: 88, tires: 82, lastServiceKm: 800 },
+     batteryLevel: 7,
+     isCharging: false,
+     speed: 0,
+     connectionType: "4g",
+     signalStatus: "LTE",
+     topSpeed: 55,
+     harshBrakingCount: 0,
+     isFakeGPS: false,
+     isGhost: false,
+  }]) as PersonnelTrack[],
 
   // HARDENING
   activeShift: "pagi",
@@ -707,7 +732,14 @@ export const useAppStore = create<AppState>()(
       auditLogs: [],
       emergency: defaultEmergency,
     });
-    localStorage.removeItem("sentinel-tactical-storage");
+    
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem("sentinel-tactical-storage");
+      } catch (err) {
+        console.warn("[Store] localStorage clear error:", err);
+      }
+    }
 
     get().pushNotification({
       title: "Security Clearing Success",
